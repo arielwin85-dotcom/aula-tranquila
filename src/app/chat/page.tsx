@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, User as UserIcon, Calendar, CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight, Clock, Loader2, Trash2, X } from 'lucide-react';
 import { ChatMessage, WeeklyPlan, PlanDay, DayStatus } from '@/types';

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { Sparkles, FileText, CheckCircle2, ChevronDown, Download, Printer, ArrowLeft, Loader2 } from 'lucide-react';
 import { Classroom, Subject, Student } from '@/types';

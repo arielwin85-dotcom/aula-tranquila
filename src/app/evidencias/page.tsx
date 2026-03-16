@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, Sparkles, Check, FileCheck, Loader2, AlertCircle, Printer, X, User, Download } from 'lucide-react';
 import { Classroom } from '@/types';
