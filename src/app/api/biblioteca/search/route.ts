@@ -13,17 +13,24 @@ export async function GET(request: Request) {
 
   try {
     const credentialsPath = path.join(process.cwd(), 'credentials.json');
-    
-    // Check if credentials exist, otherwise return mock data
-    if (!fs.existsSync(credentialsPath)) {
-      console.warn("credentials.json not found. Returning mock data.");
+    const authOptions: any = {
+      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+    };
+
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS) {
+      try {
+        authOptions.credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS);
+      } catch (e) {
+        console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT_CREDENTIALS", e);
+      }
+    } else if (fs.existsSync(credentialsPath)) {
+      authOptions.keyFile = credentialsPath;
+    } else {
+      console.warn("No Google credentials found (neither env var nor file). Returning mock data.");
       return NextResponse.json(getMockResults(query));
     }
 
-    const auth = new google.auth.GoogleAuth({
-      keyFile: credentialsPath,
-      scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-    });
+    const auth = new google.auth.GoogleAuth(authOptions);
 
     const drive = google.drive({ version: 'v3', auth });
 
