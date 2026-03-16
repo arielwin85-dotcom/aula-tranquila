@@ -1,5 +1,5 @@
 import { Classroom, User } from '@/types';
-import { supabase } from './supabase';
+import { supabase, supabaseAdmin } from './supabase';
 
 export interface SupportTicket {
   id: string;
