@@ -29,6 +29,21 @@ export async function getUsers(): Promise<User[]> {
   return data || [];
 }
 
+// Admin version to bypass RLS
+export async function getUsersAdmin(): Promise<User[]> {
+  if (!supabaseAdmin) return getUsers();
+  const { data, error } = await supabaseAdmin.from('profiles').select('*');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getProfileById(id: string): Promise<User | null> {
+  const client = supabaseAdmin || supabase;
+  const { data, error } = await client.from('profiles').select('*').eq('id', id).single();
+  if (error) return null;
+  return data;
+}
+
 export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   let query = supabase.from('classrooms').select('*');
   if (userId) query = query.eq('user_id', userId);

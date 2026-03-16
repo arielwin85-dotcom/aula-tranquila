@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getUsers } from '@/lib/db';
+import { getProfileById } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -11,8 +11,7 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
-    const users = await getUsers();
-    const user = users.find(u => u.id === userId);
+    const user = await getProfileById(userId);
 
     if (!user) {
       cookieStore.delete('auth_session');

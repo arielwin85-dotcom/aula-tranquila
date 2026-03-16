@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getUsers } from '@/lib/db';
+import { getProfileById } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
@@ -25,9 +25,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
-    // 2. Obtener el perfil extendido desde la tabla profiles
-    const users = await getUsers();
-    const profile = users.find(u => u.id === authData.user.id);
+    // 2. Obtener el perfil extendido desde la tabla profiles (usando helper admin para saltar RLS)
+    const profile = await getProfileById(authData.user.id);
 
     if (!profile) {
       return NextResponse.json({ error: 'Perfil de usuario no encontrado' }, { status: 404 });

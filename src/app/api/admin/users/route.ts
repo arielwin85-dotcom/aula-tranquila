@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getUsers, saveProfile } from '@/lib/db';
+import { getUsersAdmin, saveProfile } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // GET all users
 export async function GET() {
   try {
-    const users = await getUsers();
+    const users = await getUsersAdmin();
     // No devolvemos los passwords por seguridad (en Supabase Auth no los tenemos)
     const secureUsers = users.map(({ password: _, ...user }) => user);
     return NextResponse.json(secureUsers);
