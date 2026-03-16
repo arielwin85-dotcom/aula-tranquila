@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { readDB } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
+import { getUsers } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
@@ -10,17 +11,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email y contraseña son obligatorios' }, { status: 400 });
     }
 
-    const db = await readDB();
-    const user = db.users.find(u => u.email === email && u.password === password);
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 500 });
+    }
 
-    if (!user) {
+    // 1. Intentar hacer login con Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError || !authData.user) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
-    // En un entorno real usaríamos JWT o una sesión firmada.
-    // Para este MVP usaremos una cookie simple con el ID del usuario.
+    // 2. Obtener el perfil extendido desde la tabla profiles
+    const users = await getUsers();
+    const profile = users.find(u => u.id === authData.user.id);
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Perfil de usuario no encontrado' }, { status: 404 });
+    }
+
+    // 3. Mantener el sistema de cookies del MVP por compatibilidad
     const cookieStore = await cookies();
-    cookieStore.set('auth_session', user.id, {
+    cookieStore.set('auth_session', profile.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -28,12 +43,10 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7 // 1 semana
     });
 
-    // Devolvemos el usuario (sin el password)
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({ user: profile });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Error del servidor' }, { status: 500 });
+    return NextResponse.json({ error: 'Error del servidor: ' + error.message }, { status: 500 });
   }
 }
