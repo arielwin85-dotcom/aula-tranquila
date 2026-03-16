@@ -7,29 +7,6 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    // EMERGENCY BYPASS PARA SURFEAR LA APP SIN SUPABASE
-    if (email === 'admin' && password === 'admin') {
-      const cookieStore = await cookies();
-      cookieStore.set('auth_session', 'bypass-admin', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7 // 1 semana
-      });
-      return NextResponse.json({ 
-        user: { 
-          id: 'bypass-admin', 
-          name: 'Admin Maestro (Bypass)', 
-          email: 'admin@aulatranquila.com', 
-          role: 'admin',
-          level: 'Administración',
-          plan: 'Premium',
-          credits: 9999
-        } 
-      });
-    }
-
     if (!email || !password) {
       return NextResponse.json({ error: 'Email y contraseña son obligatorios' }, { status: 400 });
     }
