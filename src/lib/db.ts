@@ -6,62 +6,72 @@ import { mockClassrooms } from '@/mocks/data';
 // Path to the local JSON database
 const dbFilePath = path.join(process.cwd(), 'src', 'data', 'db.json');
 
-export interface Database {
-  users: User[];
-  tickets: SupportTicket[];
-  classrooms: Classroom[];
-  weeklyPlans: any[]; // Using any to avoid circular import pain, we know it's WeeklyPlan[]
-}
+// In-memory fallback for environments where filesystem is read-only (like Vercel)
+let inMemoryDB: Database | null = null;
 
-export interface SupportTicket {
-  id: string;
-  userId?: string;
-  userEmail: string;
-  subject: string;
-  description: string;
-  status: 'Abierto' | 'En Proceso' | 'Cerrado';
-  createdAt: string;
-  attachments?: string[];
-}
+const initialData: Database = { 
+  users: [
+    {
+      id: 'admin-1',
+      name: 'Administrador Maestro',
+      email: 'admin@aulatranquila.com',
+      password: 'admin', // En producción usar hashing
+      role: 'admin',
+      level: 'Administración',
+      credits: 9999,
+      plan: 'Institución'
+    }
+  ],
+  tickets: [],
+  classrooms: mockClassrooms, 
+  weeklyPlans: [] 
+};
 
-// Ensure the DB file exists, if not, create it with mock data
+// Ensure the DB file exists, if not, create it with mock data (if possible)
 export function initDB() {
   const dirPath = path.dirname(dbFilePath);
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
+  
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
 
-  if (!fs.existsSync(dbFilePath)) {
-    const initialData: Database = { 
-      users: [
-        {
-          id: 'admin-1',
-          name: 'Administrador Maestro',
-          email: 'admin@aulatranquila.com',
-          password: 'admin', // En producción usar hashing
-          role: 'admin',
-          level: 'Administración',
-          credits: 9999,
-          plan: 'Institución'
-        }
-      ],
-      tickets: [],
-      classrooms: mockClassrooms, 
-      weeklyPlans: [] 
-    };
-    fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2), 'utf-8');
+    if (!fs.existsSync(dbFilePath)) {
+      fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2), 'utf-8');
+    }
+  } catch (error) {
+    // If we are on Vercel or a read-only FS, we just log and continue using in-memory
+    console.warn('Filesystem is read-only. Data will not persist across restarts.', error);
+    if (!inMemoryDB) {
+      inMemoryDB = initialData;
+    }
   }
 }
 
 // Read from DB
 export function readDB(): Database {
-  initDB();
-  const data = fs.readFileSync(dbFilePath, 'utf-8');
-  return JSON.parse(data);
+  if (inMemoryDB) return inMemoryDB;
+  
+  try {
+    initDB();
+    if (fs.existsSync(dbFilePath)) {
+      const data = fs.readFileSync(dbFilePath, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Failed to read from DB, using fallback', error);
+  }
+  
+  return initialData;
 }
 
 // Write to DB
 export function writeDB(data: Database) {
-  initDB();
-  fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2), 'utf-8');
+  try {
+    initDB();
+    fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (error) {
+    console.warn('Write failed, updating in-memory only', error);
+    inMemoryDB = data;
+  }
 }
