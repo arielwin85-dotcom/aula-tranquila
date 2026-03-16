@@ -6,6 +6,24 @@ import { mockClassrooms } from '@/mocks/data';
 // Path to the local JSON database
 const dbFilePath = path.join(process.cwd(), 'src', 'data', 'db.json');
 
+export interface SupportTicket {
+  id: string;
+  userId?: string;
+  userEmail: string;
+  subject: string;
+  description: string;
+  status: 'Abierto' | 'En Proceso' | 'Cerrado';
+  createdAt: string;
+  attachments?: string[];
+}
+
+export interface Database {
+  users: User[];
+  tickets: SupportTicket[];
+  classrooms: Classroom[];
+  weeklyPlans: any[]; 
+}
+
 // In-memory fallback for environments where filesystem is read-only (like Vercel)
 let inMemoryDB: Database | null = null;
 
