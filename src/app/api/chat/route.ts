@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
-import { readDB } from '@/lib/db';
+import { getWeeklyPlans } from '@/lib/db';
 import { WeeklyPlan, ChatMessage } from '@/types';
 
 // The system prompt defines the AI's "Persona" and strict behavior guidelines.
@@ -57,12 +57,12 @@ export async function POST(request: Request) {
     console.log('Request received:', { messagesCount: messages?.length, classroomId, subjectId, subjectName, startDate, numClasses });
 
     // 1. Memory Retrieval: Fetch the last completed plan to feed into AI logic
-    const db = readDB();
     let pastLessonsContext = "No hay clases pasadas en el sistema. Es la primera vez que planifican.";
     
-    if (db.weeklyPlans && classroomId && subjectId) {
-      const pastPlans = db.weeklyPlans
-         .filter((p: WeeklyPlan) => p.classroomId === classroomId && p.subjectId === subjectId)
+    if (classroomId && subjectId) {
+      const allPastPlans = await getWeeklyPlans(classroomId);
+      const pastPlans = allPastPlans
+         .filter((p: WeeklyPlan) => p.subjectId === subjectId)
          .sort((a: WeeklyPlan, b: WeeklyPlan) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime());
          
       if (pastPlans.length > 0) {

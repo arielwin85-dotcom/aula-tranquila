@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
-import { readDB } from '@/lib/db';
+import { getClassrooms } from '@/lib/db';
+import { Classroom, Subject } from '@/types';
 
 const SYSTEM_PROMPT = `
 Eres un EXPERTO PEDAGÓGICO DE NIVEL MUNDIAL en diseño y planificación curricular. 
@@ -51,9 +52,9 @@ export async function POST(request: Request) {
   try {
     const { classroomId, subjectId, regulation, planType } = await request.json();
 
-    const db = readDB();
-    const classroom = db.classrooms.find(c => c.id === classroomId);
-    const subject = classroom?.subjects.find(s => s.id === subjectId);
+    const classrooms = await getClassrooms();
+    const classroom = classrooms.find((c: Classroom) => c.id === classroomId);
+    const subject = classroom?.subjects.find((s: Subject) => s.id === subjectId);
 
     if (!classroom || !subject) {
       return NextResponse.json({ error: 'Clase o materia no encontrada' }, { status: 404 });

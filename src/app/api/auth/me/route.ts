@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
-    const db = readDB();
+    const db = await readDB();
     const user = db.users.find(u => u.id === userId);
 
     if (!user) {

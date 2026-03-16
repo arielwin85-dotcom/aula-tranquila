@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { getWeeklyPlans, saveWeeklyPlan } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { WeeklyPlan } from '@/types';
 
@@ -7,18 +7,9 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const classroomId = searchParams.get('classroomId');
-    const subjectId = searchParams.get('subjectId');
+    // const subjectId = searchParams.get('subjectId');
 
-    const db = readDB();
-    let plans = db.weeklyPlans || [];
-
-    if (classroomId) {
-      plans = plans.filter((p: WeeklyPlan) => p.classroomId === classroomId);
-    }
-    
-    if (subjectId) {
-      plans = plans.filter((p: WeeklyPlan) => p.subjectId === subjectId);
-    }
+    const plans = await getWeeklyPlans(classroomId || undefined);
 
     // Sort by most recent start date
     plans.sort((a: WeeklyPlan, b: WeeklyPlan) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime());
@@ -33,11 +24,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const db = readDB();
-
-    if (!db.weeklyPlans) {
-      db.weeklyPlans = [];
-    }
 
     const newPlan: WeeklyPlan = {
       id: uuidv4(),
@@ -48,8 +34,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    db.weeklyPlans.push(newPlan);
-    writeDB(db);
+    await saveWeeklyPlan(newPlan);
 
     return NextResponse.json(newPlan, { status: 201 });
   } catch (error) {

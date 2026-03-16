@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { getClassrooms, saveClassroom, deleteClassroom } from '@/lib/db';
 import { Classroom } from '@/types';
 
 // Use asynchronous params as required by Next.js 15+ App Router
@@ -10,21 +10,21 @@ export async function PUT(
   try {
     const { id } = await params;
     const updatedClassroom: Classroom = await request.json();
-    const db = readDB();
+    const classrooms = await getClassrooms();
     
-    const index = db.classrooms.findIndex(c => c.id === id);
+    const index = classrooms.findIndex(c => c.id === id);
     if (index === -1) {
       return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
     }
 
     // Keep existing students if not provided in the update
-    updatedClassroom.students = updatedClassroom.students || db.classrooms[index].students;
+    updatedClassroom.students = updatedClassroom.students || classrooms[index].students;
     
-    db.classrooms[index] = updatedClassroom;
-    writeDB(db);
+    await saveClassroom(updatedClassroom);
     
     return NextResponse.json(updatedClassroom);
   } catch (error) {
+    console.error('Failed to update classroom:', error);
     return NextResponse.json({ error: 'Failed to update classroom' }, { status: 500 });
   }
 }
@@ -35,18 +35,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const db = readDB();
-    
-    const index = db.classrooms.findIndex(c => c.id === id);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
-    }
-
-    db.classrooms.splice(index, 1);
-    writeDB(db);
+    await deleteClassroom(id);
     
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Failed to delete classroom:', error);
     return NextResponse.json({ error: 'Failed to delete classroom' }, { status: 500 });
   }
 }

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email y contraseña son obligatorios' }, { status: 400 });
     }
 
-    const db = readDB();
+    const db = await readDB();
     const user = db.users.find(u => u.email === email && u.password === password);
 
     if (!user) {

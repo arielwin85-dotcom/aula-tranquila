@@ -1,10 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import { Classroom, User } from '@/types';
-import { mockClassrooms } from '@/mocks/data';
-
-// Path to the local JSON database
-const dbFilePath = path.join(process.cwd(), 'src', 'data', 'db.json');
+import { supabase } from './supabase';
 
 export interface SupportTicket {
   id: string;
@@ -24,72 +19,131 @@ export interface Database {
   weeklyPlans: any[]; 
 }
 
-// In-memory fallback for environments where filesystem is read-only (like Vercel)
-let inMemoryDB: Database | null = null;
+// NOTE: With Supabase, we transition from reading a whole "DB" object 
+// to querying specific tables. These helper functions will now
+// bridge the gap for the existing API routes.
 
-const initialData: Database = { 
-  users: [
-    {
-      id: 'admin-1',
-      name: 'Administrador Maestro',
-      email: 'admin@aulatranquila.com',
-      password: 'admin', // En producción usar hashing
-      role: 'admin',
-      level: 'Administración',
-      credits: 9999,
-      plan: 'Institución'
-    }
-  ],
-  tickets: [],
-  classrooms: mockClassrooms, 
-  weeklyPlans: [] 
-};
-
-// Ensure the DB file exists, if not, create it with mock data (if possible)
-export function initDB() {
-  const dirPath = path.dirname(dbFilePath);
-  
-  try {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    if (!fs.existsSync(dbFilePath)) {
-      fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2), 'utf-8');
-    }
-  } catch (error) {
-    // If we are on Vercel or a read-only FS, we just log and continue using in-memory
-    console.warn('Filesystem is read-only. Data will not persist across restarts.', error);
-    if (!inMemoryDB) {
-      inMemoryDB = initialData;
-    }
-  }
+export async function getUsers(): Promise<User[]> {
+  const { data, error } = await supabase.from('profiles').select('*');
+  if (error) throw error;
+  return data || [];
 }
 
-// Read from DB
-export function readDB(): Database {
-  if (inMemoryDB) return inMemoryDB;
+export async function getClassrooms(userId?: string): Promise<Classroom[]> {
+  let query = supabase.from('classrooms').select('*');
+  if (userId) query = query.eq('user_id', userId);
   
-  try {
-    initDB();
-    if (fs.existsSync(dbFilePath)) {
-      const data = fs.readFileSync(dbFilePath, 'utf-8');
-      return JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Failed to read from DB, using fallback', error);
-  }
-  
-  return initialData;
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(c => ({
+    ...c,
+    userId: c.user_id, // Map snake_case to camelCase
+  }));
 }
 
-// Write to DB
-export function writeDB(data: Database) {
-  try {
-    initDB();
-    fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.warn('Write failed, updating in-memory only', error);
-    inMemoryDB = data;
-  }
+export async function getWeeklyPlans(classroomId?: string): Promise<any[]> {
+  let query = supabase.from('weekly_plans').select('*');
+  if (classroomId) query = query.eq('classroom_id', classroomId);
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(p => ({
+    ...p,
+    classroomId: p.classroom_id,
+    weekStartDate: p.week_start_date
+  }));
+}
+
+// Legacy-compatible readDB (not recommended for new code)
+export async function readDB(): Promise<Database> {
+  const [users, classrooms, weeklyPlans] = await Promise.all([
+    getUsers(),
+    getClassrooms(),
+    getWeeklyPlans()
+  ]);
+
+  return {
+    users,
+    tickets: [], // Logic for tickets can be added later if needed
+    classrooms,
+    weeklyPlans
+  };
+}
+
+// Write helper for specific entities
+export async function saveClassroom(classroom: Classroom) {
+    const { data, error } = await supabase.from('classrooms').upsert({
+        id: classroom.id,
+        user_id: classroom.userId,
+        name: classroom.name,
+        grade: classroom.grade,
+        year: classroom.year,
+        description: classroom.description,
+        subjects: classroom.subjects,
+        students: classroom.students
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function saveWeeklyPlan(plan: any) {
+    const { data, error } = await supabase.from('weekly_plans').upsert({
+        id: plan.id,
+        classroom_id: plan.classroomId,
+        subject_id: plan.subjectId,
+        week_start_date: plan.weekStartDate,
+        days: plan.days
+    });
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteWeeklyPlan(id: string) {
+    const { error } = await supabase.from('weekly_plans').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+}
+
+export async function saveProfile(profile: any) {
+    const { error } = await supabase.from('profiles').upsert({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        level: profile.level,
+        credits: profile.credits,
+        plan: profile.plan,
+        role: profile.role,
+        updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+}
+
+export async function deleteClassroom(id: string) {
+    const { error } = await supabase.from('classrooms').delete().eq('id', id);
+    if (error) throw error;
+    return true;
+}
+
+export async function getTickets(): Promise<SupportTicket[]> {
+  const { data, error } = await supabase.from('tickets').select('*');
+  if (error) throw error;
+  return (data || []).map(t => ({
+    ...t,
+    createdAt: t.created_at,
+    userEmail: t.user_email
+  }));
+}
+
+export async function saveTicket(ticket: SupportTicket) {
+    const { error } = await supabase.from('tickets').upsert({
+        id: ticket.id,
+        user_id: ticket.userId,
+        user_email: ticket.userEmail,
+        subject: ticket.subject,
+        description: ticket.description,
+        status: ticket.status,
+        attachments: ticket.attachments,
+        created_at: ticket.createdAt
+    });
+    if (error) throw error;
 }

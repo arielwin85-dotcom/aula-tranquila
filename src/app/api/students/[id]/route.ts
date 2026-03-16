@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { getClassrooms, saveClassroom } from '@/lib/db';
 
 export async function DELETE(
   request: Request,
@@ -7,9 +7,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    
-    // Also need classroomId to find the student efficiently, 
-    // let's grab it from search params
     const { searchParams } = new URL(request.url);
     const classroomId = searchParams.get('classroomId');
 
@@ -17,27 +14,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
     }
 
-    const db = readDB();
+    const classrooms = await getClassrooms();
+    const classIndex = classrooms.findIndex(c => c.id === classroomId);
     
-    const classIndex = db.classrooms.findIndex(c => c.id === classroomId);
     if (classIndex === -1) {
       return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
     }
 
-    const students = db.classrooms[classIndex].students;
-    const studentIndex = students.findIndex(s => s.id === id);
+    const classroom = classrooms[classIndex];
+    const studentIndex = classroom.students.findIndex(s => s.id === id);
 
     if (studentIndex === -1) {
       return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
     }
 
     // Remove student
-    students.splice(studentIndex, 1);
-    
-    writeDB(db);
+    classroom.students.splice(studentIndex, 1);
+    await saveClassroom(classroom);
     
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Failed to delete student:', error);
     return NextResponse.json({ error: 'Failed to delete student' }, { status: 500 });
   }
 }
@@ -55,30 +52,31 @@ export async function PUT(
       return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
     }
 
-    const db = readDB();
+    const classrooms = await getClassrooms();
+    const classIndex = classrooms.findIndex(c => c.id === classroomId);
     
-    const classIndex = db.classrooms.findIndex(c => c.id === classroomId);
     if (classIndex === -1) {
       return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
     }
 
-    const students = db.classrooms[classIndex].students;
-    const studentIndex = students.findIndex(s => s.id === id);
+    const classroom = classrooms[classIndex];
+    const studentIndex = classroom.students.findIndex(s => s.id === id);
 
     if (studentIndex === -1) {
       return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
     }
 
     // Update student
-    db.classrooms[classIndex].students[studentIndex] = {
-      ...db.classrooms[classIndex].students[studentIndex],
+    classroom.students[studentIndex] = {
+      ...classroom.students[studentIndex],
       ...studentData
     };
     
-    writeDB(db);
+    await saveClassroom(classroom);
     
-    return NextResponse.json(db.classrooms[classIndex].students[studentIndex]);
+    return NextResponse.json(classroom.students[studentIndex]);
   } catch (error) {
+    console.error('Failed to update student:', error);
     return NextResponse.json({ error: 'Failed to update student' }, { status: 500 });
   }
 }

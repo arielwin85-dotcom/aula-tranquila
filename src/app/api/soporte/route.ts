@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
+import { getTickets, saveTicket } from '@/lib/db';
 import { cookies } from 'next/headers';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import path from 'path';
 
 export async function POST(request: Request) {
   try {
@@ -18,23 +16,15 @@ export async function POST(request: Request) {
 
     const attachmentNames: string[] = [];
 
-    // Save files to public/uploads
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
+    // Note: In a real production app on Vercel, we would upload to Supabase Storage.
+    // For now, we simulate file attachments to avoid breaking the UI, 
+    // but we don't save to the read-only filesystem.
     for (const file of files) {
       if (file && file.name) {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const fileName = `${Date.now()}-${file.name}`;
-        fs.writeFileSync(path.join(uploadDir, fileName), buffer);
-        attachmentNames.push(fileName);
+        attachmentNames.push(file.name);
       }
     }
 
-    const db = readDB();
-    
     const newTicket = {
       id: uuidv4(),
       userId,
@@ -46,36 +36,42 @@ export async function POST(request: Request) {
       attachments: attachmentNames
     };
 
-    db.tickets.push(newTicket);
-    writeDB(db);
+    await saveTicket(newTicket);
 
     return NextResponse.json(newTicket);
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+    console.error('Error creating ticket:', err);
+    return NextResponse.json({ error: 'Error al crear el ticket' }, { status: 500 });
   }
 }
 
 export async function GET() {
-  const db = readDB();
-  return NextResponse.json(db.tickets);
+  try {
+    const tickets = await getTickets();
+    return NextResponse.json(tickets);
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al obtener tickets' }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: Request) {
   try {
     const { id, status } = await request.json();
-    const db = readDB();
-    const ticketIndex = db.tickets.findIndex(t => t.id === id);
+    const tickets = await getTickets();
+    const ticketIndex = tickets.findIndex(t => t.id === id);
     
     if (ticketIndex === -1) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
     }
 
-    db.tickets[ticketIndex].status = status;
-    writeDB(db);
+    const ticket = tickets[ticketIndex];
+    ticket.status = status;
+    
+    await saveTicket(ticket);
 
-    return NextResponse.json(db.tickets[ticketIndex]);
+    return NextResponse.json(ticket);
   } catch (err) {
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+    console.error('Error updating ticket:', err);
+    return NextResponse.json({ error: 'Error al actualizar ticket' }, { status: 500 });
   }
 }

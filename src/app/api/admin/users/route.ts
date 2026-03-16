@@ -1,50 +1,75 @@
 import { NextResponse } from 'next/server';
-import { readDB, writeDB } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import { getUsers, saveProfile } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
+// GET all users
 export async function GET() {
-  const db = readDB();
-  // No devolvemos los passwords por seguridad
-  const secureUsers = db.users.map(({ password: _, ...user }) => user);
-  return NextResponse.json(secureUsers);
-}
-
-export async function POST(request: Request) {
   try {
-    const data = await request.json();
-    const db = readDB();
-    
-    const newUser = {
-      id: uuidv4(),
-      name: data.name,
-      email: data.email,
-      password: data.password || 'aula123',
-      role: data.role || 'docente',
-      level: data.level || 'Primaria',
-      credits: 0,
-      plan: 'Gratuito' as const
-    };
-
-    db.users.push(newUser);
-    writeDB(db);
-
-    return NextResponse.json(newUser);
-  } catch (err) {
-    return NextResponse.json({ error: 'Error' }, { status: 500 });
+    const users = await getUsers();
+    // No devolvemos los passwords por seguridad (en Supabase Auth no los tenemos)
+    const secureUsers = users.map(({ password: _, ...user }) => user);
+    return NextResponse.json(secureUsers);
+  } catch (error) {
+    return NextResponse.json({ error: 'Error al obtener usuarios' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'Falta ID' }, { status: 400 });
+// POST a new user (Silent Habilitation)
+export async function POST(request: Request) {
+  try {
+    const data = await request.json();
+    
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Supabase Admin no configurado' }, { status: 500 });
+    }
 
-  const db = readDB();
-  db.users = db.users.filter(u => u.id !== id);
-  writeDB(db);
-  return NextResponse.json({ success: true });
+    // 1. Crear el usuario en Supabase Auth de forma silenciosa
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password || 'aula123',
+      email_confirm: true, // Esto activa el usuario inmediatamente
+      user_metadata: { name: data.name }
+    });
+
+    if (authError) throw authError;
+
+    // 2. Crear el perfil del docente en la tabla profiles
+    const newUser = {
+      id: authUser.user.id,
+      name: data.name,
+      email: data.email,
+      role: data.role || 'docente',
+      level: data.level || 'Primaria',
+      credits: 100,
+      plan: 'Gratuito'
+    };
+
+    await saveProfile(newUser);
+
+    return NextResponse.json(newUser);
+  } catch (err: any) {
+    console.error('Error creating user:', err);
+    return NextResponse.json({ error: err.message || 'Error al crear usuario' }, { status: 500 });
+  }
 }
 
-// Para actualizar usaremos el ID en el cuerpo o URL. 
-// Para simplificar aquí, implementaremos PUT en el mismo archivo si es necesario 
-// o en un archivo con [id]. Vamos a crear el archivo con [id] para consistencia con students.
+// DELETE a user
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Falta ID' }, { status: 400 });
+
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Supabase Admin no configurado' }, { status: 500 });
+    }
+
+    // Al borrar en Auth se borra en cascada en profiles (por el SQL de schema.sql)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Error al borrar' }, { status: 500 });
+  }
+}
