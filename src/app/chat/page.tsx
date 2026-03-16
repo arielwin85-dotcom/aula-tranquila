@@ -513,50 +513,61 @@ export default function ChatPage() {
       {/* Modal de Detalle del Día */}
       {isEditing && activePlan && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4">
-          <div className="bg-brand-navy border border-white/10 rounded-[3rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-             <div className="px-10 py-8 border-b border-white/5 flex justify-between items-center bg-white/5">
-                <div className="flex items-center gap-4">
-                   <div className="bg-brand-orange text-white w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-[10px] font-black">
-                      <span>{activePlan.days.find(d => d.id === isEditing)?.dayOfWeek.substring(0, 3)}</span>
-                      <span className="text-lg -mt-1">{new Date(activePlan.days.find(d => d.id === isEditing)?.date || '').getDate()}</span>
-                   </div>
-                   <h2 className="text-2xl font-black text-white font-montserrat tracking-tight">Detalle de Clase</h2>
-                </div>
-                <button onClick={() => setIsEditing(null)} className="w-12 h-12 flex items-center justify-center bg-white/5 text-slate-500 hover:text-white rounded-2xl transition-all">
-                   <X size={24} />
-                </button>
-             </div>
-             <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                <div className="space-y-2">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tema de la clase</label>
-                   <h3 className="text-xl font-black text-white">{activePlan.days.find(d => d.id === isEditing)?.topic}</h3>
-                </div>
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Desarrollo Pedagógico</label>
-                   <div className="p-6 bg-white/5 border border-white/5 rounded-3xl text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">
-                      {activePlan.days.find(d => d.id === isEditing)?.description}
-                   </div>
-                </div>
-                {activePlan.days.find(d => d.id === isEditing)?.resources?.length ? (
-                   <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recursos Recomendados</label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         {activePlan.days.find(d => d.id === isEditing)?.resources.map((res: any) => (
-                            <a key={res.id} href={res.webViewLink} target="_blank" rel="noreferrer" className="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 hover:border-brand-orange transition-all group">
-                               <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition-all">
-                                  <FileText size={18} />
+           <div className="bg-brand-navy border border-white/10 w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-10 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-brand-orange/10 to-transparent">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-orange/20 text-brand-orange flex items-center justify-center">
+                       <Calendar size={24} />
+                    </div>
+                    <div>
+                       <h2 className="text-2xl font-black text-white font-montserrat tracking-tight">Detalle de Clase</h2>
+                       <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest">Revisión y Recursos</p>
+                    </div>
+                 </div>
+                 <button onClick={() => setIsEditing(null)} className="w-12 h-12 flex items-center justify-center rounded-full bg-white/5 text-slate-500 hover:text-white transition-all">
+                    <X size={24} />
+                 </button>
+              </div>
+              <div className="p-10 space-y-8">
+                 {activePlan && isEditing && (() => {
+                    const day = activePlan.days.find(d => d.id === isEditing);
+                    if (!day) return <p className="text-slate-500 font-bold">No se encontró información para este día.</p>;
+                    
+                    return (
+                       <>
+                          <div className="space-y-2">
+                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tema de la clase</label>
+                             <h3 className="text-xl font-black text-white">{day.topic}</h3>
+                          </div>
+                          <div className="space-y-4">
+                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Desarrollo Pedagógico</label>
+                             <div className="p-6 bg-white/5 border border-white/5 rounded-3xl text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">
+                                {day.description}
+                             </div>
+                          </div>
+                          {day.resources && day.resources.length > 0 && (
+                             <div className="space-y-4">
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recursos Recomendados</label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                   {day.resources.map((res: any) => (
+                                      <a key={res.id} href={res.webViewLink} target="_blank" rel="noreferrer" className="p-5 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 hover:border-brand-orange transition-all group">
+                                         <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition-all">
+                                            <FileText size={18} />
+                                          </div>
+                                         <span className="text-xs font-black text-white truncate uppercase tracking-tight">{res.name}</span>
+                                      </a>
+                                   ))}
                                 </div>
-                               <span className="text-xs font-black text-white truncate uppercase tracking-tight">{res.name}</span>
-                            </a>
-                         ))}
-                      </div>
-                   </div>
-                ) : null}
-             </div>
-             <div className="p-10 border-t border-white/5 bg-black/20 flex justify-end">
-                <button onClick={() => setIsEditing(null)} className="px-10 py-4 bg-brand-orange text-white font-black uppercase tracking-widest text-[11px] rounded-[1.2rem] shadow-xl shadow-brand-orange/20 hover:scale-105 active:scale-95 transition-all">Cerrar</button>
-             </div>
-          </div>
+                             </div>
+                          )}
+                       </>
+                    );
+                 })()}
+              </div>
+              <div className="p-10 border-t border-white/5 bg-black/20 flex justify-end">
+                 <button onClick={() => setIsEditing(null)} className="px-10 py-4 bg-brand-orange text-white font-black uppercase tracking-widest text-[11px] rounded-[1.2rem] shadow-xl shadow-brand-orange/20 hover:scale-105 active:scale-95 transition-all">Cerrar</button>
+              </div>
+           </div>
         </div>
       )}
     </div>

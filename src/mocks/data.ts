@@ -4,6 +4,7 @@ export const currentUser: User = {
   id: 'profe-1',
   name: 'Laura González',
   email: 'laura.profe@escuela.edu.ar',
+  role: 'docente',
   level: 'Secundaria',
   credits: 110,
   plan: 'Docente Pro',
