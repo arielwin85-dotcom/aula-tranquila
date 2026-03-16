@@ -417,7 +417,7 @@ export default function ChatPage() {
                   className="flex-1 bg-transparent px-4 py-2 text-white font-bold text-sm outline-none"
                 />
                 <button 
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={isGenerating || !inputValue.trim()}
                   className="bg-brand-orange text-white p-3 rounded-[1.5rem] shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-20"
                 >
