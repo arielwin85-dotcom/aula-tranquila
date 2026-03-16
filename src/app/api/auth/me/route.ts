@@ -11,6 +11,21 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
+    // BYPASS PARA SURFEAR LA APP
+    if (userId === 'bypass-admin') {
+      return NextResponse.json({ 
+        user: { 
+          id: 'bypass-admin', 
+          name: 'Admin Maestro (Bypass)', 
+          email: 'admin@aulatranquila.com', 
+          role: 'admin',
+          level: 'Administración',
+          plan: 'Premium',
+          credits: 9999
+        } 
+      });
+    }
+
     const user = await getProfileById(userId);
 
     if (!user) {
