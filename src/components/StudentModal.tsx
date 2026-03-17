@@ -179,8 +179,8 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-black/30 p-6 rounded-3xl border border-white/5">
-                <div className="space-y-2">
+              <div className="grid grid-cols-12 gap-4 items-end bg-black/30 p-6 rounded-3xl border border-white/5">
+                <div className="col-span-12 sm:col-span-3 space-y-2">
                   <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Calificación</label>
                   <input 
                     type="number" 
@@ -189,26 +189,28 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                     max="10" 
                     value={newGrade.score} 
                     onChange={(e) => setNewGrade({...newGrade, score: Number(e.target.value)})} 
-                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-brand-orange font-black text-center text-4xl shadow-inner" 
+                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-brand-orange font-black text-center text-3xl shadow-inner" 
                     placeholder="10"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="col-span-12 sm:col-span-5 space-y-2">
                   <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Fecha del Registro</label>
                   <input 
                     type="date" 
                     value={newGrade.date} 
                     onChange={(e) => setNewGrade({...newGrade, date: e.target.value})} 
-                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-white text-base font-black outline-none focus:border-brand-orange uppercase" 
+                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm font-black outline-none focus:border-brand-orange uppercase" 
                   />
                 </div>
-                <button 
-                  onClick={handleAddGrade}
-                  className="p-5 h-[75px] bg-brand-orange text-white rounded-2xl hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-brand-orange/30 font-black uppercase tracking-widest text-sm"
-                >
-                  <Plus size={24} />
-                  Cargar Registro
-                </button>
+                <div className="col-span-12 sm:col-span-4">
+                  <button 
+                    onClick={handleAddGrade}
+                    className="w-full p-5 h-[72px] bg-brand-orange text-white rounded-2xl hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-brand-orange/30 font-black uppercase tracking-widest text-xs"
+                  >
+                    <Plus size={20} />
+                    Cargar
+                  </button>
+                </div>
               </div>
             </div>
 
