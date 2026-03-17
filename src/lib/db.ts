@@ -54,19 +54,26 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
     }));
   }
 
-  return (data || []).map((c: any) => ({
-    ...c,
-    userId: c.user_id,
-    students: c.students_list?.length > 0 
-      ? c.students_list.map((s: any) => ({
-          ...s,
-          classroomId: s.classroom_id,
-          duaContextTags: s.dua_context_tags || [],
-          detailedGrades: s.grades_list || [],
-          grades: s.grades_list?.map((g: any) => g.score) || []
-        }))
-      : (c.students || []) // Fallback to legacy JSON if table is empty
-  }));
+  return (data || []).map((c: any) => {
+    const normalizedStudents = (c.students_list || []).map((s: any) => ({
+      ...s,
+      classroomId: s.classroom_id,
+      duaContextTags: s.dua_context_tags || [],
+      detailedGrades: s.grades_list || [],
+      grades: s.grades_list?.map((g: any) => g.score) || []
+    }));
+
+    // Find legacy students that are NOT yet in the normalized table
+    const legacyStudents = (c.students || []).filter((ls: any) => 
+      !normalizedStudents.some(ns => String(ns.id) === String(ls.id))
+    );
+
+    return {
+      ...c,
+      userId: c.user_id,
+      students: [...normalizedStudents, ...legacyStudents]
+    };
+  });
 }
 
 export async function getWeeklyPlans(classroomId?: string): Promise<any[]> {
