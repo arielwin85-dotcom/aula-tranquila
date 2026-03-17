@@ -158,12 +158,11 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                 </div>
                 <div className="space-y-2">
                   <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Tema / Evaluación Educativa (Campo Amplio)</label>
-                  <input 
-                    type="text"
+                  <textarea 
                     placeholder="Ej: Examen integrador de Fracciones y Decimales"
                     value={newGrade.topic}
                     onChange={(e) => setNewGrade({...newGrade, topic: e.target.value})}
-                    className="w-full p-5 bg-white/5 border border-brand-orange/30 rounded-2xl text-white text-lg font-black outline-none focus:border-brand-orange transition-all placeholder:text-slate-800"
+                    className="w-full p-5 bg-white/5 border border-brand-orange/30 rounded-2xl text-white text-base font-bold outline-none focus:border-brand-orange transition-all placeholder:text-slate-800 min-h-[100px] resize-none"
                   />
                 </div>
               </div>
@@ -210,7 +209,8 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
               ) : (
                 <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2">
                   {detailedGrades.map(grade => {
-                    const subject = subjects.find(s => s.id === grade.subjectId);
+                    const gradeSubjectId = String(grade.subject_id || grade.subjectId || '');
+                    const subject = subjects.find(s => String(s.id) === gradeSubjectId);
                     return (
                       <div key={grade.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
                         <div className="flex items-center gap-4">

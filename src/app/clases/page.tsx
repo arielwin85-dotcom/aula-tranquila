@@ -8,8 +8,10 @@ import { NewClassModal } from '@/components/NewClassModal';
 import { StudentModal } from '@/components/StudentModal';
 import { 
   Users, UserPlus, FileEdit, CheckCircle2, AlertCircle, 
-  BookOpen, Trash2, UserPlus2, FileDown, UserCog, ChevronDown
+  BookOpen, Trash2, UserPlus2, FileDown, UserCog, ChevronDown,
+  ClipboardList
 } from 'lucide-react';
+import { GradeHistoryModal } from '@/components/GradeHistoryModal';
 
 export default function ClasesPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -21,6 +23,10 @@ export default function ClasesPage() {
   const [editingClass, setEditingClass] = useState<Classroom | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  
+  // Grade History Modal State
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<Student | null>(null);
 
   // Loading state
   const [user, setUser] = useState<User | null>(null);
@@ -147,6 +153,11 @@ export default function ClasesPage() {
     }
   };
 
+  const openHistoryModal = (student: Student) => {
+    setSelectedStudentForHistory(student);
+    setIsHistoryModalOpen(true);
+  };
+
   const openEditStudentModal = (student: Student) => {
     setEditingStudent(student);
     setIsStudentModalOpen(true);
@@ -206,7 +217,8 @@ export default function ClasesPage() {
                     <div style="font-size: 10px;">
                       ${s.detailedGrades && s.detailedGrades.length > 0 
                         ? s.detailedGrades.map(g => {
-                            const subject = selectedClass.subjects.find(sub => sub.id === g.subjectId);
+                            const gradeSubjectId = String(g.subject_id || g.subjectId || '');
+                            const subject = selectedClass.subjects.find(sub => String(sub.id) === gradeSubjectId);
                             return `<div>• <strong>${g.score}</strong> - ${subject?.name || 'Materia'}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
                           }).join('')
                         : '<span style="color: #999;">Sin notas registradas</span>'
@@ -274,7 +286,12 @@ export default function ClasesPage() {
         subjects={selectedClass?.subjects || []}
       />
 
-      {/* Header General */}
+      <GradeHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        student={selectedStudentForHistory}
+        subjects={selectedClass?.subjects || []}
+      />
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
            <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Mis Clases</h1>
@@ -436,13 +453,14 @@ export default function ClasesPage() {
                                               <span className="font-black text-white tracking-tight">{student.name}</span>
                                               <div className="flex flex-wrap gap-1 mt-1">
                                                  {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
-                                                    const subject = selectedClass.subjects.find(s => s.id === g.subjectId);
-                                                    return (
-                                                       <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-500 font-bold">
-                                                          {subject?.name?.substring(0, 4)}: {g.score}
-                                                       </span>
-                                                    );
-                                                 })}
+                                                     const gradeSubjectId = String(g.subject_id || g.subjectId || '');
+                                                     const subject = selectedClass.subjects.find(s => String(s.id) === gradeSubjectId);
+                                                     return (
+                                                        <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-500 font-bold">
+                                                           {subject?.name?.substring(0, 4) || '---'}: {g.score}
+                                                        </span>
+                                                     );
+                                                  })}
                                                  {student.detailedGrades && student.detailedGrades.length > 3 && (
                                                     <span className="text-[8px] text-brand-orange font-black">+{student.detailedGrades.length - 3}</span>
                                                  )}
@@ -473,12 +491,19 @@ export default function ClasesPage() {
                                            ) : <span className="text-[9px] font-bold text-slate-700 uppercase italic">Sin tags</span>}
                                         </div>
                                      </td>
-                                     <td className="p-8">
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                           <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-brand-orange rounded-xl border border-white/10 transition-all"><UserCog size={16} /></button>
-                                           <button onClick={() => handleDeleteStudent(student.id)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
-                                        </div>
-                                     </td>
+                                      <td className="p-8">
+                                         <div className="flex gap-2 transition-all">
+                                            <button 
+                                              onClick={() => openHistoryModal(student)} 
+                                              className="flex items-center gap-2 px-4 py-2 bg-brand-orange text-white rounded-xl hover:scale-105 transition-all shadow-lg text-[10px] font-black uppercase tracking-widest"
+                                            >
+                                               <ClipboardList size={14} />
+                                               Ver Notas
+                                            </button>
+                                            <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-brand-orange rounded-xl border border-white/10 transition-all"><UserCog size={16} /></button>
+                                            <button onClick={() => handleDeleteStudent(student.id)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
+                                         </div>
+                                      </td>
                                   </tr>
                                ))}
                             </tbody>
