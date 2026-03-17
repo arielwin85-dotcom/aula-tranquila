@@ -123,7 +123,7 @@ export default function ClasesPage() {
     setIsLoading(true);
     try {
       if (editingStudent) {
-        await fetch(`/api/students/${editingStudent.id}`, {
+        await fetch(`/api/students/${editingStudent.dni}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -276,7 +276,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v3.0.0 • RELATIONAL HARD-SYNC STABLE
+        PRODUCTION BUILD v3.1.0 • DNI-BASED RELATION SYNC
       </div>
       <NewClassModal 
         isOpen={isClassModalOpen} 
@@ -451,7 +451,7 @@ export default function ClasesPage() {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                {selectedClass.students.map(student => (
-                                  <tr key={student.id} className="hover:bg-white/2 transition-colors group">
+                                  <tr key={student.dni} className="hover:bg-white/2 transition-colors group">
                                      <td className="p-8">
                                         <div className="flex items-center gap-5">
                                            <div className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-slate-400 font-black">
@@ -516,7 +516,7 @@ export default function ClasesPage() {
                                                Ver Notas
                                             </button>
                                             <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-brand-orange rounded-xl border border-white/10 transition-all"><UserCog size={16} /></button>
-                                            <button onClick={() => handleDeleteStudent(student.id)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
+                                            <button onClick={() => handleDeleteStudent(student.dni)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
                                          </div>
                                       </td>
                                   </tr>
@@ -540,7 +540,7 @@ export default function ClasesPage() {
            )}
             {/* Version Marker for debugging */}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v3.0.0 - Relational Hard-Sync Stable</span>
+               <span>Aula Tranquila v3.1.0 - DNI-Based Relation Sync</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>

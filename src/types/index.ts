@@ -11,6 +11,7 @@ export interface User {
 
 export interface GradeEntry {
   id: string;
+  studentDni: string; // Refers to the student's DNI
   subjectId: string;
   subject_id?: string; // Database field
   topic: string;
@@ -19,7 +20,7 @@ export interface GradeEntry {
 }
 
 export interface Student {
-  id: string;
+  dni: string; // National ID as the primary unique identifier
   classroomId: string;
   name: string;
   grades: number[]; // Legacy simple grades

@@ -82,8 +82,9 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
     }));
 
     // Find legacy students that are NOT yet in the normalized table
+    // Match by ID or Name as a bridge during migration
     const legacyStudents = (c.students || []).filter((ls: any) => 
-      !normalizedStudents.some((ns: Student) => String(ns.id) === String(ls.id))
+      !normalizedStudents.some((ns: Student) => String(ns.dni) === String(ls.dni || ls.id))
     );
 
     return {
@@ -187,11 +188,11 @@ export async function getStudents(classroomId: string): Promise<Student[]> {
   if (!students) return [];
 
   // 2. Fetch all grades for these students to avoid N+1 queries
-  const studentIds = (students as any[]).map((s: any) => s.id);
+  const studentDnis = (students as any[]).map((s: any) => s.dni);
   const { data: allGrades, error: gradesError } = await db()
     .from('grades')
     .select('*')
-    .in('student_id', studentIds);
+    .in('student_dni', studentDnis);
 
   if (gradesError) {
     console.error('Grades table fetch failed (might be empty or missing):', gradesError);
@@ -206,7 +207,7 @@ export async function getStudents(classroomId: string): Promise<Student[]> {
 
   // 3. Map grades back to students
   return (students as any[]).map((student: any) => {
-    const studentGrades = (allGrades || []).filter((g: any) => g.student_id === student.id);
+    const studentGrades = (allGrades || []).filter((g: any) => String(g.student_dni) === String(student.dni));
     return {
       ...student,
       classroomId: student.classroom_id,
@@ -220,11 +221,11 @@ export async function getStudents(classroomId: string): Promise<Student[]> {
   });
 }
 
-export async function getFullStudent(id: string): Promise<Student | null> {
+export async function getFullStudent(dni: string): Promise<Student | null> {
   const { data: student, error: studentError } = await db()
     .from('students')
     .select('*, grades_list:grades(*)')
-    .eq('id', id)
+    .eq('dni', dni)
     .single();
     
   if (studentError || !student) return null;
@@ -252,7 +253,7 @@ export async function deleteStudentFromLegacy(id: string, classroomId: string) {
   if (fetchErr || !classroom) return false;
 
   const students = classroom.students || [];
-  const filtered = students.filter((s: any) => String(s.id) !== String(id));
+  const filtered = students.filter((s: any) => String(s.dni || s.id) !== String(dni));
   
   if (filtered.length === students.length) return true; // Already gone
 
@@ -264,13 +265,13 @@ export async function deleteStudentFromLegacy(id: string, classroomId: string) {
   return !saveErr;
 }
 
-export async function deleteStudentFromDB(id: string, classroomId: string) {
+export async function deleteStudentFromDB(dni: string, classroomId: string) {
   try {
     // 1. Try deleting from normalized students table
-    const { error } = await db().from('students').delete().eq('id', id);
+    const { error } = await db().from('students').delete().eq('dni', dni);
     if (!error) {
       // Also clean up from legacy to be sure
-      await deleteStudentFromLegacy(id, classroomId);
+      await deleteStudentFromLegacy(dni, classroomId);
       return true;
     }
   } catch (e) {
@@ -278,13 +279,13 @@ export async function deleteStudentFromDB(id: string, classroomId: string) {
   }
 
   // 2. Fallback: Legacy JSON delete
-  return deleteStudentFromLegacy(id, classroomId);
+  return deleteStudentFromLegacy(dni, classroomId);
 }
 
 export async function upsertStudent(student: any) {
   try {
     const { data, error } = await db().from('students').upsert({
-      id: student.id,
+      dni: student.dni,
       classroom_id: student.classroom_id || student.classroomId,
       user_id: student.user_id || student.userId,
       name: student.name,
@@ -308,12 +309,12 @@ export async function upsertStudent(student: any) {
   if (fetchErr || !classroom) throw new Error('Classroom not found for legacy update');
 
   const students = classroom.students || [];
-  const index = students.findIndex((s: any) => String(s.id) === String(student.id));
+  const index = students.findIndex((s: any) => String(s.dni || s.id) === String(student.dni));
   
   if (index !== -1) {
     students[index] = { ...students[index], ...student };
   } else {
-    students.push({ ...student, id: student.id || `s-${Date.now()}` });
+    students.push({ ...student, dni: student.dni });
   }
 
   const { error: saveErr } = await db()
@@ -325,11 +326,11 @@ export async function upsertStudent(student: any) {
   return student;
 }
 
-export async function getGrades(studentId: string): Promise<any[]> {
+export async function getGrades(studentDni: string): Promise<any[]> {
   const { data, error } = await db()
     .from('grades')
     .select('*')
-    .eq('student_id', studentId);
+    .eq('student_dni', studentDni);
   if (error) throw error;
   return data || [];
 }
@@ -344,7 +345,7 @@ export async function upsertGrade(grade: any) {
   try {
     const { data, error } = await db().from('grades').upsert({
       id: grade.id,
-      student_id: grade.student_id || grade.studentId,
+      student_dni: grade.student_dni || grade.studentDni,
       classroom_id: grade.classroom_id || grade.classroomId,
       subject_id: grade.subject_id || grade.subjectId,
       topic: grade.topic,

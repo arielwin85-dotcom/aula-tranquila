@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     // 1. Hybrid Upsert Student
     const result = await upsertStudent({
       ...studentData,
-      id: studentData.id || `s-${Date.now()}`, 
+      dni: studentData.dni, 
     });
 
     if (!result) throw new Error('Failed to create student in hybrid storage');
@@ -43,17 +43,17 @@ export async function POST(request: Request) {
         await upsertGrade({
           ...grade,
           id: undefined, 
-          studentId: result.id,
+          studentDni: studentData.dni,
           classroomId: studentData.classroomId,
         });
       }
     }
 
     // 3. Migration: Ensure no duplicates in legacy JSON
-    await deleteStudentFromLegacy(result.id, studentData.classroomId);
+    await deleteStudentFromLegacy(studentData.dni, studentData.classroomId);
 
     // 4. Return Fully Hydrated Student
-    const fullStudent = await getFullStudent(result.id);
+    const fullStudent = await getFullStudent(studentData.dni);
     return NextResponse.json(fullStudent || result, { status: 201 });
   } catch (error: any) {
     console.error('Failed to add student:', error);

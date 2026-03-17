@@ -15,6 +15,7 @@ interface StudentModalProps {
 
 export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }: StudentModalProps) {
   const [name, setName] = useState("");
+  const [dni, setDni] = useState("");
   const [attendance, setAttendance] = useState(100);
   const [duaTagsInput, setDuaTagsInput] = useState("");
   const [detailedGrades, setDetailedGrades] = useState<GradeEntry[]>([]);
@@ -32,11 +33,13 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
     
     if (initialData) {
       setName(initialData.name);
+      setDni(initialData.dni);
       setAttendance(initialData.attendance);
       setDuaTagsInput(initialData.duaContextTags.join(", "));
       setDetailedGrades(initialData.detailedGrades || []);
     } else {
       setName("");
+      setDni("");
       setAttendance(100);
       setDuaTagsInput("");
       setDetailedGrades([]);
@@ -68,7 +71,11 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
       return;
     }
 
-    const entry: GradeEntry = { id: `grade-${Date.now()}`, ...newGrade };
+    const entry: GradeEntry = { 
+      id: `grade-${Date.now()}`, 
+      studentDni: dni,
+      ...newGrade 
+    };
     setDetailedGrades([...detailedGrades, entry]);
     setNewGrade({ ...newGrade, topic: "", score: 10 });
   };
@@ -76,13 +83,14 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
   const handleRemoveGrade = (id: string) => { setDetailedGrades(detailedGrades.filter(g => g.id !== id)); };
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !dni.trim()) return;
     
     // Auto-add if user filled the topic but forgot to click '+'
     let finalGrades = [...detailedGrades];
     if (newGrade.topic.trim() && newGrade.subjectId) {
        const autoEntry: GradeEntry = { 
          id: `grade-auto-${Date.now()}`, 
+         studentDni: dni,
          ...newGrade,
          topic: newGrade.topic.trim()
        };
@@ -91,7 +99,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
     const duaContextTags = duaTagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
     onSave({ 
-      id: initialData?.id, 
+      dni: dni.trim(), 
       name: name.trim(), 
       attendance: Number(attendance), 
       detailedGrades: finalGrades, 
@@ -123,7 +131,19 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
         {/* Body */}
         <div className="p-10 space-y-10 overflow-y-auto custom-scrollbar">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-3">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Alumno (DNI / ID Único)</label>
+               <input
+                 type="text"
+                 value={dni}
+                 onChange={(e) => setDni(e.target.value)}
+                 disabled={!!initialData}
+                 className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold placeholder:text-slate-700 focus:border-brand-orange outline-none transition-all disabled:opacity-50"
+                 placeholder="Ej: 40555666"
+               />
+            </div>
+
             <div className="space-y-3">
                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
                <input
@@ -136,7 +156,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
             </div>
             
             <div className="space-y-3">
-               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Asistencia Mensual (%)</label>
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Asistencia (%)</label>
                <input
                  type="number"
                  min="0"
@@ -271,7 +291,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
           <button onClick={onClose} className="px-6 py-4 font-black uppercase tracking-widest text-[10px] text-slate-600 hover:text-white transition-all">Cancelar</button>
           <button 
             onClick={handleSave}
-            disabled={!name.trim()}
+            disabled={!name.trim() || !dni.trim()}
             className="px-12 py-5 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[11px] shadow-2xl hover:bg-brand-peach hover:scale-105 active:scale-95 disabled:opacity-20 transition-all"
           >
             {initialData ? "GRABAR CAMBIOS" : "Confirmar Ingreso"}
