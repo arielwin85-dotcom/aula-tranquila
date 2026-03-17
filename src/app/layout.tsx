@@ -21,16 +21,7 @@ export default function RootLayout({
     <html lang="es" className={`${montserrat.variable} ${poppins.variable} ${inter.variable}`}>
       <body className="font-poppins bg-brand-bg text-foreground min-h-screen">
         <SidebarWrapper>
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
-            <footer className="py-8 px-4 border-t border-white/5 text-center bg-black/20">
-              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
-                AULATRANQUILA 2026 ® | Producto para uso personal | Copia o reproducción prohibida por ley.
-              </p>
-            </footer>
-          </div>
+          {children}
         </SidebarWrapper>
       </body>
     </html>
