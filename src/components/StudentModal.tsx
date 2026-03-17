@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, GraduationCap, Calendar as CalendarIcon, BookOpen, Sparkles, CheckCircle2 } from "lucide-react";
+import { X, Plus, Trash2, GraduationCap, Calendar as CalendarIcon, BookOpen, Sparkles, CheckCircle2, Save, AlertCircle } from "lucide-react";
 import { Student, Subject, GradeEntry } from "@/types";
+import { getSubjectName } from "@/constants/subjects";
 
 interface StudentModalProps {
   isOpen: boolean;
@@ -222,10 +223,10 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                    {detailedGrades.map(grade => {
                     const rawId = String(grade.subject_id || grade.subjectId || '');
                     const subject = subjects.find(s => 
-                      (s.id && String(s.id).toLowerCase() === rawId.toLowerCase()) || 
+                      String(s.id) === rawId || 
                       (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
                     );
-                    const subjectName = subject?.name || rawId || 'SIN MATERIA';
+                    const subjectName = subject?.name || getSubjectName(rawId);
                     return (
                       <div key={grade.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
                         <div className="flex items-center gap-4">

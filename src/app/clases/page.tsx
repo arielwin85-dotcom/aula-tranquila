@@ -3,7 +3,8 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { Classroom, Student, User } from '@/types';
+import { Classroom, Student, User, GradeEntry } from '@/types';
+import { getSubjectName } from "@/constants/subjects";
 import { NewClassModal } from '@/components/NewClassModal';
 import { StudentModal } from '@/components/StudentModal';
 import { 
@@ -222,7 +223,7 @@ export default function ClasesPage() {
                                String(sub.id) === gradeSubjectId || 
                                String(sub.name).toLowerCase() === gradeSubjectId.toLowerCase()
                             );
-                            const subjectName = subject?.name || gradeSubjectId || 'Materia';
+                            const subjectName = subject?.name || getSubjectName(gradeSubjectId);
                             return `<div>• <strong>${g.score}</strong> - ${subjectName}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
                           }).join('')
                         : '<span style="color: #999;">Sin notas registradas</span>'
@@ -459,19 +460,19 @@ export default function ClasesPage() {
                                            <div className="flex flex-col">
                                               <span className="font-black text-white tracking-tight">{student.name}</span>
                                               <div className="flex flex-wrap gap-1 mt-1">
-                                                  {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
-                                                     const rawId = String(g.subject_id || g.subjectId || '');
+                                                  {student.detailedGrades && student.detailedGrades.slice(0, 3).map((grade, idx) => {
+                                                     const rawId = (grade.subject_id || grade.subjectId || "").toString();
                                                      const subject = selectedClass.subjects.find(s => 
-                                                       String(s.id).toLowerCase() === rawId.toLowerCase() || 
-                                                       String(s.name).toLowerCase() === rawId.toLowerCase()
+                                                       (s.id && String(s.id) === rawId) || 
+                                                       (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
                                                      );
-                                                     // Hyper-robust name: Subject Name -> Fallback Raw ID -> 'MATERIA'
-                                                     let displayName = subject?.name?.substring(0, 4) || rawId.substring(0, 4);
+                                                     const subjectName = subject?.name || getSubjectName(rawId);
+                                                     let displayName = subjectName.substring(0, 4);
                                                      if (!displayName || displayName.trim() === '') displayName = 'MAT';
                                                      
                                                      return (
                                                         <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold uppercase">
-                                                           {displayName}: {g.score}
+                                                           {displayName}: {grade.score}
                                                         </span>
                                                      );
                                                   })}

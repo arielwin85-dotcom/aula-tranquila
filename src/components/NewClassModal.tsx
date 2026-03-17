@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { X, Check, BookOpen } from "lucide-react";
 import { Classroom, Subject } from "@/types";
+import { OFFICIAL_SUBJECTS } from "@/constants/subjects";
 
 interface NewClassModalProps {
   isOpen: boolean;
@@ -14,17 +15,6 @@ interface NewClassModalProps {
 
 const PRIMARY_GRADES = [
   "1er Grado", "2do Grado", "3er Grado", "4to Grado", "5to Grado", "6to Grado", "7mo Grado",
-];
-
-const PRIMARY_SUBJECTS = [
-  { id: "sub-mate", name: "Matemática" },
-  { id: "sub-leng", name: "Prácticas del Lenguaje" },
-  { id: "sub-nat", name: "Ciencias Naturales" },
-  { id: "sub-soc", name: "Ciencias Sociales" },
-  { id: "sub-ing", name: "Inglés" },
-  { id: "sub-ef", name: "Educación Física" },
-  { id: "sub-plast", name: "Educación Plástica" },
-  { id: "sub-mus", name: "Educación Musical" },
 ];
 
 export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: NewClassModalProps) {
@@ -55,9 +45,9 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: 
   const handleNext = () => { if (selectedGrade) setStep(2); };
 
   const toggleSubject = (subject: Subject) => {
-    const exists = selectedSubjects.find((s) => s.id === subject.id);
+    const exists = selectedSubjects.find((s) => String(s.id) === String(subject.id));
     if (exists) {
-      setSelectedSubjects(selectedSubjects.filter((s) => s.id !== subject.id));
+      setSelectedSubjects(selectedSubjects.filter((s) => String(s.id) !== String(subject.id)));
     } else {
       setSelectedSubjects([...selectedSubjects, subject]);
     }
@@ -151,8 +141,8 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: 
                Dictado de materias para <span className="text-brand-orange">{selectedGrade}</span>:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {PRIMARY_SUBJECTS.map((subject) => {
-                const isSelected = selectedSubjects.some(s => s.id === subject.id);
+              {OFFICIAL_SUBJECTS.map((subject) => {
+                const isSelected = selectedSubjects.some(s => String(s.id) === String(subject.id));
                 return (
                   <button
                     key={subject.id}
