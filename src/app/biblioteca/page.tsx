@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, FileText, File, FileIcon, Link as LinkIcon, AlertCircle, LibraryBig, Loader2, Info, ChevronRight } from 'lucide-react';
+import { Search, FileText, File, FileIcon, Link as LinkIcon, AlertCircle, LibraryBig, Loader2, Info, ChevronRight, Printer } from 'lucide-react';
 import Link from 'next/link';
 
 interface DriveFile {
@@ -63,6 +63,39 @@ export default function BibliotecaPage() {
          <p className="font-medium leading-relaxed">
             <strong className="text-white">Modo de Prueba:</strong> Si aún no has configurado las credenciales, verás resultados simulados para probar la interfaz.
          </p>
+      </div>
+
+      {/* Featured: Recursos Imprimibles */}
+      <div className="max-w-3xl mx-auto mb-10">
+        <a 
+          href="https://drive.google.com/drive/u/0/folders/1sEAstORG-s3n2SeV-ccZOI8psBQ2ey5A"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group relative overflow-hidden bg-gradient-to-br from-brand-orange/40 to-brand-peach/20 p-[1px] rounded-[2.5rem] block hover:scale-[1.02] transition-all shadow-2xl shadow-brand-orange/10"
+        >
+          <div className="bg-brand-navy/90 backdrop-blur-3xl rounded-[2.4rem] p-8 flex items-center justify-between gap-6 relative overflow-hidden">
+              {/* Background Glow */}
+              <div className="absolute -right-20 -top-20 w-60 h-60 bg-brand-orange/5 rounded-full blur-[100px] group-hover:bg-brand-orange/15 transition-all"></div>
+              
+              <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 bg-brand-orange/10 border border-brand-orange/20 rounded-2xl flex items-center justify-center text-brand-orange shrink-0 shadow-inner">
+                      <Printer size={32} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="text-xl font-black text-white font-montserrat tracking-tight">Recursos Imprimibles</h3>
+                        <span className="px-2 py-0.5 bg-brand-orange text-white text-[8px] font-black uppercase tracking-widest rounded-md">Nuevo</span>
+                      </div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed">
+                          Accedé a evaluaciones, guías y material didáctico listo para usar.
+                      </p>
+                  </div>
+              </div>
+              <div className="w-12 h-12 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center text-slate-500 group-hover:bg-brand-orange group-hover:text-white transition-all shadow-xl">
+                  <ChevronRight size={24} />
+              </div>
+          </div>
+        </a>
       </div>
 
       {/* Search Bar */}
