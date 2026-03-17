@@ -7,20 +7,24 @@ export async function POST(request: Request) {
   try {
     const studentData: Student = await request.json();
     
-    // 1. Create/Update student in normalized table
+    if (!studentData.classroomId) {
+      return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
+    }
+
+    // 1. Hybrid Upsert Student
     const result = await upsertStudent({
       ...studentData,
-      id: undefined, // Let Supabase generate a UUID
+      id: studentData.id || `s-${Date.now()}`, 
     });
 
-    if (!result) throw new Error('Failed to create student');
+    if (!result) throw new Error('Failed to create student in hybrid storage');
 
-    // 2. Create initial grades if any
+    // 2. Optional: Initial grades (Best effort if table exists)
     if (studentData.detailedGrades && studentData.detailedGrades.length > 0) {
       for (const grade of studentData.detailedGrades) {
         await upsertGrade({
           ...grade,
-          id: undefined, // Let Supabase generate a UUID
+          id: undefined, 
           studentId: result.id,
           classroomId: studentData.classroomId,
         });

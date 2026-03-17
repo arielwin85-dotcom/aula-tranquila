@@ -7,9 +7,19 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const classroomId = searchParams.get('classroomId');
+
+    if (!classroomId) {
+      return NextResponse.json({ error: 'Missing classroomId for hybrid delete' }, { status: 400 });
+    }
     
-    // Deleting from normalized table is simple
-    await deleteStudentFromDB(id);
+    // Deleting from both possible locations
+    const success = await deleteStudentFromDB(id, classroomId);
+    
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete student from any storage' }, { status: 500 });
+    }
     
     return NextResponse.json({ success: true });
   } catch (error: any) {

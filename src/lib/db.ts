@@ -166,9 +166,80 @@ export async function upsertStudent(student: any) {
   return data?.[0];
 }
 
-export async function deleteStudentFromDB(id: string) {
-  const { error } = await db().from('students').delete().eq('id', id);
-  if (error) throw error;
+export async function deleteStudentFromDB(id: string, classroomId: string) {
+  try {
+    // 1. Try deleting from normalized students table
+    const { error } = await db().from('students').delete().eq('id', id);
+    if (!error) {
+      // If student was in the new table, we are done
+      return true;
+    }
+  } catch (e) {
+    console.error('Students table might not exist yet:', e);
+  }
+
+  // 2. Fallback: Legacy JSON delete
+  const { data: classroom, error: fetchErr } = await db()
+    .from('classrooms')
+    .select('students')
+    .eq('id', classroomId)
+    .single();
+
+  if (fetchErr || !classroom) return false;
+
+  const students = classroom.students || [];
+  const filtered = students.filter((s: any) => String(s.id) !== String(id));
+  
+  const { error: saveErr } = await db()
+    .from('classrooms')
+    .update({ students: filtered })
+    .eq('id', classroomId);
+
+  return !saveErr;
+}
+
+export async function upsertStudent(student: any) {
+  try {
+    const { data, error } = await db().from('students').upsert({
+      id: student.id,
+      classroom_id: student.classroom_id || student.classroomId,
+      user_id: student.user_id || student.userId,
+      name: student.name,
+      attendance: student.attendance,
+      dua_context_tags: student.dua_context_tags || student.duaContextTags || [],
+    }).select();
+    
+    if (!error) return data?.[0];
+  } catch (e) {
+    console.error('Students table might not exist yet:', e);
+  }
+
+  // 3. Fallback: Legacy JSON update
+  const classroomId = student.classroom_id || student.classroomId;
+  const { data: classroom, error: fetchErr } = await db()
+    .from('classrooms')
+    .select('students')
+    .eq('id', classroomId)
+    .single();
+
+  if (fetchErr || !classroom) throw new Error('Classroom not found for legacy update');
+
+  const students = classroom.students || [];
+  const index = students.findIndex((s: any) => String(s.id) === String(student.id));
+  
+  if (index !== -1) {
+    students[index] = { ...students[index], ...student };
+  } else {
+    students.push({ ...student, id: student.id || `s-${Date.now()}` });
+  }
+
+  const { error: saveErr } = await db()
+    .from('classrooms')
+    .update({ students })
+    .eq('id', classroomId);
+
+  if (saveErr) throw saveErr;
+  return student;
 }
 
 export async function getGrades(studentId: string): Promise<any[]> {
@@ -181,22 +252,30 @@ export async function getGrades(studentId: string): Promise<any[]> {
 }
 
 export async function upsertGrade(grade: any) {
-  const { data, error } = await db().from('grades').upsert({
-    id: grade.id,
-    student_id: grade.student_id || grade.studentId,
-    classroom_id: grade.classroom_id || grade.classroomId,
-    subject_id: grade.subject_id || grade.subjectId,
-    topic: grade.topic,
-    score: grade.score,
-    date: grade.date,
-  }).select();
-  if (error) throw error;
-  return data?.[0];
+  try {
+    const { data, error } = await db().from('grades').upsert({
+      id: grade.id,
+      student_id: grade.student_id || grade.studentId,
+      classroom_id: grade.classroom_id || grade.classroomId,
+      subject_id: grade.subject_id || grade.subjectId,
+      topic: grade.topic,
+      score: grade.score,
+      date: grade.date,
+    }).select();
+    if (!error) return data?.[0];
+  } catch (e) {
+    console.error('Grades table might not exist yet:', e);
+  }
+  return null;
 }
 
 export async function deleteGrade(id: string) {
-  const { error } = await db().from('grades').delete().eq('id', id);
-  if (error) throw error;
+  try {
+    const { error } = await db().from('grades').delete().eq('id', id);
+    if (error) throw error;
+  } catch (e) {
+    console.error('Grades table might not exist yet:', e);
+  }
 }
 
 // Legacy support / Maintenance
