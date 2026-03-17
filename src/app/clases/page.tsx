@@ -126,8 +126,8 @@ export default function ClasesPage() {
         });
       } else {
         const payload = {
-          id: `s-${Date.now()}`,
           classroomId: selectedClassId,
+          userId: user?.id,
           ...studentData
         };
 

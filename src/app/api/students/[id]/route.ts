@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getClassrooms, saveClassroom } from '@/lib/db';
+import { upsertStudent, deleteStudentFromDB, upsertGrade, deleteGrade, getGrades } from '@/lib/db';
 
 export async function DELETE(
   request: Request,
@@ -7,39 +7,14 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const classroomId = searchParams.get('classroomId');
-
-    if (!classroomId) {
-      return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
-    }
-
-    const classrooms = await getClassrooms();
-    const classIndex = classrooms.findIndex(c => c.id === classroomId);
     
-    if (classIndex === -1) {
-      return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
-    }
-
-    const classroom = classrooms[classIndex];
-    // Find student in classroom
-    console.log(`Attempting to delete student with ID: ${id} from classroom: ${classroomId}`);
-    const studentIndex = classroom.students.findIndex(s => String(s.id) === String(id));
-
-    if (studentIndex === -1) {
-      console.error(`Student not found. Available IDs: ${classroom.students.map(s => s.id).join(', ')}`);
-      return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
-    }
-
-    // Remove student
-    classroom.students.splice(studentIndex, 1);
-    await saveClassroom(classroom);
-    console.log('Student deleted successfully');
+    // Deleting from normalized table is simple
+    await deleteStudentFromDB(id);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Failed to delete student:', error);
-    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Failed to delete student: ${error.message}` }, { status: 500 });
   }
 }
 
@@ -50,42 +25,37 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { classroomId, ...studentData } = body;
+    const { classroomId, detailedGrades, ...studentData } = body;
 
-    if (!classroomId) {
-      return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
+    // 1. Update Student
+    const result = await upsertStudent({
+      ...studentData,
+      id: id,
+      classroomId: classroomId
+    });
+
+    if (!result) throw new Error('Failed to update student');
+
+    // 2. Sync Grades
+    if (detailedGrades && detailedGrades.length > 0) {
+      // Get existing grades to handle deletions or updates
+      const existingGrades = await getGrades(id);
+      
+      for (const grade of detailedGrades) {
+        // If it's a new grade (id is like grade-auto-...) or from frontend
+        // we upsert it.
+        await upsertGrade({
+          ...grade,
+          id: grade.id?.startsWith('grade-') ? undefined : grade.id,
+          studentId: id,
+          classroomId: classroomId,
+        });
+      }
     }
-
-    const classrooms = await getClassrooms();
-    const classIndex = classrooms.findIndex(c => c.id === classroomId);
     
-    if (classIndex === -1) {
-      return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
-    }
-
-    const classroom = classrooms[classIndex];
-    // Find student in classroom
-    console.log(`Attempting to update student with ID: ${id} in classroom: ${classroomId}`);
-    const studentIndex = classroom.students.findIndex(s => String(s.id) === String(id));
-
-    if (studentIndex === -1) {
-      console.error(`Student not found for update. Available IDs: ${classroom.students.map(s => s.id).join(', ')}`);
-      return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
-    }
-
-    // Update student
-    console.log('Updating student data:', JSON.stringify(studentData));
-    classroom.students[studentIndex] = {
-      ...classroom.students[studentIndex],
-      ...studentData
-    };
-    
-    await saveClassroom(classroom);
-    console.log('Student updated and classroom saved successfully');
-    
-    return NextResponse.json(classroom.students[studentIndex]);
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Failed to update student:', error);
-    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ error: `Failed to update student: ${error.message}` }, { status: 500 });
   }
 }

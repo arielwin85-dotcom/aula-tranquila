@@ -39,14 +39,33 @@ export async function getProfileById(id: string): Promise<User | null> {
 }
 
 export async function getClassrooms(userId?: string): Promise<Classroom[]> {
-  let query = db().from('classrooms').select('*');
+  let query = db().from('classrooms').select('*, students_list:students(*, grades_list:grades(*))');
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    // Fallback if joined tables don't exist yet (migration period)
+    const { data: fallbackData, error: fallbackError } = await db().from('classrooms').select('*');
+    if (fallbackError) throw fallbackError;
+    return (fallbackData || []).map((c: any) => ({
+      ...c,
+      userId: c.user_id,
+      students: c.students || [],
+    }));
+  }
+
   return (data || []).map((c: any) => ({
     ...c,
     userId: c.user_id,
+    students: c.students_list?.length > 0 
+      ? c.students_list.map((s: any) => ({
+          ...s,
+          classroomId: s.classroom_id,
+          duaContextTags: s.dua_context_tags || [],
+          detailedGrades: s.grades_list || [],
+          grades: s.grades_list?.map((g: any) => g.score) || []
+        }))
+      : (c.students || []) // Fallback to legacy JSON if table is empty
   }));
 }
 
@@ -125,6 +144,62 @@ export async function deleteClassroom(id: string) {
   return true;
 }
 
+export async function getStudents(classroomId: string): Promise<any[]> {
+  const { data, error } = await db()
+    .from('students')
+    .select('*')
+    .eq('classroom_id', classroomId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function upsertStudent(student: any) {
+  const { data, error } = await db().from('students').upsert({
+    id: student.id,
+    classroom_id: student.classroom_id || student.classroomId,
+    user_id: student.user_id || student.userId,
+    name: student.name,
+    attendance: student.attendance,
+    dua_context_tags: student.dua_context_tags || student.duaContextTags || [],
+  }).select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function deleteStudentFromDB(id: string) {
+  const { error } = await db().from('students').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function getGrades(studentId: string): Promise<any[]> {
+  const { data, error } = await db()
+    .from('grades')
+    .select('*')
+    .eq('student_id', studentId);
+  if (error) throw error;
+  return data || [];
+}
+
+export async function upsertGrade(grade: any) {
+  const { data, error } = await db().from('grades').upsert({
+    id: grade.id,
+    student_id: grade.student_id || grade.studentId,
+    classroom_id: grade.classroom_id || grade.classroomId,
+    subject_id: grade.subject_id || grade.subjectId,
+    topic: grade.topic,
+    score: grade.score,
+    date: grade.date,
+  }).select();
+  if (error) throw error;
+  return data?.[0];
+}
+
+export async function deleteGrade(id: string) {
+  const { error } = await db().from('grades').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Legacy support / Maintenance
 export async function getTickets(): Promise<SupportTicket[]> {
   const { data, error } = await db().from('tickets').select('*');
   if (error) throw error;
