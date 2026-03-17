@@ -372,6 +372,51 @@ export default function ChatPage() {
               </button>
         </div>
 
+        {/* Configuration Header - PEDAGOGICAL POSITIONING */}
+        {chatView === 'chat' && (
+          <div className="px-6 py-4 bg-white/5 border-b border-white/5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+             <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Aula / Grado</label>
+                <select 
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange"
+                >
+                  {classrooms.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+             </div>
+             <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Área / Materia</label>
+                <select 
+                  value={selectedSubjectId}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
+                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange"
+                >
+                  {subjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+             </div>
+             <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha de Inicio</label>
+                <input 
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange uppercase"
+                />
+             </div>
+             <div className="space-y-1.5">
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Cant. de Clases</label>
+                <select 
+                  value={numClasses}
+                  onChange={(e) => setNumClasses(Number(e.target.value))}
+                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange"
+                >
+                  {[3, 4, 5, 6].map(n => <option key={n} value={n}>{n} Clases</option>)}
+                </select>
+             </div>
+          </div>
+        )}
+
         {chatView === 'chat' ? (
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
