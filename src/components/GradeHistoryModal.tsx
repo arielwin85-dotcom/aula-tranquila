@@ -71,12 +71,12 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
               </div>
 
               {student.detailedGrades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => {
-                const gradeSubjectId = (grade.subject_id || grade.subjectId || '').toString();
+                const rawId = (grade.subject_id || grade.subjectId || '').toString();
                 const subject = subjects.find(s =>
-                  String(s.id) === gradeSubjectId ||
-                  String(s.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                  String(s.id).toLowerCase() === rawId.toLowerCase() ||
+                  String(s.name).toLowerCase() === rawId.toLowerCase()
                 );
-                const subjectName = subject?.name || gradeSubjectId || "Materia";
+                const subjectName = subject?.name || rawId || "Materia";
                 return (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/5 border border-white/5 p-6 rounded-3xl hover:border-brand-orange/30 transition-all hover:bg-brand-orange/[0.02]">
                     <div className="col-span-2 flex items-center gap-2">

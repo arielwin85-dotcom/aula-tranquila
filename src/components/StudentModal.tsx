@@ -208,13 +208,13 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                 </div>
               ) : (
                 <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2">
-                  {detailedGrades.map(grade => {
-                    const gradeSubjectId = String(grade.subject_id || grade.subjectId || '');
+                   {detailedGrades.map(grade => {
+                    const rawId = String(grade.subject_id || grade.subjectId || '');
                     const subject = subjects.find(s => 
-                      String(s.id) === gradeSubjectId || 
-                      String(s.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                      String(s.id).toLowerCase() === rawId.toLowerCase() || 
+                      String(s.name).toLowerCase() === rawId.toLowerCase()
                     );
-                    const subjectName = subject?.name || gradeSubjectId;
+                    const subjectName = subject?.name || rawId || 'Materia';
                     return (
                       <div key={grade.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
                         <div className="flex items-center gap-4">

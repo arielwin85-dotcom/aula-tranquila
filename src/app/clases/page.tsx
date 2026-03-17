@@ -273,7 +273,10 @@ export default function ClasesPage() {
 
   return (
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
-      
+      {/* Visible Version Marker to help diagnose cache issues */}
+      <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
+        PRODUCTION BUILD v2.5.4 • REFLOW FIX ACTIVE
+      </div>
       <NewClassModal 
         isOpen={isClassModalOpen} 
         onClose={() => setIsClassModalOpen(false)} 
@@ -457,14 +460,17 @@ export default function ClasesPage() {
                                               <span className="font-black text-white tracking-tight">{student.name}</span>
                                               <div className="flex flex-wrap gap-1 mt-1">
                                                   {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
-                                                     const gradeSubjectId = String(g.subject_id || g.subjectId || '');
+                                                     const rawId = String(g.subject_id || g.subjectId || '');
                                                      const subject = selectedClass.subjects.find(s => 
-                                                       String(s.id) === gradeSubjectId || 
-                                                       String(s.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                                                       String(s.id).toLowerCase() === rawId.toLowerCase() || 
+                                                       String(s.name).toLowerCase() === rawId.toLowerCase()
                                                      );
-                                                     const displayName = subject?.name?.substring(0, 4) || gradeSubjectId.substring(0, 4) || '---';
+                                                     // Hyper-robust name: Subject Name -> Fallback Raw ID -> 'MATERIA'
+                                                     let displayName = subject?.name?.substring(0, 4) || rawId.substring(0, 4);
+                                                     if (!displayName || displayName.trim() === '') displayName = 'MAT';
+                                                     
                                                      return (
-                                                        <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-500 font-bold">
+                                                        <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-400 font-bold uppercase">
                                                            {displayName}: {g.score}
                                                         </span>
                                                      );
