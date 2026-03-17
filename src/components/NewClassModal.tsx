@@ -23,6 +23,28 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: 
   const [selectedYear, setSelectedYear] = useState<number>(initialData?.year || new Date().getFullYear());
   const [selectedDescription, setSelectedDescription] = useState<string>(initialData?.description || "");
   const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>(initialData?.subjects || []);
+  const [dbSubjects, setDbSubjects] = useState<Subject[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  useEffect(() => {
+    async function fetchSubjects() {
+      setLoadingSubjects(true);
+      try {
+        const res = await fetch('/api/subjects');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setDbSubjects(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch subjects:', err);
+        // Fallback to constants if API fails during transition
+        setDbSubjects(OFFICIAL_SUBJECTS);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    }
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -141,7 +163,11 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: 
                Dictado de materias para <span className="text-brand-orange">{selectedGrade}</span>:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {OFFICIAL_SUBJECTS.map((subject) => {
+              {loadingSubjects ? (
+                 <div className="col-span-full py-10 text-center text-slate-500 animate-pulse font-black uppercase tracking-[0.2em] text-[10px]">
+                    Cargando Materias Oficiales...
+                 </div>
+              ) : dbSubjects.map((subject) => {
                 const isSelected = selectedSubjects.some(s => String(s.id) === String(subject.id));
                 return (
                   <button

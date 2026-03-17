@@ -38,6 +38,15 @@ export async function getProfileById(id: string): Promise<User | null> {
   return data;
 }
 
+export async function getSubjects(): Promise<Subject[]> {
+  const { data, error } = await db().from('subjects').select('*').order('id', { ascending: true });
+  if (error) {
+    console.error('Failed to fetch subjects from DB, table might not exist yet:', error);
+    return [];
+  }
+  return data || [];
+}
+
 export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   let query = db().from('classrooms').select('*, students_list:students(*, grades_list:grades(*))');
   if (userId) query = query.eq('user_id', userId);
