@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { Classroom, Student } from '@/types';
+import { Classroom, Student, User } from '@/types';
 import { NewClassModal } from '@/components/NewClassModal';
 import { StudentModal } from '@/components/StudentModal';
 import { 
