@@ -276,7 +276,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v2.7.2 • STANDARDIZED DYNAMIC FIX
+        PRODUCTION BUILD v2.7.3 • TYPE FIX ACTIVE
       </div>
       <NewClassModal 
         isOpen={isClassModalOpen} 

@@ -1,4 +1,4 @@
-import { Classroom, User } from '@/types';
+import { Classroom, User, Subject } from '@/types';
 import { supabase, supabaseAdmin } from './supabase';
 
 export interface SupportTicket {
