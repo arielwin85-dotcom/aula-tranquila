@@ -1,4 +1,4 @@
-import { Classroom, User, Subject } from '@/types';
+import { Classroom, User, Subject, Student, GradeEntry } from '@/types';
 import { supabase, supabaseAdmin } from './supabase';
 
 export interface SupportTicket {
@@ -70,7 +70,7 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
       id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
     }));
 
-    const normalizedStudents = (c.students_list || []).map((s: any) => ({
+    const normalizedStudents: Student[] = (c.students_list || []).map((s: any) => ({
       ...s,
       classroomId: s.classroom_id,
       duaContextTags: s.dua_context_tags || [],
@@ -83,7 +83,7 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
 
     // Find legacy students that are NOT yet in the normalized table
     const legacyStudents = (c.students || []).filter((ls: any) => 
-      !normalizedStudents.some(ns => String(ns.id) === String(ls.id))
+      !normalizedStudents.some((ns: Student) => String(ns.id) === String(ls.id))
     );
 
     return {
@@ -176,7 +176,7 @@ export async function deleteClassroom(id: string) {
   return true;
 }
 
-export async function getStudents(classroomId: string): Promise<any[]> {
+export async function getStudents(classroomId: string): Promise<Student[]> {
   // 1. Fetch students for this classroom
   const { data: students, error: studentError } = await db()
     .from('students')
@@ -187,7 +187,7 @@ export async function getStudents(classroomId: string): Promise<any[]> {
   if (!students) return [];
 
   // 2. Fetch all grades for these students to avoid N+1 queries
-  const studentIds = students.map((s: {id: string}) => s.id);
+  const studentIds = (students as any[]).map((s: any) => s.id);
   const { data: allGrades, error: gradesError } = await db()
     .from('grades')
     .select('*')
@@ -195,21 +195,27 @@ export async function getStudents(classroomId: string): Promise<any[]> {
 
   if (gradesError) {
     console.error('Grades table fetch failed (might be empty or missing):', gradesError);
-    return students.map((s: any) => ({ ...s, detailedGrades: [], grades: [] }));
+    return (students as any[]).map((s: any) => ({ 
+      ...s, 
+      classroomId: s.classroom_id,
+      duaContextTags: s.dua_context_tags || [],
+      detailedGrades: [], 
+      grades: [] 
+    }));
   }
 
   // 3. Map grades back to students
-  return students.map((student: any) => {
+  return (students as any[]).map((student: any) => {
     const studentGrades = (allGrades || []).filter((g: any) => g.student_id === student.id);
     return {
       ...student,
+      classroomId: student.classroom_id,
+      duaContextTags: student.dua_context_tags || [],
       detailedGrades: studentGrades.map((g: any) => ({
         ...g,
         subjectId: g.subject_id || g.subjectId
       })),
       grades: studentGrades.map((g: any) => g.score),
-      // Map database fields to types if needed
-      duaContextTags: student.dua_context_tags || [],
     };
   });
 }

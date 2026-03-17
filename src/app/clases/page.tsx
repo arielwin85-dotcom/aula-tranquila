@@ -276,7 +276,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v2.7.3 • TYPE FIX ACTIVE
+        PRODUCTION BUILD v2.8.0 • FULL TYPE SAFETY STABLE
       </div>
       <NewClassModal 
         isOpen={isClassModalOpen} 
@@ -540,7 +540,7 @@ export default function ClasesPage() {
            )}
             {/* Version Marker for debugging */}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v2.7.2 - Standardized Dynamic Fix</span>
+               <span>Aula Tranquila v2.8.0 - Full Type Safety Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>
