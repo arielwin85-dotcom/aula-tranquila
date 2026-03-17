@@ -210,7 +210,11 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                 <div className="max-h-60 overflow-y-auto custom-scrollbar space-y-2">
                   {detailedGrades.map(grade => {
                     const gradeSubjectId = String(grade.subject_id || grade.subjectId || '');
-                    const subject = subjects.find(s => String(s.id) === gradeSubjectId);
+                    const subject = subjects.find(s => 
+                      String(s.id) === gradeSubjectId || 
+                      String(s.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                    );
+                    const subjectName = subject?.name || gradeSubjectId;
                     return (
                       <div key={grade.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
                         <div className="flex items-center gap-4">
@@ -219,7 +223,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                           </div>
                           <div>
                             <div className="flex items-center gap-3">
-                              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{subject?.name}</span>
+                              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{subjectName}</span>
                               <span className="text-[8px] text-slate-600 font-black uppercase flex items-center gap-1 opacity-50"><CalendarIcon size={10} /> {new Date(grade.date).toLocaleDateString()}</span>
                             </div>
                             <p className="text-sm font-bold text-white tracking-tight">{grade.topic}</p>

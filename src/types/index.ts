@@ -12,6 +12,7 @@ export interface User {
 export interface GradeEntry {
   id: string;
   subjectId: string;
+  subject_id?: string; // Database field
   topic: string;
   score: number;
   date: string;

@@ -218,8 +218,12 @@ export default function ClasesPage() {
                       ${s.detailedGrades && s.detailedGrades.length > 0 
                         ? s.detailedGrades.map(g => {
                             const gradeSubjectId = String(g.subject_id || g.subjectId || '');
-                            const subject = selectedClass.subjects.find(sub => String(sub.id) === gradeSubjectId);
-                            return `<div>• <strong>${g.score}</strong> - ${subject?.name || 'Materia'}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
+                            const subject = selectedClass.subjects.find(sub => 
+                               String(sub.id) === gradeSubjectId || 
+                               String(sub.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                            );
+                            const subjectName = subject?.name || gradeSubjectId || 'Materia';
+                            return `<div>• <strong>${g.score}</strong> - ${subjectName}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
                           }).join('')
                         : '<span style="color: #999;">Sin notas registradas</span>'
                       }
@@ -452,12 +456,16 @@ export default function ClasesPage() {
                                            <div className="flex flex-col">
                                               <span className="font-black text-white tracking-tight">{student.name}</span>
                                               <div className="flex flex-wrap gap-1 mt-1">
-                                                 {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
+                                                  {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
                                                      const gradeSubjectId = String(g.subject_id || g.subjectId || '');
-                                                     const subject = selectedClass.subjects.find(s => String(s.id) === gradeSubjectId);
+                                                     const subject = selectedClass.subjects.find(s => 
+                                                       String(s.id) === gradeSubjectId || 
+                                                       String(s.name).toLowerCase() === gradeSubjectId.toLowerCase()
+                                                     );
+                                                     const displayName = subject?.name?.substring(0, 4) || gradeSubjectId.substring(0, 4) || '---';
                                                      return (
                                                         <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-500 font-bold">
-                                                           {subject?.name?.substring(0, 4) || '---'}: {g.score}
+                                                           {displayName}: {g.score}
                                                         </span>
                                                      );
                                                   })}
@@ -523,8 +531,13 @@ export default function ClasesPage() {
                 </div>
              </div>
            )}
+            {/* Version Marker for debugging */}
+            <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
+               <span>Aula Tranquila v2.5.3 - UI Updated 11:55 AM</span>
+               <span>{new Date().toLocaleDateString()}</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
