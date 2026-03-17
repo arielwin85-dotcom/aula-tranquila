@@ -55,13 +55,19 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   }
 
   return (data || []).map((c: any) => {
+    // Ensure subjects have IDs (Healer)
+    const subjects = (c.subjects || []).map((s: any) => ({
+      ...s,
+      id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
+    }));
+
     const normalizedStudents = (c.students_list || []).map((s: any) => ({
       ...s,
       classroomId: s.classroom_id,
       duaContextTags: s.dua_context_tags || [],
       detailedGrades: (s.grades_list || []).map((g: any) => ({
         ...g,
-        subjectId: g.subject_id, // Ensure both formats are available
+        subjectId: g.subject_id || g.subjectId, 
       })),
       grades: (s.grades_list || []).map((g: any) => g.score)
     }));
@@ -73,6 +79,7 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
 
     return {
       ...c,
+      subjects, // Repaired subjects
       userId: c.user_id,
       students: [...normalizedStudents, ...legacyStudents]
     };
@@ -102,6 +109,12 @@ export async function readDB(): Promise<Database> {
 }
 
 export async function saveClassroom(classroom: Classroom) {
+  // Heal subjects before saving to ensure consistency
+  const healedSubjects = (classroom.subjects || []).map(s => ({
+    ...s,
+    id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
+  }));
+
   const { data, error } = await db().from('classrooms').upsert({
     id: classroom.id,
     user_id: classroom.userId,
@@ -109,7 +122,7 @@ export async function saveClassroom(classroom: Classroom) {
     grade: classroom.grade,
     year: classroom.year,
     description: classroom.description,
-    subjects: classroom.subjects,
+    subjects: healedSubjects,
     students: classroom.students,
   });
   if (error) throw error;
@@ -165,7 +178,7 @@ export async function getStudents(classroomId: string): Promise<any[]> {
   if (!students) return [];
 
   // 2. Fetch all grades for these students to avoid N+1 queries
-  const studentIds = students.map(s => s.id);
+  const studentIds = students.map((s: {id: string}) => s.id);
   const { data: allGrades, error: gradesError } = await db()
     .from('grades')
     .select('*')
@@ -173,16 +186,19 @@ export async function getStudents(classroomId: string): Promise<any[]> {
 
   if (gradesError) {
     console.error('Grades table fetch failed (might be empty or missing):', gradesError);
-    return students.map(s => ({ ...s, detailedGrades: [], grades: [] }));
+    return students.map((s: any) => ({ ...s, detailedGrades: [], grades: [] }));
   }
 
   // 3. Map grades back to students
-  return students.map(student => {
-    const studentGrades = (allGrades || []).filter(g => g.student_id === student.id);
+  return students.map((student: any) => {
+    const studentGrades = (allGrades || []).filter((g: any) => g.student_id === student.id);
     return {
       ...student,
-      detailedGrades: studentGrades,
-      grades: studentGrades.map(g => g.score),
+      detailedGrades: studentGrades.map((g: any) => ({
+        ...g,
+        subjectId: g.subject_id || g.subjectId
+      })),
+      grades: studentGrades.map((g: any) => g.score),
       // Map database fields to types if needed
       duaContextTags: student.dua_context_tags || [],
     };
