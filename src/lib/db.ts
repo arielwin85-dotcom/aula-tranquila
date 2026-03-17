@@ -160,18 +160,6 @@ export async function getStudents(classroomId: string): Promise<any[]> {
   return data || [];
 }
 
-export async function upsertStudent(student: any) {
-  const { data, error } = await db().from('students').upsert({
-    id: student.id,
-    classroom_id: student.classroom_id || student.classroomId,
-    user_id: student.user_id || student.userId,
-    name: student.name,
-    attendance: student.attendance,
-    dua_context_tags: student.dua_context_tags || student.duaContextTags || [],
-  }).select();
-  if (error) throw error;
-  return data?.[0];
-}
 
 export async function deleteStudentFromDB(id: string, classroomId: string) {
   try {
