@@ -26,6 +26,9 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
   });
 
   useEffect(() => {
+    // Determine default subject
+    const defaultSubjectId = subjects[0]?.id || subjects[0]?.name || "";
+    
     if (initialData) {
       setName(initialData.name);
       setAttendance(initialData.attendance);
@@ -37,7 +40,15 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
       setDuaTagsInput("");
       setDetailedGrades([]);
     }
-  }, [initialData, isOpen]);
+    
+    // Reset form for NEW grade
+    setNewGrade({
+      subjectId: defaultSubjectId,
+      topic: "",
+      score: 10,
+      date: new Date().toISOString().split('T')[0]
+    });
+  }, [initialData, isOpen, subjects]);
 
   if (!isOpen) return null;
 
@@ -211,10 +222,10 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                    {detailedGrades.map(grade => {
                     const rawId = String(grade.subject_id || grade.subjectId || '');
                     const subject = subjects.find(s => 
-                      String(s.id).toLowerCase() === rawId.toLowerCase() || 
-                      String(s.name).toLowerCase() === rawId.toLowerCase()
+                      (s.id && String(s.id).toLowerCase() === rawId.toLowerCase()) || 
+                      (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
                     );
-                    const subjectName = subject?.name || rawId || 'Materia';
+                    const subjectName = subject?.name || rawId || 'SIN MATERIA';
                     return (
                       <div key={grade.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:border-white/20 transition-all">
                         <div className="flex items-center gap-4">

@@ -276,6 +276,12 @@ export async function getGrades(studentId: string): Promise<any[]> {
 }
 
 export async function upsertGrade(grade: any) {
+  const finalSubjectId = grade.subject_id || grade.subjectId;
+  if (!finalSubjectId) {
+    console.error('Refusing to save grade without subject identifier');
+    return null;
+  }
+
   try {
     const { data, error } = await db().from('grades').upsert({
       id: grade.id,

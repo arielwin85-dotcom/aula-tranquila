@@ -73,10 +73,10 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
               {student.detailedGrades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => {
                 const rawId = (grade.subject_id || grade.subjectId || '').toString();
                 const subject = subjects.find(s =>
-                  String(s.id).toLowerCase() === rawId.toLowerCase() ||
-                  String(s.name).toLowerCase() === rawId.toLowerCase()
+                  (s.id && String(s.id).toLowerCase() === rawId.toLowerCase()) ||
+                  (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
                 );
-                const subjectName = subject?.name || rawId || "Materia";
+                const subjectName = subject?.name || rawId || "SIN MATERIA";
                 return (
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/5 border border-white/5 p-6 rounded-3xl hover:border-brand-orange/30 transition-all hover:bg-brand-orange/[0.02]">
                     <div className="col-span-2 flex items-center gap-2">
