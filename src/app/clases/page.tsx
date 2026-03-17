@@ -113,6 +113,7 @@ export default function ClasesPage() {
 
   const handleSaveStudent = async (studentData: Partial<Student>) => {
     if (!selectedClassId) return;
+    setIsLoading(true);
     try {
       if (editingStudent) {
         await fetch(`/api/students/${editingStudent.id}`, {
@@ -138,8 +139,11 @@ export default function ClasesPage() {
       }
       await fetchClassrooms();
       setEditingStudent(null);
+      setIsStudentModalOpen(false);
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 

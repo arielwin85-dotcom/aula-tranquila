@@ -138,18 +138,18 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Tema / Evaluación</label>
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Tema / Evaluación Educativa (Campo Amplio)</label>
                   <input 
                     type="text"
-                    placeholder="Ej: Examen de Fracciones"
+                    placeholder="Ej: Examen integrador de Fracciones y Decimales"
                     value={newGrade.topic}
                     onChange={(e) => setNewGrade({...newGrade, topic: e.target.value})}
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm font-bold outline-none"
+                    className="w-full p-5 bg-white/5 border border-brand-orange/30 rounded-2xl text-white text-lg font-black outline-none focus:border-brand-orange transition-all placeholder:text-slate-800"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end bg-black/30 p-6 rounded-3xl border border-white/5">
                 <div className="space-y-2">
                   <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Calificación</label>
                   <input 
@@ -159,25 +159,25 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
                     max="10" 
                     value={newGrade.score} 
                     onChange={(e) => setNewGrade({...newGrade, score: Number(e.target.value)})} 
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white font-black text-center text-xl placeholder:text-slate-800" 
+                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-brand-orange font-black text-center text-4xl shadow-inner" 
                     placeholder="10"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Fecha</label>
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Fecha del Registro</label>
                   <input 
                     type="date" 
                     value={newGrade.date} 
                     onChange={(e) => setNewGrade({...newGrade, date: e.target.value})} 
-                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm font-bold outline-none uppercase" 
+                    className="w-full p-5 bg-white/5 border border-white/10 rounded-2xl text-white text-base font-black outline-none focus:border-brand-orange uppercase" 
                   />
                 </div>
                 <button 
                   onClick={handleAddGrade}
-                  className="p-4 h-[60px] bg-brand-orange text-white rounded-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-orange/20 font-black uppercase tracking-widest text-xs"
+                  className="p-5 h-[75px] bg-brand-orange text-white rounded-2xl hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-brand-orange/30 font-black uppercase tracking-widest text-sm"
                 >
-                  <Plus size={20} />
-                  Cargar Nota
+                  <Plus size={24} />
+                  Cargar Registro
                 </button>
               </div>
             </div>
