@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Calendar, Trash2, BookOpen, GraduationCap } from "lucide-react";
+import { X, Calendar as CalendarIcon, Trash2, BookOpen, GraduationCap } from "lucide-react";
 import { Student, Subject } from "@/types";
 import { getSubjectName } from "@/constants/subjects";
 
