@@ -55,6 +55,19 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
   const handleAddGrade = () => {
     if (!newGrade.topic || !newGrade.subjectId) return;
+    
+    // Check for exact duplicates (Subject + Topic + Date) - as requested by user
+    const isDuplicate = detailedGrades.some(g => 
+      String(g.subjectId || g.subject_id) === String(newGrade.subjectId) &&
+      g.topic.toLowerCase().trim() === newGrade.topic.toLowerCase().trim() &&
+      g.date === newGrade.date
+    );
+
+    if (isDuplicate) {
+      alert("Ya existe un registro con la misma materia, tema y fecha.");
+      return;
+    }
+
     const entry: GradeEntry = { id: `grade-${Date.now()}`, ...newGrade };
     setDetailedGrades([...detailedGrades, entry]);
     setNewGrade({ ...newGrade, topic: "", score: 10 });

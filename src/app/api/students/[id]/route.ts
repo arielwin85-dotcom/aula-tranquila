@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { upsertStudent, deleteStudentFromDB, upsertGrade, deleteGrade, getGrades } from '@/lib/db';
+import { upsertStudent, deleteStudentFromDB, upsertGrade, deleteGrade, getGrades, getFullStudent, deleteStudentFromLegacy } from '@/lib/db';
 
 export async function DELETE(
   request: Request,
@@ -46,30 +46,31 @@ export async function PUT(
 
     if (!result) throw new Error('Failed to update student');
 
-    // 2. Sync Grades (Bidirectional)
+    // 2. Sync Grades (Full Impact Strategy)
+    // A) Wipe all existing grades for this student
     const existingGrades = await getGrades(id);
-    const incomingGradeIds = (detailedGrades || [])
-      .map((g: any) => g.id)
-      .filter((gid: string) => gid && !gid.startsWith('grade-'));
-
-    // A) Delete grades that are no longer in the incoming list
-    const gradesToDelete = existingGrades.filter(eg => !incomingGradeIds.includes(eg.id));
-    for (const dg of gradesToDelete) {
-      await deleteGrade(dg.id);
+    for (const eg of existingGrades) {
+      await deleteGrade(eg.id);
     }
 
-    // B) Upsert incoming grades
+    // B) Re-insert current structure
     if (detailedGrades && detailedGrades.length > 0) {
       for (const grade of detailedGrades) {
         await upsertGrade({
           ...grade,
-          // If it's a frontend-only ID (grade-...), strip it to let DB generate one
-          id: String(grade.id).startsWith('grade-') ? undefined : grade.id,
+          id: undefined, // Let DB generate fresh UUIDs for absolute structure impact
           studentId: id,
           classroomId: classroomId,
         });
       }
     }
+
+    // 3. Finalize Migration (Cleanup Legacy)
+    await deleteStudentFromLegacy(id, classroomId);
+
+    // 4. Return Fully Hydrated Student
+    const fullStudent = await getFullStudent(id);
+    return NextResponse.json(fullStudent || result);
     
     return NextResponse.json(result);
   } catch (error: any) {

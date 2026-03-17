@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { upsertStudent, upsertGrade, getStudents } from '@/lib/db';
+import { upsertStudent, upsertGrade, getStudents, getFullStudent, deleteStudentFromLegacy } from '@/lib/db';
 import { Student } from '@/types';
 
 // GET students for a classroom
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     if (!result) throw new Error('Failed to create student in hybrid storage');
 
-    // 2. Optional: Initial grades (Best effort if table exists)
+    // 2. Sync Grades (Initial)
     if (studentData.detailedGrades && studentData.detailedGrades.length > 0) {
       for (const grade of studentData.detailedGrades) {
         await upsertGrade({
@@ -49,7 +49,12 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json(result, { status: 201 });
+    // 3. Migration: Ensure no duplicates in legacy JSON
+    await deleteStudentFromLegacy(result.id, studentData.classroomId);
+
+    // 4. Return Fully Hydrated Student
+    const fullStudent = await getFullStudent(result.id);
+    return NextResponse.json(fullStudent || result, { status: 201 });
   } catch (error: any) {
     console.error('Failed to add student:', error);
     return NextResponse.json({ error: `Failed to add student: ${error.message}` }, { status: 500 });

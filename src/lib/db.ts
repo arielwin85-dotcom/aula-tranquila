@@ -220,20 +220,29 @@ export async function getStudents(classroomId: string): Promise<Student[]> {
   });
 }
 
+export async function getFullStudent(id: string): Promise<Student | null> {
+  const { data: student, error: studentError } = await db()
+    .from('students')
+    .select('*, grades_list:grades(*)')
+    .eq('id', id)
+    .single();
+    
+  if (studentError || !student) return null;
 
-export async function deleteStudentFromDB(id: string, classroomId: string) {
-  try {
-    // 1. Try deleting from normalized students table
-    const { error } = await db().from('students').delete().eq('id', id);
-    if (!error) {
-      // If student was in the new table, we are done
-      return true;
-    }
-  } catch (e) {
-    console.error('Students table might not exist yet:', e);
-  }
+  return {
+    ...student,
+    classroomId: student.classroom_id,
+    duaContextTags: student.dua_context_tags || [],
+    detailedGrades: (student.grades_list || []).map((g: any) => ({
+      ...g,
+      subjectId: g.subject_id || g.subjectId, 
+    })),
+    grades: (student.grades_list || []).map((g: any) => g.score)
+  } as any;
+}
 
-  // 2. Fallback: Legacy JSON delete
+
+export async function deleteStudentFromLegacy(id: string, classroomId: string) {
   const { data: classroom, error: fetchErr } = await db()
     .from('classrooms')
     .select('students')
@@ -245,12 +254,31 @@ export async function deleteStudentFromDB(id: string, classroomId: string) {
   const students = classroom.students || [];
   const filtered = students.filter((s: any) => String(s.id) !== String(id));
   
+  if (filtered.length === students.length) return true; // Already gone
+
   const { error: saveErr } = await db()
     .from('classrooms')
     .update({ students: filtered })
     .eq('id', classroomId);
 
   return !saveErr;
+}
+
+export async function deleteStudentFromDB(id: string, classroomId: string) {
+  try {
+    // 1. Try deleting from normalized students table
+    const { error } = await db().from('students').delete().eq('id', id);
+    if (!error) {
+      // Also clean up from legacy to be sure
+      await deleteStudentFromLegacy(id, classroomId);
+      return true;
+    }
+  } catch (e) {
+    console.error('Students table might not exist yet:', e);
+  }
+
+  // 2. Fallback: Legacy JSON delete
+  return deleteStudentFromLegacy(id, classroomId);
 }
 
 export async function upsertStudent(student: any) {
