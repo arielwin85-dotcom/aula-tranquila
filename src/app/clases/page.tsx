@@ -123,7 +123,8 @@ export default function ClasesPage() {
     setIsLoading(true);
     try {
       if (editingStudent) {
-        await fetch(`/api/students/${editingStudent.dni}`, {
+        const studentId = editingStudent.dni || (editingStudent as any).id;
+        await fetch(`/api/students/${studentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -276,7 +277,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v3.2.0 • RELATIONAL STABILITY PATCH
+        PRODUCTION BUILD v3.3.0 • DNI RECOGNITION STABLE
       </div>
       <NewClassModal 
         isOpen={isClassModalOpen} 
@@ -443,10 +444,11 @@ export default function ClasesPage() {
                             <thead>
                                <tr className="bg-white/2 text-slate-600 text-[10px] font-black uppercase tracking-[0.3em] border-b border-white/5">
                                   <th className="p-8">Alumno</th>
+                                  <th className="p-8">DNI / Documento</th>
                                   <th className="p-8">Asistencia</th>
                                   <th className="p-8">Promedio</th>
                                   <th className="p-8">Seguimiento DUA</th>
-                                  <th className="p-8 w-24"></th>
+                                  <th className="p-8 w-24">Acciones</th>
                                </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -454,8 +456,8 @@ export default function ClasesPage() {
                                   <tr key={student.dni || (student as any).id} className="hover:bg-white/2 transition-colors group">
                                      <td className="p-8">
                                         <div className="flex items-center gap-5">
-                                           <div className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-slate-400 font-black">
-                                              {student.name.charAt(0)}
+                                           <div className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-slate-400 font-black shrink-0">
+                                              {(student.name || "?").charAt(0)}
                                            </div>
                                            <div className="flex flex-col">
                                               <span className="font-black text-white tracking-tight">{student.name}</span>
@@ -484,20 +486,23 @@ export default function ClasesPage() {
                                         </div>
                                      </td>
                                      <td className="p-8">
-                                        <div className="flex items-center gap-3">
-                                           <span className={`text-sm font-black ${student.attendance >= 80 ? 'text-emerald-400' : 'text-amber-500'}`}>{student.attendance}%</span>
-                                           {student.attendance >= 80 ? <CheckCircle2 size={14} className="text-emerald-500" /> : <AlertCircle size={14} className="text-amber-500" />}
-                                        </div>
-                                     </td>
-                                     <td className="p-8">
-                                        <span className="font-black text-slate-400">
-                                           {student.detailedGrades?.length ? 
-                                             (student.detailedGrades.reduce((a, b) => a + b.score, 0) / student.detailedGrades.length).toFixed(1) : 
-                                             (student.grades?.length ? (student.grades.reduce((a, b) => a + b, 0) / student.grades.length).toFixed(1) : '---')
-                                           }
-                                        </span>
-                                     </td>
-                                     <td className="p-8">
+                                         <span className="text-[10px] font-black text-brand-orange uppercase tracking-widest">{student.dni || (student as any).id || "S/D"}</span>
+                                      </td>
+                                      <td className="p-8">
+                                         <div className="flex items-center gap-3">
+                                            <span className={`text-sm font-black ${student.attendance >= 80 ? 'text-emerald-400' : 'text-amber-500'}`}>{student.attendance}%</span>
+                                            {student.attendance >= 80 ? <CheckCircle2 size={14} className="text-emerald-500" /> : <AlertCircle size={14} className="text-amber-500" />}
+                                         </div>
+                                      </td>
+                                      <td className="p-8">
+                                         <span className="font-black text-slate-400">
+                                            {student.detailedGrades?.length ? 
+                                              (student.detailedGrades.reduce((a, b) => a + b.score, 0) / student.detailedGrades.length).toFixed(1) : 
+                                              (student.grades?.length ? (student.grades.reduce((a, b) => a + b, 0) / student.grades.length).toFixed(1) : '---')
+                                            }
+                                         </span>
+                                      </td>
+                                      <td className="p-8">
                                         <div className="flex gap-2 flex-wrap max-w-xs">
                                            {student.duaContextTags?.length ? (
                                               student.duaContextTags.map(tag => (
@@ -540,7 +545,7 @@ export default function ClasesPage() {
            )}
             {/* Version Marker for debugging */}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v3.2.0 - Relational Stability Patch</span>
+               <span>Aula Tranquila v3.3.0 - DNI Recognition Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>

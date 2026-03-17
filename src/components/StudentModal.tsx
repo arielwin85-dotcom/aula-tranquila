@@ -101,14 +101,18 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
     }
 
     const duaContextTags = duaTagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
-    onSave({ 
-      dni: safeDni, 
-      name: safeName, 
-      attendance: Number(attendance), 
-      detailedGrades: finalGrades, 
-      duaContextTags, 
-      grades: finalGrades.map(g => g.score) 
-    });
+    
+    if (onSave) {
+      onSave({ 
+        dni: safeDni, 
+        name: safeName, 
+        attendance: Number(attendance), 
+        detailedGrades: finalGrades, 
+        duaContextTags, 
+        grades: finalGrades.map(g => g.score) 
+      });
+    }
+    
     onClose();
   };
 
