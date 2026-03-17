@@ -22,20 +22,24 @@ export async function DELETE(
     }
 
     const classroom = classrooms[classIndex];
-    const studentIndex = classroom.students.findIndex(s => s.id === id);
+    // Find student in classroom
+    console.log(`Attempting to delete student with ID: ${id} from classroom: ${classroomId}`);
+    const studentIndex = classroom.students.findIndex(s => String(s.id) === String(id));
 
     if (studentIndex === -1) {
+      console.error(`Student not found. Available IDs: ${classroom.students.map(s => s.id).join(', ')}`);
       return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
     }
 
     // Remove student
     classroom.students.splice(studentIndex, 1);
     await saveClassroom(classroom);
+    console.log('Student deleted successfully');
     
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to delete student:', error);
-    return NextResponse.json({ error: 'Failed to delete student' }, { status: 500 });
+    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
   }
 }
 
@@ -60,14 +64,17 @@ export async function PUT(
     }
 
     const classroom = classrooms[classIndex];
-    const studentIndex = classroom.students.findIndex(s => s.id === id);
+    // Find student in classroom
+    console.log(`Attempting to update student with ID: ${id} in classroom: ${classroomId}`);
+    const studentIndex = classroom.students.findIndex(s => String(s.id) === String(id));
 
     if (studentIndex === -1) {
+      console.error(`Student not found for update. Available IDs: ${classroom.students.map(s => s.id).join(', ')}`);
       return NextResponse.json({ error: 'Student not found in classroom' }, { status: 404 });
     }
 
     // Update student
-    console.log('Updating student:', id, 'with data:', JSON.stringify(studentData));
+    console.log('Updating student data:', JSON.stringify(studentData));
     classroom.students[studentIndex] = {
       ...classroom.students[studentIndex],
       ...studentData
@@ -77,8 +84,8 @@ export async function PUT(
     console.log('Student updated and classroom saved successfully');
     
     return NextResponse.json(classroom.students[studentIndex]);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to update student:', error);
-    return NextResponse.json({ error: 'Failed to update student' }, { status: 500 });
+    return NextResponse.json({ error: `Server error: ${error.message}` }, { status: 500 });
   }
 }

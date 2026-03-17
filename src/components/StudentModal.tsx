@@ -243,7 +243,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
             disabled={!name.trim()}
             className="px-12 py-5 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[11px] shadow-2xl hover:bg-brand-peach hover:scale-105 active:scale-95 disabled:opacity-20 transition-all"
           >
-            {initialData ? "Modificar Perfil" : "Confirmar Ingreso"}
+            {initialData ? "GRABAR CAMBIOS" : "Confirmar Ingreso"}
           </button>
         </div>
 
