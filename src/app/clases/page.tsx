@@ -232,13 +232,18 @@ export default function ClasesPage() {
   const handleDeleteStudent = async (studentId: string) => {
     if (!selectedClassId) return;
     if (!confirm("¿Eliminar este alumno de la clase?")) return;
+    setIsLoading(true);
     try {
-      await fetch(`/api/students/${studentId}?classroomId=${selectedClassId}`, {
+      const res = await fetch(`/api/students/${studentId}?classroomId=${selectedClassId}`, {
         method: 'DELETE'
       });
+      if (!res.ok) throw new Error("Error al eliminar alumno");
       await fetchClassrooms();
     } catch (err) {
       console.error(err);
+      alert("No se pudo eliminar el alumno.");
+    } finally {
+      setIsLoading(false);
     }
   };
    if (isLoading) {
@@ -427,7 +432,22 @@ export default function ClasesPage() {
                                            <div className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center text-slate-400 font-black">
                                               {student.name.charAt(0)}
                                            </div>
-                                           <span className="font-black text-white tracking-tight">{student.name}</span>
+                                           <div className="flex flex-col">
+                                              <span className="font-black text-white tracking-tight">{student.name}</span>
+                                              <div className="flex flex-wrap gap-1 mt-1">
+                                                 {student.detailedGrades && student.detailedGrades.slice(0, 3).map((g, idx) => {
+                                                    const subject = selectedClass.subjects.find(s => s.id === g.subjectId);
+                                                    return (
+                                                       <span key={idx} className="text-[8px] bg-white/5 border border-white/5 px-1.5 py-0.5 rounded text-slate-500 font-bold">
+                                                          {subject?.name?.substring(0, 4)}: {g.score}
+                                                       </span>
+                                                    );
+                                                 })}
+                                                 {student.detailedGrades && student.detailedGrades.length > 3 && (
+                                                    <span className="text-[8px] text-brand-orange font-black">+{student.detailedGrades.length - 3}</span>
+                                                 )}
+                                              </div>
+                                           </div>
                                         </div>
                                      </td>
                                      <td className="p-8">
