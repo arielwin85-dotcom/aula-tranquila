@@ -9,6 +9,7 @@ interface NewClassModalProps {
   onClose: () => void;
   onSave: (newClass: Classroom) => void;
   initialData?: Classroom | null;
+  userId: string;
 }
 
 const PRIMARY_GRADES = [
@@ -26,7 +27,7 @@ const PRIMARY_SUBJECTS = [
   { id: "sub-mus", name: "Educación Musical" },
 ];
 
-export function NewClassModal({ isOpen, onClose, onSave, initialData }: NewClassModalProps) {
+export function NewClassModal({ isOpen, onClose, onSave, initialData, userId }: NewClassModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedGrade, setSelectedGrade] = useState<string>(initialData?.grade || "");
   const [selectedYear, setSelectedYear] = useState<number>(initialData?.year || new Date().getFullYear());
@@ -66,7 +67,7 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData }: NewClass
     if (!selectedGrade || selectedSubjects.length === 0) return;
     const newClassroom: Classroom = {
       id: initialData?.id || `grado-${Date.now()}`,
-      userId: initialData?.userId || "profe-1",
+      userId: userId,
       name: `${selectedGrade} ${selectedYear}`, 
       grade: selectedGrade,
       year: selectedYear,
@@ -184,7 +185,7 @@ export function NewClassModal({ isOpen, onClose, onSave, initialData }: NewClass
               disabled={step === 1 ? !selectedGrade : selectedSubjects.length === 0}
               className="px-10 py-4 bg-brand-orange text-white font-black uppercase tracking-widest text-[11px] rounded-[1.2rem] shadow-xl shadow-brand-orange/20 hover:scale-105 active:scale-95 disabled:opacity-20 transition-all flex-1 sm:flex-none"
             >
-              {step === 1 ? "Continuar" : (initialData ? "Actualizar" : "Crear Clase")}
+              {step === 1 ? "Continuar" : (initialData ? "Modificar" : "Crear Clase")}
             </button>
           </div>
         </div>

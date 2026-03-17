@@ -23,6 +23,7 @@ export default function ClasesPage() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
   // Loading state
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchClassrooms = async () => {
@@ -41,7 +42,18 @@ export default function ClasesPage() {
   };
 
   useEffect(() => {
-    fetchClassrooms();
+    const init = async () => {
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        setUser(meData.user);
+        await fetchClassrooms();
+      } catch (err) {
+        console.error("Initialization failed", err);
+        setIsLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const availableYears = Array.from(new Set(classrooms.map(c => c.year || new Date().getFullYear()))).sort((a, b) => b - a);
@@ -218,6 +230,7 @@ export default function ClasesPage() {
         onClose={() => setIsClassModalOpen(false)} 
         onSave={handleSaveClass}
         initialData={editingClass}
+        userId={user?.id || ''}
       />
 
       <StudentModal
