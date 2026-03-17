@@ -71,7 +71,7 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
                 <div className="col-span-1 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Nota</div>
               </div>
 
-              {student.detailedGrades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => {
+              {[...(student.detailedGrades || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => {
                 const rawId = (grade.subject_id || grade.subjectId || '').toString();
                 const subject = subjects.find(s =>
                   (s.id && String(s.id) === rawId) ||
@@ -82,15 +82,15 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
                   <div key={idx} className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/5 border border-white/5 p-6 rounded-3xl hover:border-brand-orange/30 transition-all hover:bg-brand-orange/[0.02]">
                     <div className="col-span-2 flex items-center gap-2">
                       <CalendarIcon size={12} className="text-slate-500" />
-                      <span className="text-[10px] font-black text-slate-400">{new Date(grade.date).toLocaleDateString()}</span>
+                      <span className="text-[10px] font-black text-slate-400">{grade.date ? new Date(grade.date).toLocaleDateString() : 'S/F'}</span>
                     </div>
                     <div className="col-span-3">
                       <span className="px-3 py-1 bg-white/5 rounded-xl text-[9px] font-black text-brand-orange uppercase tracking-widest border border-white/5">
-                        {subject?.name || "Materia"}
+                        {subjectName}
                       </span>
                     </div>
                     <div className="col-span-6">
-                      <p className="text-sm font-bold text-white tracking-tight leading-relaxed">{grade.topic}</p>
+                      <p className="text-sm font-bold text-white tracking-tight leading-relaxed">{grade.topic || 'Sin tema'}</p>
                     </div>
                     <div className="col-span-1 text-right">
                       <span className={`text-xl font-black ${grade.score >= 7 ? 'text-emerald-400' : grade.score >= 4 ? 'text-brand-orange' : 'text-rose-500'}`}>

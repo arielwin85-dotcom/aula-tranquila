@@ -32,10 +32,10 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
     const defaultSubjectId = subjects[0]?.id || subjects[0]?.name || "";
     
     if (initialData) {
-      setName(initialData.name);
-      setDni(initialData.dni);
-      setAttendance(initialData.attendance);
-      setDuaTagsInput(initialData.duaContextTags.join(", "));
+      setName(initialData.name || "");
+      setDni(initialData.dni || (initialData as any).id || "");
+      setAttendance(initialData.attendance || 100);
+      setDuaTagsInput((initialData.duaContextTags || []).join(", "));
       setDetailedGrades(initialData.detailedGrades || []);
     } else {
       setName("");
@@ -60,9 +60,9 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
     if (!newGrade.topic || !newGrade.subjectId) return;
     
     // Check for exact duplicates (Subject + Topic + Date) - as requested by user
-    const isDuplicate = detailedGrades.some(g => 
+    const isDuplicate = (detailedGrades || []).some(g => 
       String(g.subjectId || g.subject_id) === String(newGrade.subjectId) &&
-      g.topic.toLowerCase().trim() === newGrade.topic.toLowerCase().trim() &&
+      (g.topic || "").toLowerCase().trim() === (newGrade.topic || "").toLowerCase().trim() &&
       g.date === newGrade.date
     );
 
@@ -73,7 +73,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
     const entry: GradeEntry = { 
       id: `grade-${Date.now()}`, 
-      studentDni: dni,
+      studentDni: dni || "",
       ...newGrade 
     };
     setDetailedGrades([...detailedGrades, entry]);
@@ -83,7 +83,10 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
   const handleRemoveGrade = (id: string) => { setDetailedGrades(detailedGrades.filter(g => g.id !== id)); };
 
   const handleSave = () => {
-    if (!name.trim() || !dni.trim()) return;
+    const safeName = (name || "").trim();
+    const safeDni = (dni || "").trim();
+
+    if (!safeName || !safeDni) return;
     
     // Auto-add if user filled the topic but forgot to click '+'
     let finalGrades = [...detailedGrades];
@@ -99,8 +102,8 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
     const duaContextTags = duaTagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
     onSave({ 
-      dni: dni.trim(), 
-      name: name.trim(), 
+      dni: safeDni, 
+      name: safeName, 
       attendance: Number(attendance), 
       detailedGrades: finalGrades, 
       duaContextTags, 
