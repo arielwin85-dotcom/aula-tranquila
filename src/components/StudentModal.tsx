@@ -106,7 +106,7 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
           <div className="space-y-3">
              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                Contexto DUA <span className="text-brand-orange text-[8px] italic">(IA las usará para adaptar copilot)</span>
+                Contexto DUA <span className="text-brand-orange text-[8px] italic">(IA lo usará para adaptar copilot)</span>
              </label>
              <input
                type="text"
@@ -125,43 +125,61 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
             </h3>
 
             {/* Form */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-              <div className="sm:col-span-1 space-y-2">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Materia</label>
-                <select 
-                  value={newGrade.subjectId}
-                  onChange={(e) => setNewGrade({...newGrade, subjectId: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest outline-none"
+            <div className="flex flex-col space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Materia</label>
+                  <select 
+                    value={newGrade.subjectId}
+                    onChange={(e) => setNewGrade({...newGrade, subjectId: e.target.value})}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-xs font-black uppercase tracking-widest outline-none appearance-none"
+                  >
+                    {subjects.map(s => <option key={s.id} value={s.id} className="bg-brand-navy">{s.name}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Tema / Evaluación</label>
+                  <input 
+                    type="text"
+                    placeholder="Ej: Examen de Fracciones"
+                    value={newGrade.topic}
+                    onChange={(e) => setNewGrade({...newGrade, topic: e.target.value})}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Calificación</label>
+                  <input 
+                    type="number" 
+                    step="0.5" 
+                    min="1" 
+                    max="10" 
+                    value={newGrade.score} 
+                    onChange={(e) => setNewGrade({...newGrade, score: Number(e.target.value)})} 
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white font-black text-center text-xl placeholder:text-slate-800" 
+                    placeholder="10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1 text-xs">Fecha</label>
+                  <input 
+                    type="date" 
+                    value={newGrade.date} 
+                    onChange={(e) => setNewGrade({...newGrade, date: e.target.value})} 
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-xl text-white text-sm font-bold outline-none uppercase" 
+                  />
+                </div>
+                <button 
+                  onClick={handleAddGrade}
+                  className="p-4 h-[60px] bg-brand-orange text-white rounded-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-orange/20 font-black uppercase tracking-widest text-xs"
                 >
-                  {subjects.map(s => <option key={s.id} value={s.id} className="bg-brand-navy">{s.name}</option>)}
-                </select>
+                  <Plus size={20} />
+                  Cargar Nota
+                </button>
               </div>
-              <div className="sm:col-span-1 space-y-2">
-                <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Tema</label>
-                <input 
-                  type="text"
-                  placeholder="Ej: Fracciones"
-                  value={newGrade.topic}
-                  onChange={(e) => setNewGrade({...newGrade, topic: e.target.value})}
-                  className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white text-[11px] font-bold outline-none"
-                />
-              </div>
-              <div className="sm:col-span-1 grid grid-cols-2 gap-3 space-y-2">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Nota</label>
-                  <input type="number" step="0.5" min="1" max="10" value={newGrade.score} onChange={(e) => setNewGrade({...newGrade, score: Number(e.target.value)})} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white font-black text-center" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest ml-1">Fecha</label>
-                  <input type="date" value={newGrade.date} onChange={(e) => setNewGrade({...newGrade, date: e.target.value})} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white text-[10px]" />
-                </div>
-              </div>
-              <button 
-                onClick={handleAddGrade}
-                className="p-4 bg-brand-orange text-white rounded-2xl hover:scale-105 transition-all flex items-center justify-center shadow-lg shadow-brand-orange/10"
-              >
-                <Plus size={20} />
-              </button>
             </div>
 
             {/* List */}

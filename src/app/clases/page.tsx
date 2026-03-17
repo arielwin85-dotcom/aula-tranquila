@@ -180,19 +180,43 @@ export default function ClasesPage() {
           </div>
           <table>
             <thead>
-              <tr><th>Alumno</th><th>Asistencia</th><th>Contexto DUA</th><th>Promedio</th></tr>
+              <tr>
+                <th>Alumno</th>
+                <th>DUA / Observaciones</th>
+                <th>Calificaciones Detalladas</th>
+                <th>Promedio</th>
+              </tr>
             </thead>
             <tbody>
               ${selectedClass.students.map(s => `
                 <tr>
-                  <td><strong>${s.name}</strong></td>
-                  <td>${s.attendance}%</td>
-                  <td>${s.duaContextTags.join(', ')}</td>
-                  <td>${s.detailedGrades?.length ? (s.detailedGrades.reduce((a,b)=>a+b.score, 0)/s.detailedGrades.length).toFixed(1) : '-'}</td>
+                  <td>
+                    <div style="font-weight: bold; font-size: 14px;">${s.name}</div>
+                    <div style="font-size: 10px; color: #666;">Asistencia: ${s.attendance}%</div>
+                  </td>
+                  <td>
+                    ${s.duaContextTags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    ${s.duaContextTags.length === 0 ? '<span style="color: #ccc; font-size: 10px;">Sin etiquetas DUA</span>' : ''}
+                  </td>
+                  <td>
+                    <div style="font-size: 10px;">
+                      ${s.detailedGrades && s.detailedGrades.length > 0 
+                        ? s.detailedGrades.map(g => {
+                            const subject = selectedClass.subjects.find(sub => sub.id === g.subjectId);
+                            return `<div>• <strong>${g.score}</strong> - ${subject?.name || 'Materia'}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
+                          }).join('')
+                        : '<span style="color: #999;">Sin notas registradas</span>'
+                      }
+                    </div>
+                  </td>
+                  <td style="text-align: center; font-weight: 800; color: #7c3aed; font-size: 16px;">
+                    ${s.detailedGrades?.length ? (s.detailedGrades.reduce((a,b)=>a+b.score, 0)/s.detailedGrades.length).toFixed(1) : '-'}
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
+          <p style="margin-top: 30px; font-size: 10px; color: #999; text-align: center;">Documento generado por Aula Tranquila - IA Pedagógica</p>
           <script>window.print();</script>
         </body>
       </html>
