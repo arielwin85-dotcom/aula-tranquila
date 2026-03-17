@@ -243,7 +243,7 @@ export async function getFullStudent(dni: string): Promise<Student | null> {
 }
 
 
-export async function deleteStudentFromLegacy(id: string, classroomId: string) {
+export async function deleteStudentFromLegacy(dni: string, classroomId: string) {
   const { data: classroom, error: fetchErr } = await db()
     .from('classrooms')
     .select('students')
