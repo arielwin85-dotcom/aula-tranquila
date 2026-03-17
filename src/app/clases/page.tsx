@@ -295,7 +295,12 @@ export default function ClasesPage() {
                          </div>
                          <div className="min-w-0">
                             <p className="font-black text-sm tracking-tight truncate uppercase">{classroom.name}</p>
-                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${selectedClassId === classroom.id ? 'text-white/70' : 'text-slate-600'}`}>{classroom.grade}</p>
+                            <div className="flex flex-col gap-0.5 mt-1">
+                               <p className={`text-[9px] font-black uppercase tracking-widest ${selectedClassId === classroom.id ? 'text-white/70' : 'text-slate-600'}`}>{classroom.grade}</p>
+                               {classroom.description && (
+                                 <p className={`text-[8px] font-bold truncate ${selectedClassId === classroom.id ? 'text-white/50' : 'text-slate-500 italic'}`}>{classroom.description}</p>
+                               )}
+                            </div>
                          </div>
                       </button>
                    ))
@@ -310,11 +315,16 @@ export default function ClasesPage() {
              <div className="flex flex-col flex-1">
                 {/* Header Classroom */}
                 <div className="p-8 md:p-12 border-b border-white/5 bg-white/5 flex flex-col md:flex-row justify-between items-start gap-8">
-                   <div className="flex-1">
-                      <div className="flex items-center gap-4 mb-4">
-                        <span className="bg-brand-orange text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand-orange/20">Ciclo {selectedClass.year}</span>
-                        <h2 className="text-3xl font-black text-white font-montserrat tracking-tight">{selectedClass.name}</h2>
-                      </div>
+                    <div className="flex-1">
+                       <div className="flex flex-col mb-4">
+                         <div className="flex items-center gap-4 mb-2">
+                           <span className="bg-brand-orange text-white px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-brand-orange/20">Ciclo {selectedClass.year}</span>
+                           <h2 className="text-3xl font-black text-white font-montserrat tracking-tight">{selectedClass.name}</h2>
+                         </div>
+                         {selectedClass.description && (
+                           <p className="text-brand-peach font-bold text-sm tracking-wide uppercase italic ml-1 opacity-80">{selectedClass.description}</p>
+                         )}
+                       </div>
                       <div className="flex flex-wrap gap-2">
                          {selectedClass.subjects?.map(subject => (
                            <span key={subject.id} className="inline-flex items-center gap-2 px-4 py-2 bg-black/40 border border-white/5 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
