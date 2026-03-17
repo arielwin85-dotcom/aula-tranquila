@@ -70,34 +70,42 @@ export default function SoportePage() {
 
   const tutorialTabs = [
     {
+      id: 'clases',
+      title: 'Mis Clases',
+      icon: MessageSquare,
+      desc: 'El centro de gestión de tus aulas y alumnos.',
+      content: 'Acá organizás todas tus clases y alumnos en un solo lugar. Podés crear aulas por grado y año lectivo, agregar alumnos con su información pedagógica, registrar asistencia, cargar notas detalladas por tema y materia, y visualizar el promedio de cada estudiante. También podés etiquetar a los alumnos con contexto DUA (Diseño Universal para el Aprendizaje) y generar un informe PDF completo de cada clase con un solo clic.'
+    },
+    {
       id: 'copiloto',
-      title: 'Copiloto IA',
+      title: '✦ IA Pedagógica',
       icon: MessageSquare,
       desc: 'Tu asistente personal para el día a día.',
-      content: 'El Copiloto IA te ayuda a planificar tus clases de forma dinámica. Podés escribirle qué temas diste anteriormente y él te sugerirá la siguiente secuencia lógica. Incluye un calendario semanal interactivo donde podés marcar feriados, editar temas y regenerar clases específicas en segundos.'
+      content: 'La IA Pedagógica te ayuda a planificar tus clases de forma dinámica. Podés escribirle qué temas diste anteriormente y ella te sugerirá la siguiente secuencia lógica basada en los contenidos curriculares. Incluye un calendario semanal interactivo donde podés marcar feriados, editar temas y regenerar clases específicas en segundos.'
     },
     {
       id: 'normativa',
-      title: 'Planificación por Normativa',
+      title: 'Planificación Normativa',
       icon: ScrollText,
       desc: 'Alineación perfecta con los diseños curriculares.',
       content: 'Subí el diseño curricular de tu jurisdicción (PDF o texto). Nuestra IA analizará los contenidos obligatorios y generará un plan anual detallado, mes a mes, con objetivos de aprendizaje y ejemplos de actividades concretas que respetan estrictamente la ley educativa.'
     },
     {
       id: 'evidencias',
-      title: 'Evaluación de Evidencias',
+      title: 'Evidencias',
       icon: Camera,
       desc: 'Corrección inteligente de trabajos y exámenes.',
-      content: 'Subí fotos de los exámenes realizados por tus alumnos. La IA reconocerá la escritura a mano, identificará aciertos y errores, y generará un informe pedagógico con fortalezas y áreas de mejora, sugiriendo incluso una calificación.'
+      content: 'Subí fotos de los exámenes realizados por tus alumnos. La IA reconocerá la escritura a mano, identificará aciertos y errores, y generará un informe pedagógico con fortalezas y áreas de mejora, sugiriendo incluso una calificación lista para registrar.'
     },
     {
       id: 'generador',
-      title: 'Contenidos de Valuación Rápida',
+      title: 'Valuaciones y Contenidos Rápido',
       icon: Sparkles,
       desc: 'Evaluaciones y actividades en un clic.',
-      content: '¿Necesitás una prueba de opción múltiple, una rúbrica o una secuencia didáctica urgente? Seleccioná la materia, el tema y el tipo de recurso. La IA redactará el documento completo listo para imprimir, adaptado al nivel de tu clase.'
+      content: '¿Necesitás una prueba de opción múltiple, una rúbrica o una secuencia didáctica urgente? Seleccioná la materia, el tema y el tipo de recurso. La IA redactará el documento completo listo para imprimir, adaptado al nivel y grado de tu clase.'
     }
   ];
+
 
   return (
     <div className="max-w-5xl mx-auto pb-20">
