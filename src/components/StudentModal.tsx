@@ -52,8 +52,27 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
 
   const handleSave = () => {
     if (!name.trim()) return;
+    
+    // Auto-add if user filled the topic but forgot to click '+'
+    let finalGrades = [...detailedGrades];
+    if (newGrade.topic.trim() && newGrade.subjectId) {
+       const autoEntry: GradeEntry = { 
+         id: `grade-auto-${Date.now()}`, 
+         ...newGrade,
+         topic: newGrade.topic.trim()
+       };
+       finalGrades.push(autoEntry);
+    }
+
     const duaContextTags = duaTagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
-    onSave({ id: initialData?.id, name: name.trim(), attendance: Number(attendance), detailedGrades, duaContextTags, grades: detailedGrades.map(g => g.score) });
+    onSave({ 
+      id: initialData?.id, 
+      name: name.trim(), 
+      attendance: Number(attendance), 
+      detailedGrades: finalGrades, 
+      duaContextTags, 
+      grades: finalGrades.map(g => g.score) 
+    });
     onClose();
   };
 

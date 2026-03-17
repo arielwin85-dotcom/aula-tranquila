@@ -438,7 +438,10 @@ export default function ClasesPage() {
                                      </td>
                                      <td className="p-8">
                                         <span className="font-black text-slate-400">
-                                           {student.grades?.length ? (student.grades.reduce((a, b) => a + b, 0) / student.grades.length).toFixed(1) : '---'}
+                                           {student.detailedGrades?.length ? 
+                                             (student.detailedGrades.reduce((a, b) => a + b.score, 0) / student.detailedGrades.length).toFixed(1) : 
+                                             (student.grades?.length ? (student.grades.reduce((a, b) => a + b, 0) / student.grades.length).toFixed(1) : '---')
+                                           }
                                         </span>
                                      </td>
                                      <td className="p-8">

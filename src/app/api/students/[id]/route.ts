@@ -67,12 +67,14 @@ export async function PUT(
     }
 
     // Update student
+    console.log('Updating student:', id, 'with data:', JSON.stringify(studentData));
     classroom.students[studentIndex] = {
       ...classroom.students[studentIndex],
       ...studentData
     };
     
     await saveClassroom(classroom);
+    console.log('Student updated and classroom saved successfully');
     
     return NextResponse.json(classroom.students[studentIndex]);
   } catch (error) {
