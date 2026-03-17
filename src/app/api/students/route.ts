@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server';
-import { upsertStudent, upsertGrade } from '@/lib/db';
+import { upsertStudent, upsertGrade, getStudents } from '@/lib/db';
 import { Student } from '@/types';
+
+// GET students for a classroom
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const classroomId = searchParams.get('classroomId');
+
+    if (!classroomId) {
+      return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
+    }
+
+    const students = await getStudents(classroomId);
+    return NextResponse.json(students);
+  } catch (error: any) {
+    console.error('Failed to fetch students:', error);
+    return NextResponse.json({ error: `Failed to fetch students: ${error.message}` }, { status: 500 });
+  }
+}
 
 // POST a new student into a specific classroom
 export async function POST(request: Request) {

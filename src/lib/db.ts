@@ -59,8 +59,11 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
       ...s,
       classroomId: s.classroom_id,
       duaContextTags: s.dua_context_tags || [],
-      detailedGrades: s.grades_list || [],
-      grades: s.grades_list?.map((g: any) => g.score) || []
+      detailedGrades: (s.grades_list || []).map((g: any) => ({
+        ...g,
+        subjectId: g.subject_id, // Ensure both formats are available
+      })),
+      grades: (s.grades_list || []).map((g: any) => g.score)
     }));
 
     // Find legacy students that are NOT yet in the normalized table
@@ -152,12 +155,38 @@ export async function deleteClassroom(id: string) {
 }
 
 export async function getStudents(classroomId: string): Promise<any[]> {
-  const { data, error } = await db()
+  // 1. Fetch students for this classroom
+  const { data: students, error: studentError } = await db()
     .from('students')
     .select('*')
     .eq('classroom_id', classroomId);
-  if (error) throw error;
-  return data || [];
+    
+  if (studentError) throw studentError;
+  if (!students) return [];
+
+  // 2. Fetch all grades for these students to avoid N+1 queries
+  const studentIds = students.map(s => s.id);
+  const { data: allGrades, error: gradesError } = await db()
+    .from('grades')
+    .select('*')
+    .in('student_id', studentIds);
+
+  if (gradesError) {
+    console.error('Grades table fetch failed (might be empty or missing):', gradesError);
+    return students.map(s => ({ ...s, detailedGrades: [], grades: [] }));
+  }
+
+  // 3. Map grades back to students
+  return students.map(student => {
+    const studentGrades = (allGrades || []).filter(g => g.student_id === student.id);
+    return {
+      ...student,
+      detailedGrades: studentGrades,
+      grades: studentGrades.map(g => g.score),
+      // Map database fields to types if needed
+      duaContextTags: student.dua_context_tags || [],
+    };
+  });
 }
 
 
