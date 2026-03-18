@@ -102,19 +102,23 @@ export default function GeneradorPage() {
         <head>
           <title>Recurso Pedagógico - ${topic}</title>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-            h1 { color: #7c3aed; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
-            h2 { color: #4b5563; margin-top: 30px; }
-            pre { white-space: pre-wrap; word-wrap: break-word; }
-            .header-info { margin-bottom: 30px; font-size: 14px; color: #666; }
+            body { font-family: 'Arial', sans-serif; padding: 40px; color: #000; line-height: 1.5; }
+            .exam-header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px; }
+            .exam-header p { margin: 5px 0; font-size: 14px; font-weight: bold; }
+            .line { border-bottom: 1px solid #000; display: inline-block; width: 300px; margin-left: 10px; }
+            .content { font-size: 14px; }
+            h2 { font-size: 18px; margin-top: 20px; text-transform: uppercase; }
             @media print { .no-print { display: none; } }
           </style>
         </head>
         <body>
-          <div class="header-info">
-            <p><strong>Aula Tranquila</strong> - Generador de Materiales IA</p>
-            <p><strong>Clase:</strong> ${selectedClass?.name} (${selectedClass?.grade}) | <strong>Materia:</strong> ${subjects.find(s => s.id === selectedSubjectId)?.name}</p>
-            <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-AR')}</p>
+          <div class="exam-header">
+            <div style="display: flex; justify-content: space-between;">
+              <p>MATERIA: ${subjects.find(s => s.id === selectedSubjectId)?.name || ''}</p>
+              <p>CURSO: ${selectedClass?.name || ''}</p>
+            </div>
+            <p>NOMBRE Y APELLIDO: <span class="line"></span></p>
+            <p style="text-align: right; margin-top: 10px;">FECHA: ____/____/2026</p>
           </div>
           <div class="content">
             ${generatedContent.replace(/\n/g, '<br/>')}
