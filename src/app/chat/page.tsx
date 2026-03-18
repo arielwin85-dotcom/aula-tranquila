@@ -221,6 +221,8 @@ export default function ChatPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
+      console.log('Respuesta status:', res.status);
+      console.log('Respuesta data:', data);
 
       if (data.error) throw new Error(data.error);
 

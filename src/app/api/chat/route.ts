@@ -5,8 +5,14 @@ import { NextRequest, NextResponse } from 'next/server';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
+  console.log('=== API CHAT LLAMADA ===');
   try {
-    const { messages, context } = await req.json();
+    const body = await req.json();
+    console.log('Body recibido:', JSON.stringify(body));
+    console.log('GEMINI_API_KEY existe:', !!process.env.GEMINI_API_KEY);
+    console.log('SUPABASE_URL existe:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+    
+    const { messages, context } = body;
     const { aulaGrado, areaMateria, fechaInicio, cantClases, userId } = context;
 
     // 1. Obtener contenidos previos de Supabase
