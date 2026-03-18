@@ -190,58 +190,62 @@ export default function ChatPage() {
 
       if (jsonMatch) {
         try {
-          const { planificacion } = JSON.parse(jsonMatch[0]);
-          const planId = uuidv4();
-          const fechasHabiles = generarFechasHabilesDesde(startDate, planificacion.length);
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.planificacion && Array.isArray(parsed.planificacion)) {
+            const planId = uuidv4();
+            const fechasHabiles = generarFechasHabilesDesde(startDate, parsed.planificacion.length);
 
-          const mappedDays: PlanDay[] = planificacion.map((d: any, idx: number) => ({
-            id: uuidv4(),
-            numero_clase: d.numero_clase || (idx + 1),
-            date: fechasHabiles[idx] || startDate,
-            dayOfWeek: d.dia_semana || new Date(fechasHabiles[idx] + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long' }),
-            topic: d.titulo || "Clase",
-            objetivo: d.objetivo || '',
-            contenido: d.contenido || d.description || '',
-            actividades: d.actividades || d.actividad || '',
-            recursos: d.recursos || '',
-            evaluacion: d.evaluacion || '',
-            status: 'Pendiente',
-            isHoliday: false,
-            resources: []
-          }));
+            const mappedDays: PlanDay[] = parsed.planificacion.map((d: any, idx: number) => ({
+              id: uuidv4(),
+              numero_clase: d.numero_clase || (idx + 1),
+              date: fechasHabiles[idx] || startDate,
+              dayOfWeek: d.dia_semana || new Date(fechasHabiles[idx] + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long' }),
+              topic: d.titulo || "Clase",
+              objetivo: d.objetivo || '',
+              contenido: d.contenido || d.description || '',
+              actividades: d.actividades || d.actividad || '',
+              recursos: d.recursos || '',
+              evaluacion: d.evaluacion || '',
+              status: 'Pendiente',
+              isHoliday: false,
+              resources: []
+            }));
 
-          const botMsg: ChatMessage = {
-            id: uuidv4(), role: 'assistant', userId: 'system',
-            content: 'Planificación finalizada ✅',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
+            const botMsg: ChatMessage = {
+              id: uuidv4(), role: 'assistant', userId: 'system',
+              content: 'Planificación finalizada ✅',
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
 
-          const planPayload: WeeklyPlan = {
-            id: planId,
-            userId: user?.id,
-            classroomId: selectedClassId,
-            subjectId: selectedSubjectId,
-            aula_grado: selectedClass?.name || 'Aula',
-            area_materia: subjectName,
-            weekStartDate: startDate,
-            numClasses: planificacion.length,
-            days: mappedDays,
-            messages: [...actualMessages, botMsg],
-            createdAt: new Date().toISOString()
-          };
+            const planPayload: WeeklyPlan = {
+              id: planId,
+              userId: user?.id,
+              classroomId: selectedClassId,
+              subjectId: selectedSubjectId,
+              aula_grado: selectedClass?.name || 'Aula',
+              area_materia: subjectName,
+              weekStartDate: startDate,
+              numClasses: parsed.planificacion.length,
+              days: mappedDays,
+              messages: [...actualMessages, botMsg],
+              createdAt: new Date().toISOString()
+            };
 
-          await fetch('/api/weeklyPlans', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(planPayload)
-          });
+            await fetch('/api/weeklyPlans', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(planPayload)
+            });
 
-          setAllPlans(prev => [planPayload, ...prev]);
-          setActivePlan(planPayload);
-          setAllMessages(prev => ({ ...prev, [key]: planPayload.messages as ChatMessage[] }));
-        } catch (parseError) {
-          console.error("Error parsing JSON:", parseError);
-          throw new Error("La IA respondió pero el formato de planificación no es válido.");
+            setAllPlans(prev => [planPayload, ...prev]);
+            setActivePlan(planPayload);
+            setAllMessages(prev => ({ ...prev, [key]: planPayload.messages as ChatMessage[] }));
+          } else {
+            throw new Error("El formato de planificación no contiene la lista de clases esperada.");
+          }
+        } catch (parseError: any) {
+          console.error("Error al procesar JSON de la IA:", parseError);
+          throw new Error("La IA generó una respuesta pero hubo un error al procesar el plan pedagógico.");
         }
       } else {
         const botMsg: ChatMessage = {
@@ -290,63 +294,78 @@ export default function ChatPage() {
     });
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!activePlan) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    
+    // Problema 6: Asegurar que se lee desde la DB real
+    try {
+      const res = await fetch(`/api/weeklyPlans?classroomId=${activePlan.classroomId}`);
+      const plans = await res.json();
+      const planFromDb = plans.find((p: any) => p.id === activePlan.id);
+      
+      const planToPrint = planFromDb || activePlan;
+      
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
 
-    const html = `
-      <html>
-        <head>
-          <title>Planificación - Aula Tranquila</title>
-          <style>
-             body { font-family: Arial, sans-serif; padding: 40px; color: #000; max-width: 850px; margin: 0 auto; }
-             .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-             .title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; text-transform: uppercase; }
-             .info-grid { display: grid; grid-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 14px; font-weight: bold; }
-             .clase { border: 1px solid #000; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; border-radius: 8px; }
-             .clase-header { font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; justify-content: space-between; }
-             .label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444; margin-top: 10px; display: block; }
-             .content { font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 5px; }
-             @media print { body { padding: 0; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-             <div class="title">Planificación Pedagógica</div>
-             <div class="info-grid">
-                <div>MATERIA: ${selectedSubject}</div>
-                <div>CURSO: ${activePlan.aula_grado}</div>
-                <div>DOCENTE: ${user?.name || '____________________'}</div>
-                <div>SEMANA DEL: ${formatLocalDate(activePlan.weekStartDate, { day: '2-digit', month: 'long', year: 'numeric' })}</div>
-             </div>
-          </div>
-          
-          ${activePlan.days.map(day => `
-            <div class="clase">
-              <div class="clase-header">
-                <span>CLASE ${day.numero_clase} — ${day.dayOfWeek}</span>
-                <span>FECHA: ${formatLocalDate(day.date)}</span>
-              </div>
-              <div class="label">TEMA</div>
-              <div class="content"><strong>${day.topic}</strong></div>
-              <div class="label">OBJETIVO</div>
-              <div class="content">${day.objetivo}</div>
-              <div class="label">CONTENIDO</div>
-              <div class="content">${day.contenido}</div>
-              <div class="label">ACTIVIDADES</div>
-              <div class="content">${day.actividades || 'No especificadas'}</div>
-              <div class="label">RECURSOS</div>
-              <div class="content">${day.recursos || 'No especificados'}</div>
+      const html = `
+        <html>
+          <head>
+            <title>Planificación - Aula Tranquila</title>
+            <style>
+               body { font-family: Arial, sans-serif; padding: 40px; color: #000; max-width: 850px; margin: 0 auto; }
+               .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+               .title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; text-transform: uppercase; }
+               .info-grid { display: grid; grid-cols: 1fr 1fr; gap: 10px; margin-bottom: 20px; font-size: 14px; font-weight: bold; }
+               .clase { border: 1px solid #000; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; border-radius: 8px; }
+               .clase-header { font-weight: bold; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; justify-content: space-between; }
+               .label { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444; margin-top: 10px; display: block; }
+               .content { font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 5px; }
+               @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+               <div class="title">Planificación Pedagógica</div>
+               <div class="info-grid">
+                  <div>MATERIA: ${planToPrint.area_materia}</div>
+                  <div>CURSO: ${planToPrint.aula_grado}</div>
+                  <div>DOCENTE: ${user?.name || '____________________'}</div>
+                  <div>SEMANA DEL: ${formatLocalDate(planToPrint.weekStartDate, { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+               </div>
             </div>
-          `).join('')}
-          
-          <script>window.onload = () => { window.print(); setTimeout(window.close, 500); }</script>
-        </body>
-      </html>
-    `;
-    printWindow.document.write(html);
-    printWindow.document.close();
+            
+            ${planToPrint.days.map((day: any) => `
+              <div class="clase">
+                <div class="clase-header">
+                  <span>CLASE ${day.numero_clase} — ${day.dayOfWeek}</span>
+                  <span>FECHA: ${formatLocalDate(day.date)}</span>
+                </div>
+                <div class="label">TEMA</div>
+                <div class="content"><strong>${day.topic}</strong></div>
+                <div class="label">OBJETIVO</div>
+                <div class="content">${day.objetivo}</div>
+                <div class="label">CONTENIDO</div>
+                <div class="content">${day.contenido}</div>
+                <div class="label">ACTIVIDADES</div>
+                <div class="content">${day.actividades || 'No especificadas'}</div>
+                <div class="label">RECURSOS</div>
+                <div class="content">${day.recursos || 'No especificados'}</div>
+                <div class="label">EVALUACIÓN</div>
+                <div class="content">${day.evaluacion || 'No especificada'}</div>
+              </div>
+            `).join('')}
+            
+            <script>window.onload = () => { window.print(); setTimeout(window.close, 500); }</script>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+      alert("Hubo un error al generar el PDF. Por favor, intentá de nuevo.");
+    }
   };
 
   return (
