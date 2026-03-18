@@ -392,3 +392,73 @@ export async function saveTicket(ticket: SupportTicket) {
   });
   if (error) throw error;
 }
+
+// --- NEW NOTAS SYSTEM (v4.0.0) ---
+
+export async function getNotasByStudent(dni: string, classroomId: string) {
+  const { data, error } = await db()
+    .from('notas')
+    .select('*')
+    .eq('alumno_dni', dni)
+    .eq('clase_id', classroomId)
+    .order('fecha', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching notas:', error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function upsertNota(nota: any) {
+  const { data, error } = await db()
+    .from('notas')
+    .upsert({
+      ...nota,
+      id: nota.id?.startsWith('grade-') ? undefined : nota.id // Handle fresh IDs
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error upserting nota:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function deleteNota(id: string) {
+  const { error } = await db()
+    .from('notas')
+    .delete()
+    .eq('id', id);
+    
+  return !error;
+}
+
+export async function getAveragesByStudent(dni: string, classroomId: string) {
+  const notas = await getNotasByStudent(dni, classroomId);
+  if (!notas.length) return { general: 0, bySubject: {} };
+
+  const subjects: Record<string, number[]> = {};
+  notas.forEach(n => {
+    if (!subjects[n.materia]) subjects[n.materia] = [];
+    subjects[n.materia].push(Number(n.nota));
+  });
+
+  const bySubject: Record<string, number> = {};
+  let totalSum = 0;
+  let totalCount = 0;
+
+  Object.entries(subjects).forEach(([sub, scores]) => {
+    const sum = scores.reduce((a, b) => a + b, 0);
+    bySubject[sub] = Number((sum / scores.length).toFixed(2));
+    totalSum += sum;
+    totalCount += scores.length;
+  });
+
+  return {
+    general: Number((totalSum / totalCount).toFixed(2)),
+    bySubject
+  };
+}

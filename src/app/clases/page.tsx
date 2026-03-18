@@ -3,16 +3,17 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import { Classroom, Student, User, GradeEntry } from '@/types';
+import { Classroom, Student, User } from '@/types';
 import { getSubjectName } from "@/constants/subjects";
 import { NewClassModal } from '@/components/NewClassModal';
 import { StudentModal } from '@/components/StudentModal';
 import { 
   Users, UserPlus, FileEdit, CheckCircle2, AlertCircle, 
   BookOpen, Trash2, UserPlus2, FileDown, UserCog, ChevronDown,
-  ClipboardList
+  ClipboardList, Plus, FileText
 } from 'lucide-react';
 import { GradeHistoryModal } from '@/components/GradeHistoryModal';
+import { GradesManagerModal } from '@/components/GradesManagerModal';
 
 export default function ClasesPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -28,6 +29,10 @@ export default function ClasesPage() {
   // Grade History Modal State
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<Student | null>(null);
+
+  // Grades Manager Modal State
+  const [isGradesManagerOpen, setIsGradesManagerOpen] = useState(false);
+  const [gradingStudent, setGradingStudent] = useState<Student | null>(null);
 
   // Loading state
   const [user, setUser] = useState<User | null>(null);
@@ -160,13 +165,22 @@ export default function ClasesPage() {
     setIsHistoryModalOpen(true);
   };
 
-  const openEditStudentModal = (student: Student) => {
-    setEditingStudent(student);
-    setIsStudentModalOpen(true);
+  const openGradesManager = (student: Student) => {
+    setGradingStudent(student);
+    setIsGradesManagerOpen(true);
+  };
+
+  const refreshTableData = async () => {
+    await fetchClassrooms();
   };
 
   const openNewStudentModal = () => {
     setEditingStudent(null);
+    setIsStudentModalOpen(true);
+  };
+
+  const openEditStudentModal = (student: Student) => {
+    setEditingStudent(student);
     setIsStudentModalOpen(true);
   };
 
@@ -182,7 +196,7 @@ export default function ClasesPage() {
           <style>
             body { font-family: sans-serif; padding: 40px; color: #333; }
             h1 { color: #7c3aed; margin-bottom: 5px; }
-            .header-info { margin-bottom: 30px; border-bottom: 2px solid #7c3aed; pb: 10px; }
+            .header-info { margin-bottom: 30px; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
             th { background-color: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; }
@@ -218,7 +232,7 @@ export default function ClasesPage() {
                   <td>
                     <div style="font-size: 10px;">
                       ${s.detailedGrades && s.detailedGrades.length > 0 
-                        ? s.detailedGrades.map(g => {
+                        ? s.detailedGrades.map((g: any) => {
                             const gradeSubjectId = String(g.subject_id || g.subjectId || '');
                             const subject = selectedClass.subjects.find(sub => 
                                String(sub.id) === gradeSubjectId || 
@@ -232,7 +246,7 @@ export default function ClasesPage() {
                     </div>
                   </td>
                   <td style="text-align: center; font-weight: 800; color: #7c3aed; font-size: 16px;">
-                    ${s.detailedGrades?.length ? (s.detailedGrades.reduce((a,b)=>a+b.score, 0)/s.detailedGrades.length).toFixed(1) : '-'}
+                    ${s.detailedGrades?.length ? (s.detailedGrades.reduce((a: number, b: any) => a + b.score, 0) / s.detailedGrades.length).toFixed(1) : '-'}
                   </td>
                 </tr>
               `).join('')}
@@ -264,7 +278,8 @@ export default function ClasesPage() {
       setIsLoading(false);
     }
   };
-   if (isLoading) {
+
+  if (isLoading) {
     return (
       <div className="flex flex-col h-[60vh] items-center justify-center text-slate-500 space-y-6">
         <div className="w-16 h-16 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin" />
@@ -274,11 +289,13 @@ export default function ClasesPage() {
   }
 
   return (
+    <>
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v3.3.0 • DNI RECOGNITION STABLE (RE-DEPLOY SYNC)
+        PRODUCTION BUILD v4.0.1 • GRADES MANAGER STABLE
       </div>
+      
       <NewClassModal 
         isOpen={isClassModalOpen} 
         onClose={() => setIsClassModalOpen(false)} 
@@ -301,6 +318,16 @@ export default function ClasesPage() {
         student={selectedStudentForHistory}
         subjects={selectedClass?.subjects || []}
       />
+
+      <GradesManagerModal
+        isOpen={isGradesManagerOpen}
+        onClose={() => setIsGradesManagerOpen(false)}
+        student={gradingStudent}
+        classroomId={selectedClassId || ""}
+        subjects={selectedClass?.subjects || []}
+        onUpdate={refreshTableData}
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
            <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Mis Clases</h1>
@@ -520,7 +547,17 @@ export default function ClasesPage() {
                                                <ClipboardList size={14} />
                                                Ver Notas
                                             </button>
-                                            <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-brand-orange rounded-xl border border-white/10 transition-all"><UserCog size={16} /></button>
+                                            <button 
+                                              onClick={() => openGradesManager(student)} 
+                                              className="p-3 bg-white/5 text-brand-orange hover:text-white hover:bg-brand-orange rounded-xl border border-white/10 transition-all shadow-md active:scale-95"
+                                              title="Gestionar Notas (Gear)"
+                                            >
+                                               <div className="relative">
+                                                  <UserCog size={16} />
+                                                  <Plus size={8} className="absolute -top-1 -right-1 font-black" />
+                                               </div>
+                                            </button>
+                                            <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-slate-700 rounded-xl border border-white/10 transition-all" title="Editar Perfil"><FileText size={16} /></button>
                                             <button onClick={() => handleDeleteStudent(student.dni || (student as any).id)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
                                          </div>
                                       </td>
@@ -543,13 +580,21 @@ export default function ClasesPage() {
                 </div>
              </div>
            )}
-            {/* Version Marker for debugging */}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v3.3.0 - DNI Recognition Stable</span>
+               <span>Aula Tranquila v4.0.1 - Grades Manager Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>
         </div>
       </div>
+      <GradesManagerModal
+        isOpen={isGradesManagerOpen}
+        onClose={() => setIsGradesManagerOpen(false)}
+        student={gradingStudent}
+        classroomId={selectedClassId || ""}
+        subjects={selectedClass?.subjects || []}
+        onUpdate={refreshTableData}
+      />
+    </>
   );
 }
