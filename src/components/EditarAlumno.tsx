@@ -7,11 +7,13 @@ import { supabase } from "@/lib/supabase";
 
 interface EditarAlumnoProps {
   alumno: Student;
+  userId: string;
+  classroomId: string;
   onCerrar: () => void;
   onGuardado: () => void;
 }
 
-export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps) {
+export function EditarAlumno({ alumno, userId, classroomId, onCerrar, onGuardado }: EditarAlumnoProps) {
   const [name, setName] = useState("");
   const [dni, setDni] = useState("");
   const [duaTagsInput, setDuaTagsInput] = useState("");
@@ -48,38 +50,33 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
     setGuardando(true);
     setError(null);
 
-    // 2. Armar el objeto a actualizar SIN el DNI (no se modifica)
+    // 2. Armar el objeto para UPSERT (Si existe lo actualiza, si no lo crea)
     const datosAActualizar = {
-      name: safeName,              // ← Columna original en Supabase
-      dua_context_tags: dua_context_tags // ← Columna original en Supabase
+      dni: dni,                          // ← PK verificada
+      name: safeName,                    // ← Columna original en Supabase
+      dua_context_tags: dua_context_tags, // ← Columna original en Supabase
+      classroom_id: classroomId,         // ← Requerido para nuevo registro
+      user_id: userId,                   // ← Requerido para nuevo registro
     };
 
-    console.log("Intentando UPDATE en Supabase para DNI:", dni);
+    console.log("Intentando UPSERT en Supabase para DNI:", dni);
     console.log("Datos a enviar:", datosAActualizar);
 
     try {
-      // 3. Hacer UPDATE en Supabase
+      // 3. Hacer UPSERT en Supabase (usamos upsert para migrar legacy si es necesario)
       const { data, error: supabaseError } = await supabase
         .from('students')               // ← Tabla verificada
-        .update(datosAActualizar)
-        .eq('dni', dni)                 // ← PK verificada
+        .upsert(datosAActualizar)
         .select();                      // .select() para confirmar impacto
 
       if (supabaseError) {
-        console.error('Error en el UPDATE de Supabase:', supabaseError);
+        console.error('Error en el UPSERT de Supabase:', supabaseError);
         setError("Error al guardar: " + supabaseError.message);
         setGuardando(false);
         return;
       }
 
-      if (!data || data.length === 0) {
-        console.error('UPDATE no impactó ningún registro. Verificar que el DNI existe en la tabla students.');
-        setError("No se encontró el registro para actualizar (DNI: " + dni + ")");
-        setGuardando(false);
-        return;
-      }
-
-      console.log('Alumno actualizado correctamente:', data);
+      console.log('Alumno guardado correctamente (UPSERT):', data);
       setGuardando(false);
       onGuardado(); // cerrar modal y recargar lista
     } catch (err: any) {

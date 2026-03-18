@@ -382,6 +382,8 @@ export default function ClasesPage() {
       {modalEditarAbierto && alumnoAEditar && (
         <EditarAlumno
           alumno={alumnoAEditar}
+          userId={user?.id || ''}
+          classroomId={selectedClassId || ''}
           onCerrar={() => {
             setModalEditarAbierto(false);
             setAlumnoAEditar(null);
