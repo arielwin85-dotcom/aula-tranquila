@@ -111,16 +111,35 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   });
 }
 
-export async function getWeeklyPlans(classroomId?: string): Promise<any[]> {
-  let query = db().from('weekly_plans').select('*');
+export async function getWeeklyPlans(classroomId?: string, userId?: string): Promise<any[]> {
+  let query = db().from('planificaciones').select('*');
   if (classroomId) query = query.eq('classroom_id', classroomId);
+  if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    console.error('Error fetching planificaciones:', error);
+    // Fallback attempt to old table if new one fails (during migration)
+    const oldRes = await db().from('weekly_plans').select('*');
+    if (!oldRes.error) {
+      return (oldRes.data || []).map((p: any) => ({
+        ...p,
+        classroomId: p.classroom_id,
+        weekStartDate: p.week_start_date,
+      }));
+    }
+    return [];
+  }
+
   return (data || []).map((p: any) => ({
     ...p,
     classroomId: p.classroom_id,
-    weekStartDate: p.week_start_date,
+    weekStartDate: p.fecha_inicio || p.week_start_date,
+    numClasses: p.cant_clases,
+    days: p.clases || p.days,
+    messages: p.chat_historial,
+    aula_grado: p.aula_grado,
+    area_materia: p.area_materia
   }));
 }
 
@@ -155,20 +174,41 @@ export async function saveClassroom(classroom: Classroom) {
 }
 
 export async function saveWeeklyPlan(plan: any) {
-  const { data, error } = await db().from('weekly_plans').upsert({
+  const payload = {
     id: plan.id,
+    user_id: plan.userId,
     classroom_id: plan.classroomId,
     subject_id: plan.subjectId,
-    week_start_date: plan.weekStartDate,
-    days: plan.days,
-  });
-  if (error) throw error;
+    aula_grado: plan.aula_grado || 'Aula Sin Nombre',
+    area_materia: plan.area_materia || 'Materia Sin Nombre',
+    fecha_inicio: plan.weekStartDate,
+    cant_clases: plan.numClasses || plan.days?.length || 0,
+    clases: plan.days,
+    chat_historial: plan.messages || [],
+  };
+
+  const { data, error } = await db().from('planificaciones').upsert(payload);
+  
+  if (error) {
+    console.warn('Failed to save to planificaciones, trying weekly_plans fallback...', error.message);
+    // Fallback to old schema if table doesn't exist
+    return await db().from('weekly_plans').upsert({
+      id: plan.id,
+      classroom_id: plan.classroomId,
+      subject_id: plan.subjectId,
+      week_start_date: plan.weekStartDate,
+      days: plan.days,
+    });
+  }
   return data;
 }
 
 export async function deleteWeeklyPlan(id: string) {
-  const { error } = await db().from('weekly_plans').delete().eq('id', id);
-  if (error) throw error;
+  const { error } = await db().from('planificaciones').delete().eq('id', id);
+  if (error) {
+     // Try old table fallback
+     await db().from('weekly_plans').delete().eq('id', id);
+  }
   return true;
 }
 

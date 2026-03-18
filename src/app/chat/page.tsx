@@ -19,7 +19,7 @@ export default function ChatPage() {
   const [activePlan, setActivePlan] = useState<WeeklyPlan | null>(null);
   const [allPlans, setAllPlans] = useState<WeeklyPlan[]>([]);
   const [chatView, setChatView] = useState<'chat' | 'history'>('chat');
-  
+  const [user, setUser] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
@@ -80,6 +80,12 @@ export default function ChatPage() {
           if (classes.length > 0) setSelectedClassId(classes[0].id);
         }
 
+        const meRes = await fetch('/api/auth/me');
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setUser(meData.user);
+        }
+
         if (plansRes.ok) {
           const plans = await plansRes.json();
           setAllPlans(plans);
@@ -101,6 +107,14 @@ export default function ChatPage() {
     
     if (matchedPlan) {
       setActivePlan(matchedPlan);
+      // Sync messages from plan to chat history
+      if (matchedPlan.messages && matchedPlan.messages.length > 0) {
+        const key = `${matchedPlan.classroomId}-${matchedPlan.subjectId}`;
+        setAllMessages(prev => ({
+          ...prev,
+          [key]: matchedPlan.messages || []
+        }));
+      }
     } else {
       setActivePlan(null);
     }
@@ -277,23 +291,28 @@ export default function ChatPage() {
           return dayObj;
         });
 
-        const newPlan: WeeklyPlan = {
+        const planPayload: WeeklyPlan = {
           id: newPlanId,
+          userId: user?.id,
           classroomId: selectedClassId,
           subjectId: selectedSubjectId,
+          aula_grado: selectedClass?.name || 'Aula',
+          area_materia: selectedSubject || 'Materia',
           weekStartDate: new Date(startDate).toISOString(),
+          numClasses: numClasses,
           days: mappedDays,
+          messages: [...(allMessages[key] || currentMessages), newUserMsg],
           createdAt: new Date().toISOString()
         };
 
         await fetch('/api/weeklyPlans', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newPlan)
+          body: JSON.stringify(planPayload)
         });
 
-        setAllPlans(prev => [...prev, newPlan]);
-        setActivePlan(newPlan);
+        setAllPlans(prev => [...prev, planPayload]);
+        setActivePlan(planPayload);
 
         const botMsg: ChatMessage = {
           id: uuidv4(), role: 'assistant', userId: 'system',

@@ -77,9 +77,14 @@ export interface PlanDay {
 
 export interface WeeklyPlan {
   id: string;
+  userId?: string;
   classroomId: string;
   subjectId: string;
+  aula_grado?: string;
+  area_materia?: string;
   weekStartDate: string;
+  numClasses?: number;
   days: PlanDay[];
+  messages?: ChatMessage[];
   createdAt: string;
 }
