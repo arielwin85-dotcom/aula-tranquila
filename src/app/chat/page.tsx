@@ -609,7 +609,32 @@ export default function ChatPage() {
                        </div>
                        {!day.isHoliday && (
                          <div className="space-y-4">
-                            <p className="text-xs text-slate-400 font-bold leading-relaxed line-clamp-3">{day.description}</p>
+                             <p className="text-xs text-slate-400 font-bold leading-relaxed line-clamp-3">{day.description}</p>
+                             
+                             {/* CAMBIO 5: Recursos sugeridos de Mi Biblioteca */}
+                             {day.resources && day.resources.length > 0 && (
+                               <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+                                  <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest flex items-center gap-1.5">
+                                    📎 Recursos sugeridos
+                                  </p>
+                                  <div className="flex flex-col gap-2">
+                                     {day.resources.map((res: any) => (
+                                       <a 
+                                         key={res.id} 
+                                         href={res.webViewLink} 
+                                         target="_blank" 
+                                         rel="noreferrer" 
+                                         className="flex items-center gap-3 p-2 bg-black/20 border border-white/5 rounded-xl hover:border-brand-orange transition-all group"
+                                       >
+                                          <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition-all">
+                                             <FileText size={12} />
+                                          </div>
+                                          <span className="text-[9px] font-bold text-slate-300 truncate uppercase tracking-tight">{res.name}</span>
+                                       </a>
+                                     ))}
+                                  </div>
+                               </div>
+                             )}
                             <div className="flex justify-between items-center pt-3 border-t border-white/5">
                                <button 
                                  onClick={() => handleUpdateDay(day.id, { status: day.status === 'Completado' ? 'Pendiente' : 'Completado' })}
