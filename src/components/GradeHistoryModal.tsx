@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Calendar as CalendarIcon, Trash2, BookOpen, GraduationCap } from "lucide-react";
+import { X, Calendar as CalendarIcon, BookOpen, GraduationCap, Calculator } from "lucide-react";
 import { Student, Subject } from "@/types";
 import { getSubjectName } from "@/constants/subjects";
 
@@ -14,9 +14,31 @@ interface GradeHistoryModalProps {
 export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeHistoryModalProps) {
   if (!isOpen || !student) return null;
 
+  // Grouping logic
+  const gradesBySubject: Record<string, any[]> = {};
+  const detailedGrades = student.detailedGrades || [];
+
+  detailedGrades.forEach(grade => {
+    const rawId = (grade.subject_id || grade.subjectId || '').toString();
+    const subject = subjects.find(s =>
+      (s.id && String(s.id) === rawId) ||
+      (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
+    );
+    const subjectName = subject?.name || getSubjectName(rawId);
+    
+    if (!gradesBySubject[subjectName]) {
+      gradesBySubject[subjectName] = [];
+    }
+    gradesBySubject[subjectName].push(grade);
+  });
+
+  const generalAverage = detailedGrades.length
+    ? (detailedGrades.reduce((a, b) => a + (b.score || 0), 0) / detailedGrades.length).toFixed(1)
+    : "0.0";
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4">
-      <div className="bg-brand-navy border border-white/10 rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]">
+      <div className="bg-brand-navy border border-white/10 rounded-[3rem] shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="px-10 py-8 border-b border-white/5 flex justify-between items-center bg-white/5">
@@ -29,7 +51,7 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
                 Historial Académico
               </h2>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">
-                Registros detallados de {student.name}
+                👤 Alumno: {student.name}
               </p>
             </div>
           </div>
@@ -38,64 +60,48 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
           </button>
         </div>
 
-        {/* Legend / Stats */}
-        <div className="px-10 py-4 bg-white/2 border-b border-white/5 flex gap-8">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Total Notas:</span>
-            <span className="text-xs font-black text-white">{student.detailedGrades?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Promedio Actual:</span>
-            <span className="text-xs font-black text-brand-orange">
-              {student.detailedGrades?.length
-                ? (student.detailedGrades.reduce((a, b) => a + b.score, 0) / student.detailedGrades.length).toFixed(1)
-                : "---"}
-            </span>
-          </div>
-        </div>
-
-        {/* Grid Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-10">
-          {!student.detailedGrades?.length ? (
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-8">
+          {Object.keys(gradesBySubject).length === 0 ? (
             <div className="h-60 flex flex-col items-center justify-center space-y-4 opacity-30">
               <BookOpen size={48} className="text-slate-500" />
               <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Sin registros históricos</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {/* Header Grid (Hidden on mobile) */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 mb-2">
-                <div className="col-span-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">Fecha</div>
-                <div className="col-span-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">Materia</div>
-                <div className="col-span-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">Tema / Evaluación</div>
-                <div className="col-span-1 text-[9px] font-black text-slate-600 uppercase tracking-widest text-right">Nota</div>
-              </div>
-
-              {[...(student.detailedGrades || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => {
-                const rawId = (grade.subject_id || grade.subjectId || '').toString();
-                const subject = subjects.find(s =>
-                  (s.id && String(s.id) === rawId) ||
-                  (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
-                );
-                const subjectName = subject?.name || getSubjectName(rawId);
+            <div className="space-y-10">
+              {Object.entries(gradesBySubject).map(([subjectName, grades]) => {
+                const subjectAverage = (grades.reduce((a, b) => a + (b.score || 0), 0) / grades.length).toFixed(1);
+                
                 return (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-12 items-center gap-4 bg-white/5 border border-white/5 p-6 rounded-3xl hover:border-brand-orange/30 transition-all hover:bg-brand-orange/[0.02]">
-                    <div className="col-span-2 flex items-center gap-2">
-                      <CalendarIcon size={12} className="text-slate-500" />
-                      <span className="text-[10px] font-black text-slate-400">{grade.date ? new Date(grade.date).toLocaleDateString() : 'S/F'}</span>
+                  <div key={subjectName} className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-brand-orange/20 pb-4">
+                       <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-brand-orange/10 flex items-center justify-center text-brand-orange">
+                          <BookOpen size={16} />
+                        </div>
+                        <h3 className="text-lg font-black text-white uppercase tracking-tight">{subjectName}</h3>
+                       </div>
+                       <div className="bg-brand-orange/10 px-4 py-2 rounded-xl border border-brand-orange/20">
+                         <span className="text-[9px] font-black text-brand-orange uppercase tracking-widest mr-2">Promedio:</span>
+                         <span className="text-sm font-black text-white">{subjectAverage}</span>
+                       </div>
                     </div>
-                    <div className="col-span-3">
-                      <span className="px-3 py-1 bg-white/5 rounded-xl text-[9px] font-black text-brand-orange uppercase tracking-widest border border-white/5">
-                        {subjectName}
-                      </span>
-                    </div>
-                    <div className="col-span-6">
-                      <p className="text-sm font-bold text-white tracking-tight leading-relaxed">{grade.topic || 'Sin tema'}</p>
-                    </div>
-                    <div className="col-span-1 text-right">
-                      <span className={`text-xl font-black ${grade.score >= 7 ? 'text-emerald-400' : grade.score >= 4 ? 'text-brand-orange' : 'text-rose-500'}`}>
-                        {grade.score}
-                      </span>
+
+                    <div className="grid gap-3">
+                      {grades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-white/2 border border-white/5 p-4 rounded-2xl hover:bg-white/5 transition-all">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-white tracking-tight">{grade.topic || 'Evaluación'}</span>
+                            <div className="flex items-center gap-2 mt-1 opacity-50">
+                              <CalendarIcon size={10} />
+                              <span className="text-[9px] font-black uppercase tracking-widest">{new Date(grade.date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <span className={`text-lg font-black ${grade.score >= 7 ? 'text-emerald-400' : grade.score >= 4 ? 'text-brand-orange' : 'text-rose-500'}`}>
+                            {grade.score} pts
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
@@ -104,11 +110,26 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-10 border-t border-white/5 bg-black/20 text-center">
+        {/* Global Footer Stats */}
+        <div className="px-10 py-8 border-t border-white/5 bg-black/40 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">General</span>
+              <div className="flex items-center gap-2">
+                <Calculator size={16} className="text-brand-orange" />
+                <span className="text-2xl font-black text-white font-montserrat">Promedio: {generalAverage}</span>
+              </div>
+            </div>
+            <div className="w-px h-10 bg-white/5 hidden md:block" />
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Notas</span>
+              <span className="text-lg font-black text-slate-300">{detailedGrades.length}</span>
+            </div>
+          </div>
+          
           <button
             onClick={onClose}
-            className="px-10 py-4 bg-white/5 text-slate-400 hover:text-white border border-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all"
+            className="w-full md:w-auto px-10 py-5 bg-brand-orange text-white rounded-[1.5rem] font-black uppercase tracking-widest text-[11px] hover:scale-105 transition-all shadow-xl shadow-brand-orange/20"
           >
             Cerrar Historial
           </button>

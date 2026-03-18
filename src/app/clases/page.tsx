@@ -192,67 +192,104 @@ export default function ClasesPage() {
     const html = `
       <html>
         <head>
-          <title>Informe de Clase - ${selectedClass.name}</title>
+          <title>Informe Pedagógico - ${selectedClass.name}</title>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; }
-            h1 { color: #7c3aed; margin-bottom: 5px; }
-            .header-info { margin-bottom: 30px; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; }
-            .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; background: #f3e8ff; color: #7e22ce; margin-right: 4px; }
-            .score { font-weight: bold; }
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+            h1 { color: #f97316; font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; font-size: 28px; letter-spacing: -0.02em; }
+            .header-info { margin-bottom: 40px; border-bottom: 4px solid #f97316; padding-bottom: 20px; }
+            .class-meta { color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+            
+            .student-card { margin-bottom: 40px; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; page-break-inside: avoid; }
+            .student-header { background: #f8fafc; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+            .student-name { font-family: 'Montserrat', sans-serif; font-weight: 900; color: #0f172a; font-size: 18px; text-transform: uppercase; }
+            .student-dni { color: #f97316; font-weight: 800; font-size: 12px; }
+            
+            .content-section { padding: 20px; }
+            .subject-group { margin-bottom: 25px; }
+            .subject-title { font-weight: 900; text-transform: uppercase; font-size: 12px; color: #64748b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+            .subject-avg { color: #f97316; }
+            
+            .grade-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: #475569; }
+            .grade-topic { font-weight: 600; }
+            .grade-score { font-weight: 800; color: #0f172a; }
+            
+            .dua-tags { margin-top: 15px; display: flex; gap: 5px; flex-wrap: wrap; }
+            .tag { background: #fff7ed; color: #c2410c; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 1px solid #ffedd5; }
+            
+            .general-avg-box { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+            .general-avg-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
+            .general-avg-value { font-size: 20px; font-weight: 900; }
+            
+            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; letter-spacing: 0.2em; }
           </style>
         </head>
         <body>
           <div class="header-info">
-            <h1>Aula Tranquila - Informe Pedagógico</h1>
-            <p><strong>Clase:</strong> ${selectedClass.name} | <strong>Ciclo:</strong> ${selectedClass.year}</p>
+            <h1>Aula Tranquila</h1>
+            <div class="class-meta">Informe Pedagógico de Clase | ${selectedClass.name} | Ciclo ${selectedClass.year}</div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Alumno</th>
-                <th>DUA / Observaciones</th>
-                <th>Calificaciones Detalladas</th>
-                <th>Promedio</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${selectedClass.students.map(s => `
-                <tr>
-                  <td>
-                    <div style="font-weight: bold; font-size: 14px;">${s.name}</div>
-                    <div style="font-size: 10px; color: #666;">Asistencia: ${s.attendance}%</div>
-                  </td>
-                  <td>
-                    ${s.duaContextTags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                    ${s.duaContextTags.length === 0 ? '<span style="color: #ccc; font-size: 10px;">Sin etiquetas DUA</span>' : ''}
-                  </td>
-                  <td>
-                    <div style="font-size: 10px;">
-                      ${s.detailedGrades && s.detailedGrades.length > 0 
-                        ? s.detailedGrades.map((g: any) => {
-                            const gradeSubjectId = String(g.subject_id || g.subjectId || '');
-                            const subject = selectedClass.subjects.find(sub => 
-                               String(sub.id) === gradeSubjectId || 
-                               String(sub.name).toLowerCase() === gradeSubjectId.toLowerCase()
-                            );
-                            const subjectName = subject?.name || getSubjectName(gradeSubjectId);
-                            return `<div>• <strong>${g.score}</strong> - ${subjectName}: ${g.topic} (${new Date(g.date).toLocaleDateString()})</div>`;
-                          }).join('')
-                        : '<span style="color: #999;">Sin notas registradas</span>'
-                      }
-                    </div>
-                  </td>
-                  <td style="text-align: center; font-weight: 800; color: #7c3aed; font-size: 16px;">
-                    ${s.detailedGrades?.length ? (s.detailedGrades.reduce((a: number, b: any) => a + b.score, 0) / s.detailedGrades.length).toFixed(1) : '-'}
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <p style="margin-top: 30px; font-size: 10px; color: #999; text-align: center;">Documento generado por Aula Tranquila - IA Pedagógica</p>
+
+          ${selectedClass.students.map(s => {
+            const gradesBySubject: Record<string, any[]> = {};
+            const detailed = s.detailedGrades || [];
+            
+            detailed.forEach(g => {
+              const rawId = String(g.subject_id || g.subjectId || '');
+              const subject = selectedClass.subjects.find(sub => 
+                 String(sub.id) === rawId || String(sub.name).toLowerCase() === rawId.toLowerCase()
+              );
+              const sName = subject?.name || getSubjectName(rawId);
+              if (!gradesBySubject[sName]) gradesBySubject[sName] = [];
+              gradesBySubject[sName].push(g);
+            });
+
+            const genAvg = detailed.length 
+              ? (detailed.reduce((a, b) => a + (b.score || 0), 0) / detailed.length).toFixed(1)
+              : "0.0";
+
+            return `
+              <div class="student-card">
+                <div class="student-header">
+                  <div class="student-name">${s.name}</div>
+                  <div class="student-dni">DNI: ${s.dni || (s as any).id || "S/D"}</div>
+                </div>
+                
+                <div class="content-section">
+                  ${Object.entries(gradesBySubject).map(([sub, gs]) => {
+                    const subAvg = (gs.reduce((a, b) => a + (b.score || 0), 0) / gs.length).toFixed(1);
+                    return `
+                      <div class="subject-group">
+                        <div class="subject-title">
+                          <span>📚 ${sub}</span>
+                          <span class="subject-avg">Promedio: ${subAvg}</span>
+                        </div>
+                        ${gs.map(g => `
+                          <div class="grade-item">
+                            <span class="grade-topic">${g.topic || 'Evaluación'} <span style="font-size: 9px; opacity: 0.5; font-weight: normal;">(${new Date(g.date).toLocaleDateString()})</span></span>
+                            <span class="grade-score">${g.score}</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `;
+                  }).join('')}
+
+                  ${Object.keys(gradesBySubject).length === 0 ? '<p style="color: #94a3b8; font-size: 12px; font-style: italic;">Sin notas registradas aún.</p>' : ''}
+
+                  <div class="dua-tags">
+                    ${(s.duaContextTags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                  </div>
+                </div>
+
+                <div class="general-avg-box">
+                  <span class="general-avg-label">Promedio General</span>
+                  <span class="general-avg-value">${genAvg}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <div class="footer">Generado por Aula Tranquila v4.1.0 • ${new Date().toLocaleDateString()}</div>
           <script>window.print();</script>
         </body>
       </html>
@@ -293,7 +330,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v4.0.1 • GRADES MANAGER STABLE
+        PRODUCTION BUILD v4.1.0 • PANEL STABLE
       </div>
       
       <NewClassModal 
@@ -471,8 +508,6 @@ export default function ClasesPage() {
                             <thead>
                                <tr className="bg-white/2 text-slate-600 text-[10px] font-black uppercase tracking-[0.3em] border-b border-white/5">
                                   <th className="p-8">Alumno</th>
-                                  <th className="p-8">DNI / Documento</th>
-                                  <th className="p-8">Asistencia</th>
                                   <th className="p-8">Promedio</th>
                                   <th className="p-8">Seguimiento DUA</th>
                                   <th className="p-8 w-24">Acciones</th>
@@ -506,21 +541,12 @@ export default function ClasesPage() {
                                                      );
                                                   })}
                                                  {student.detailedGrades && student.detailedGrades.length > 3 && (
-                                                    <span className="text-[8px] text-brand-orange font-black">+{student.detailedGrades.length - 3}</span>
+                                                     <span className="text-[8px] text-brand-orange font-black">+{student.detailedGrades.length - 3}</span>
                                                  )}
                                               </div>
                                            </div>
                                         </div>
                                      </td>
-                                     <td className="p-8">
-                                         <span className="text-[10px] font-black text-brand-orange uppercase tracking-widest">{student.dni || (student as any).id || "S/D"}</span>
-                                      </td>
-                                      <td className="p-8">
-                                         <div className="flex items-center gap-3">
-                                            <span className={`text-sm font-black ${student.attendance >= 80 ? 'text-emerald-400' : 'text-amber-500'}`}>{student.attendance}%</span>
-                                            {student.attendance >= 80 ? <CheckCircle2 size={14} className="text-emerald-500" /> : <AlertCircle size={14} className="text-amber-500" />}
-                                         </div>
-                                      </td>
                                       <td className="p-8">
                                          <span className="font-black text-slate-400">
                                             {student.detailedGrades?.length ? 
@@ -581,20 +607,12 @@ export default function ClasesPage() {
              </div>
            )}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v4.0.1 - Grades Manager Stable</span>
+               <span>Aula Tranquila v4.1.0 - Panel Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>
         </div>
       </div>
-      <GradesManagerModal
-        isOpen={isGradesManagerOpen}
-        onClose={() => setIsGradesManagerOpen(false)}
-        student={gradingStudent}
-        classroomId={selectedClassId || ""}
-        subjects={selectedClass?.subjects || []}
-        onUpdate={refreshTableData}
-      />
     </>
   );
 }
