@@ -441,7 +441,7 @@ export async function getAveragesByStudent(dni: string, classroomId: string) {
   if (!notas.length) return { general: 0, bySubject: {} };
 
   const subjects: Record<string, number[]> = {};
-  notas.forEach(n => {
+  notas.forEach((n: any) => {
     if (!subjects[n.materia]) subjects[n.materia] = [];
     subjects[n.materia].push(Number(n.nota));
   });
