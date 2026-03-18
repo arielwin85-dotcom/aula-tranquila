@@ -111,7 +111,7 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   });
 }
 
-export async function getWeeklyPlans(classroomId?: string, userId?: string): Promise<any[]> {
+export async function getWeeklyPlans(classroomId?: string, userId?: string, aula_grado?: string, area_materia?: string): Promise<any[]> {
   // Query normalizada con clases anidadas
   let query = db().from('planificaciones').select(`
     *,
@@ -119,6 +119,8 @@ export async function getWeeklyPlans(classroomId?: string, userId?: string): Pro
   `);
   
   if (userId) query = query.eq('user_id', userId);
+  if (aula_grado) query = query.eq('aula_grado', aula_grado);
+  if (area_materia) query = query.eq('area_materia', area_materia);
 
   const { data, error } = await query.order('created_at', { ascending: false });
   
@@ -149,15 +151,31 @@ export async function getWeeklyPlans(classroomId?: string, userId?: string): Pro
       .sort((a: any, b: any) => a.numero_clase - b.numero_clase)
       .map((c: any) => ({
         id: c.id,
-        dayOfWeek: `Clase ${c.numero_clase}`,
+        numero_clase: c.numero_clase,
+        dayOfWeek: c.dia_semana || `Clase ${c.numero_clase}`,
         topic: c.titulo,
-        description: c.descripcion,
         objetivo: c.objetivo,
-        actividad: c.actividad,
+        contenido: c.contenido,
+        actividades: c.actividades,
+        recursos: c.recursos,
+        evaluacion: c.evaluacion,
         status: c.estado === 'COMPLETADO' ? 'Completado' : 'Pendiente',
         isHoliday: false
       }))
   }));
+}
+
+export async function obtenerContenidosPrevios(userId: string, aula_grado: string, area_materia: string): Promise<string> {
+  const { data, error } = await db()
+    .from('contenidos_dados')
+    .select('tema, fecha_dada')
+    .eq('user_id', userId)
+    .eq('aula_grado', aula_grado)
+    .eq('area_materia', area_materia)
+    .order('fecha_dada', { ascending: true });
+
+  if (error || !data || data.length === 0) return 'Ninguno aún.';
+  return (data as any[]).map((c: any) => `- ${c.tema} (${c.fecha_dada})`).join('\n');
 }
 
 export async function readDB(): Promise<Database> {
@@ -206,25 +224,36 @@ export async function saveWeeklyPlan(plan: any) {
   if (errorPlan) throw errorPlan;
 
   // 2. Detalle (Clases)
-  // Borramos clases previas para este plan_id
   await db().from('planificacion_clases').delete().eq('planificacion_id', plan.id);
 
   const clasesPayload = (plan.days || []).map((day: any, index: number) => ({
     planificacion_id: plan.id,
-    numero_clase: index + 1,
-    fecha: plan.weekStartDate, // aproximación
-    titulo: day.topic,
-    descripcion: day.description || '',
+    numero_clase: day.numero_clase || index + 1,
+    fecha: day.fecha || plan.weekStartDate,
+    dia_semana: day.dia_semana,
+    titulo: day.topic || day.titulo,
     objetivo: day.objetivo || '',
-    actividad: day.actividad || '',
+    contenido: day.contenido || day.description || '',
+    actividades: day.actividades || day.actividad || '',
+    recursos: day.recursos || '',
+    evaluacion: day.evaluacion || '',
     estado: day.status === 'Completado' ? 'COMPLETADO' : 'PENDIENTE'
   }));
 
   const { error: errorClases } = await db().from('planificacion_clases').insert(clasesPayload);
-  if (errorClases) {
-    console.error('Error saving planificacion_clases:', errorClases);
-    // No lanzamos error para no romper todo si la tabla de clases falla pero el cabezal funcionó
-  }
+  if (errorClases) console.error('Error saving planificacion_clases:', errorClases);
+
+  // 3. Registrar en memoria de contenidos dados
+  const temasPayload = (plan.days || []).map((day: any) => ({
+    user_id: plan.userId,
+    aula_grado: plan.aula_grado,
+    area_materia: plan.area_materia,
+    tema: day.topic || day.titulo,
+    fecha_dada: day.fecha || plan.weekStartDate
+  }));
+
+  const { error: errorTemas } = await db().from('contenidos_dados').upsert(temasPayload, { onConflict: 'user_id,aula_grado,area_materia,tema' });
+  if (errorTemas) console.error('Error saving contenidos_dados:', errorTemas);
 
   return { success: true };
 }

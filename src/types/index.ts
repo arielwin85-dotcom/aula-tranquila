@@ -66,10 +66,16 @@ export type DayStatus = 'Pendiente' | 'Completado' | 'Atrasado';
 
 export interface PlanDay {
   id: string;
+  numero_clase?: number;
   date: string;
   dayOfWeek: string;
   topic: string; // What the AI planned for this day
-  description: string;
+  objetivo?: string;
+  contenido?: string;
+  actividades?: string;
+  recursos?: string | any[]; // Puede ser texto o array de docs
+  evaluacion?: string;
+  description?: string; // Mantener por compatibilidad
   isHoliday: boolean; // Marked explicitly by the teacher
   status: DayStatus; 
   resources?: any[];

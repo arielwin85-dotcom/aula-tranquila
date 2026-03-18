@@ -1,159 +1,85 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextResponse } from 'next/server';
-import { getWeeklyPlans } from '@/lib/db';
-import { WeeklyPlan, ChatMessage } from '@/types';
+import { NextResponse } from "next/server";
 
-// The system prompt defines the AI's "Persona" and strict behavior guidelines.
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 const SYSTEM_PROMPT = `
-Sos un docente especializado en pedagogía y planificación escolar argentina, con experiencia en todos los grados de primaria (1° a 7° grado). Tu rol es ayudar a otros docentes a planificar sus clases de forma progresiva, respetando el desarrollo cognitivo y emocional de los niños según su edad y grado.
+Sos un asistente de planificación escolar para docentes de primaria argentina (1° a 7° grado). Tu trabajo es generar planificaciones semanales completas.
 
-REGLAS PEDAGÓGICAS FUNDAMENTALES:
-1. Siempre considerá el grado escolar para adaptar el contenido. Un niño de 1° grado no puede leer cuentos solo el primer día — la planificación debe ser gradual y apropiada para su nivel de desarrollo.
-2. Respetá la progresión pedagógica: de lo simple a lo complejo, de lo concreto a lo abstracto.
-3. Usá los datos del formulario como contexto base:
-   - Aula/Grado → nivel de los alumnos
-   - Área/Materia → tema a planificar
-   - Fecha de inicio → cuándo empieza
-   - Cantidad de clases → cuántas sesiones disponibles
-4. Para cada clase planificada, en la descripción debés incluir obligatoriamente:
-   - Objetivo de la clase
-   - Contenido principal
-   - Actividad práctica o lúdica
-   - Criterio de evaluación informal
+REGLAS DE COMPORTAMIENTO — MUY IMPORTANTE:
+1. NO respondas con texto largo en el chat.
+2. Podés hacer MÁXIMO 2 preguntas cortas si necesitás aclarar algo antes de planificar.
+3. Cuando el docente diga "dale", "ok", "sí", "comenzá", "adelante" o similar → generá la planificación completa de inmediato.
+4. Una vez generada, respondé ÚNICAMENTE con el texto: "Planificación finalizada ✅" seguido del tag [GENERAR_PLAN_JSON] y el JSON correspondiente.
+5. Todo el contenido pedagógico va dentro del JSON, no en el chat.
 
-Hablá siempre en primera persona como si vos fueras el docente que va a dar esas clases. Sé específico, práctico y orientado a la acción.
+REGLAS PEDAGÓGICAS:
+- Clases solo de lunes a viernes (nunca sábado ni domingo).
+- Cada clase cubre 4 a 5 horas de trabajo con los alumnos.
+- Progresión gradual: de lo simple a lo complejo.
+- NUNCA repetir contenidos que figuren en la lista de "Contenidos Previos".
+- Incluir al menos una actividad lúdica o práctica por clase.
+- Adaptar el nivel al grado indicado (1° a 7°).
 
-REGLAS TÉCNICAS (CONTRATO DE SALIDA):
-- Tu respuesta DEBE incluir el tag [GENERAR_PLAN_JSON] seguido de un array JSON con la planificación.
-- Cada objeto del array debe tener: "dayOfWeek", "topic", "description" (prolongada), "objetivo", "actividad" e "isHoliday".
-- NUNCA muestres el JSON directamente al docente, solo el texto pedagógico antes del tag.
+FORMATO DE SALIDA:
+Respondé SOLO con el texto: "Planificación finalizada ✅"
+Seguido inmediatamente por [GENERAR_PLAN_JSON] y el array JSON con este formato:
+{
+  "planificacion": [
+    {
+      "numero_clase": 1,
+      "fecha": "YYYY-MM-DD",
+      "dia_semana": "Lunes",
+      "titulo": "...",
+      "objetivo": "...",
+      "contenido": "...",
+      "actividades": "...",
+      "recursos": "...",
+      "evaluacion": "..."
+    }
+  ]
+}
 `;
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    if (request.method !== 'POST') {
-      return NextResponse.json({ error: 'Método no permitido' }, { status: 405 });
+    const { messages, context } = await req.json();
+
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json({ error: "Mensajes no válidos" }, { status: 400 });
     }
 
-    let body;
-    let rawText = '';
-    try {
-      rawText = await request.text();
-      const trimmedText = rawText.trim();
-      console.log('Raw Request Body Size:', rawText.length, 'Trimmed Size:', trimmedText.length);
-      
-      if (!trimmedText) {
-        return NextResponse.json({ error: 'Payload de solicitud vacío' }, { status: 400 });
-      }
-      body = JSON.parse(trimmedText);
-    } catch (e) {
-      console.error('Error parsing request JSON:', e, 'Raw Text was:', `"${rawText}"`);
-      return NextResponse.json({ error: 'Payload de solicitud inválido' }, { status: 400 });
-    }
-    const { messages, classroomId, subjectId, subjectName, config, classroom } = body;
-    const { startDate, numClasses } = config || {};
-    const startDateObj = new Date(startDate + 'T12:00:00');
-    const startWeekday = startDateObj.toLocaleDateString('es-AR', { weekday: 'long' });
-    const classroomContext = classroom ? `GRADO EXACTO: ${classroom.grade} | MATERIA EXACTA: ${subjectName || subjectId} | AULA: ${classroom.name}` : `ID Aula: ${classroomId} | MATERIA EXACTA: ${subjectName || subjectId}`;
-    console.log('Request received:', { messagesCount: messages?.length, classroomId, subjectId, subjectName, startDate, numClasses });
+    // Inyectar contexto dinámico en el prompt
+    const dynamicPrompt = `
+${SYSTEM_PROMPT}
 
-    // 1. Memory Retrieval: Fetch the last completed plan to feed into AI logic
-    let pastLessonsContext = "No hay clases pasadas en el sistema. Es la primera vez que planifican.";
+CONTEXTO ACTUAL:
+- Grado: ${context?.aula_grado || 'No especificado'}
+- Materia: ${context?.area_materia || 'No especificada'}
+- Fecha de inicio: ${context?.fecha_inicio || 'Hoy'}
+- Cantidad de clases: ${context?.cant_clases || 3}
+- Contenidos ya dados previamente: 
+${context?.contenidos_previos || 'Ninguno aún.'}
+`;
+
+    const chat = model.startChat({
+      history: messages.slice(0, -1).map((m: any) => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }],
+      })),
+    });
+
+    const result = await chat.sendMessage([
+      { text: dynamicPrompt },
+      { text: messages[messages.length - 1].content }
+    ]);
+
+    const responseText = result.response.text();
     
-    if (classroomId && subjectId) {
-      const allPastPlans = await getWeeklyPlans(classroomId);
-      const pastPlans = allPastPlans
-         .filter((p: WeeklyPlan) => p.subjectId === subjectId)
-         .sort((a: WeeklyPlan, b: WeeklyPlan) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime());
-         
-      if (pastPlans.length > 0) {
-        // Feed the most recent week of topics into the AI context
-        const recentTopics = pastPlans[0].days.map((d: any) => `${d.dayOfWeek}: ${d.topic}`).join(', ');
-        pastLessonsContext = `Temas enseñados la SEMANA ANTERIOR: ${recentTopics}\nIMPORTANTE: Los alumnos YA DOMINAN estos temas. NO los repitas exactamente. Avanza en la progresión de aprendizaje o cambia al siguiente contenido del Diseño Curricular.`;
-      }
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Falta la API Key de Gemini en el backend' }, { status: 500 });
-    }
-
-    // 2. Build the full multi-turn conversation for Gemini
-    // First message: System prompt + memory context (as "user"), then a fake "model" ack
-    const contents: Array<{role: string, parts: Array<{text: string}>}> = [
-      {
-        role: "user",
-        parts: [{ text: `${SYSTEM_PROMPT}\n\n[CONFIGURACIÓN RECIBIDA]:\n- ${classroomContext}\n- Fecha Inicio: ${startDate} (es ${startWeekday})\n- Cantidad de Clases: ${numClasses}\n\n[CONTEXTO DE MEMORIA]:\n${pastLessonsContext}\n\nResponde "Entendido" y nada más.` }]
-      },
-      {
-        role: "model", 
-        parts: [{ text: "Entendido. Soy el Copiloto Pedagógico de Aula Tranquila. Aplicaré la memoria de clases anteriores y seguiré el flujo conversacional paso a paso." }]
-      }
-    ];
-
-    // Add ALL conversation messages (this is the key fix - we send the FULL history)
-    for (const msg of messages) {
-      // Skip the welcome system message
-      if (msg.id === 'welcome') continue;
-      
-      contents.push({
-        role: msg.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: msg.content }]
-      });
-    }
-
-    const responseBody = { contents };
-
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    
-    console.log('Fetching Gemini...');
-    
-    // Retry logic for rate limits (429)
-    let geminiResponse: Response | null = null;
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries <= maxRetries) {
-      geminiResponse = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(responseBody)
-      });
-
-      if (geminiResponse.status === 429 && retries < maxRetries) {
-        const waitTime = Math.pow(2, retries + 1) * 5000; // 10s, 20s, 40s
-        console.log(`Rate limited (429). Retrying in ${waitTime / 1000}s... (attempt ${retries + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        retries++;
-      } else {
-        break;
-      }
-    }
-
-    if (!geminiResponse || !geminiResponse.ok) {
-      const errorData = await geminiResponse?.json().catch(() => ({ error: 'No JSON body' }));
-      console.error(`Gemini API Error (${geminiResponse?.status}):`, JSON.stringify(errorData, null, 2));
-      
-      if (geminiResponse?.status === 429) {
-        return NextResponse.json({ error: 'La IA está temporalmente ocupada. Esperá unos segundos y volvé a intentar.' }, { status: 429 });
-      }
-      throw new Error(`Gemini API Error: ${JSON.stringify(errorData)}`);
-    }
-
-    const data = await geminiResponse.json();
-    console.log('Gemini Response OK!');
-    
-    if (data.error) {
-      console.error('Gemini returned error field:', data.error);
-      throw new Error(`Gemini Error: ${data.error.message || 'Unknown'}`);
-    }
-
-    const textReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo obtener respuesta del modelo.";
-
-    return NextResponse.json({ reply: textReply });
-
-  } catch (error) {
-    console.error('Gemini Request Error:', error);
-    return NextResponse.json({ error: 'Ocurrió un error al contactar al asistente IA' }, { status: 500 });
+    return NextResponse.json({ reply: responseText });
+  } catch (err) {
+    console.error("Chat API Error:", err);
+    return NextResponse.json({ error: "Error en la comunicación con la IA" }, { status: 500 });
   }
 }
