@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 // ── Tipos ──────────────────────────────────────────────────────────────────
 interface Mensaje { role: 'user' | 'assistant'; content: string; }
 interface Clase {
+  id?: string;
   numero_clase: number; fecha: string; dia_semana: string;
   titulo: string; objetivo: string; contenido: string;
   actividades: string; recursos: string; evaluacion: string;
