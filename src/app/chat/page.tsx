@@ -137,9 +137,10 @@ export default function ChatPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    const actualMessages = [...(allMessages[key] || currentMessages), newUserMsg];
     setAllMessages(prev => ({
       ...prev,
-      [key]: [...(prev[key] || currentMessages), newUserMsg]
+      [key]: actualMessages
     }));
     
     setInputValue('');
@@ -157,7 +158,8 @@ export default function ChatPage() {
         if (resPrev.ok) {
            const plans = await resPrev.json();
            if (plans.length > 0) {
-             contenidosPrevios = plans.flatMap((p: any) => p.days.map((d: any) => `- ${d.topic} (${d.date.split('T')[0]})`)).join('\n');
+             const topics = plans.flatMap((p: any) => p.days.map((d: any) => `- ${d.topic} (${d.date.split('T')[0]})`));
+             contenidosPrevios = topics.slice(-10).join('\n'); 
            }
         }
       } catch (e) { console.error("Error fetching prev contents", e); }
@@ -167,7 +169,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...currentMessages, newUserMsg],
+          messages: actualMessages,
           context: {
             aula_grado: selectedClass?.name,
             area_materia: subjectName,
@@ -187,71 +189,76 @@ export default function ChatPage() {
       const jsonMatch = rawText.match(/\{[\s\S]*"planificacion"[\s\S]*\}/);
 
       if (jsonMatch) {
-        const { planificacion } = JSON.parse(jsonMatch[0]);
-        const planId = uuidv4();
-        const fechasHabiles = generarFechasHabilesDesde(startDate, planificacion.length);
+        try {
+          const { planificacion } = JSON.parse(jsonMatch[0]);
+          const planId = uuidv4();
+          const fechasHabiles = generarFechasHabilesDesde(startDate, planificacion.length);
 
-        const mappedDays: PlanDay[] = planificacion.map((d: any, idx: number) => ({
-          id: uuidv4(),
-          numero_clase: d.numero_clase || (idx + 1),
-          date: fechasHabiles[idx] || startDate,
-          dayOfWeek: d.dia_semana || new Date(fechasHabiles[idx] + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long' }),
-          topic: d.titulo || "Clase",
-          objetivo: d.objetivo || '',
-          contenido: d.contenido || d.description || '',
-          actividades: d.actividades || d.actividad || '',
-          recursos: d.recursos || '',
-          evaluacion: d.evaluacion || '',
-          status: 'Pendiente',
-          isHoliday: false,
-          resources: []
-        }));
+          const mappedDays: PlanDay[] = planificacion.map((d: any, idx: number) => ({
+            id: uuidv4(),
+            numero_clase: d.numero_clase || (idx + 1),
+            date: fechasHabiles[idx] || startDate,
+            dayOfWeek: d.dia_semana || new Date(fechasHabiles[idx] + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long' }),
+            topic: d.titulo || "Clase",
+            objetivo: d.objetivo || '',
+            contenido: d.contenido || d.description || '',
+            actividades: d.actividades || d.actividad || '',
+            recursos: d.recursos || '',
+            evaluacion: d.evaluacion || '',
+            status: 'Pendiente',
+            isHoliday: false,
+            resources: []
+          }));
 
-        const planPayload: WeeklyPlan = {
-          id: planId,
-          userId: user?.id,
-          classroomId: selectedClassId,
-          subjectId: selectedSubjectId,
-          aula_grado: selectedClass?.name || 'Aula',
-          area_materia: subjectName,
-          weekStartDate: startDate,
-          numClasses: planificacion.length,
-          days: mappedDays,
-          messages: [...(allMessages[key] || currentMessages), newUserMsg, {
+          const botMsg: ChatMessage = {
             id: uuidv4(), role: 'assistant', userId: 'system',
             content: 'Planificación finalizada ✅',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }],
-          createdAt: new Date().toISOString()
-        };
+          };
 
-        await fetch('/api/weeklyPlans', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(planPayload)
-        });
+          const planPayload: WeeklyPlan = {
+            id: planId,
+            userId: user?.id,
+            classroomId: selectedClassId,
+            subjectId: selectedSubjectId,
+            aula_grado: selectedClass?.name || 'Aula',
+            area_materia: subjectName,
+            weekStartDate: startDate,
+            numClasses: planificacion.length,
+            days: mappedDays,
+            messages: [...actualMessages, botMsg],
+            createdAt: new Date().toISOString()
+          };
 
-        setAllPlans(prev => [planPayload, ...prev]);
-        setActivePlan(planPayload);
+          await fetch('/api/weeklyPlans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(planPayload)
+          });
 
-        setAllMessages(prev => ({
-          ...prev,
-          [key]: planPayload.messages as ChatMessage[]
-        }));
-
+          setAllPlans(prev => [planPayload, ...prev]);
+          setActivePlan(planPayload);
+          setAllMessages(prev => ({ ...prev, [key]: planPayload.messages as ChatMessage[] }));
+        } catch (parseError) {
+          console.error("Error parsing JSON:", parseError);
+          throw new Error("La IA respondió pero el formato de planificación no es válido.");
+        }
       } else {
         const botMsg: ChatMessage = {
           id: uuidv4(), role: 'assistant', userId: 'system',
           content: rawText,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
-        setAllMessages(prev => ({
-          ...prev,
-          [key]: [...(prev[key] || []), botMsg]
-        }));
+        setAllMessages(prev => ({ ...prev, [key]: [...actualMessages, botMsg] }));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const errorBotMsg: ChatMessage = {
+        id: uuidv4(), role: 'assistant', userId: 'system',
+        content: `❌ ${err.message || 'Error en la comunicación con el Asistente.'}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setAllMessages(prev => ({ ...prev, [key]: [...actualMessages, errorBotMsg] }));
     } finally {
       setIsGenerating(false);
     }

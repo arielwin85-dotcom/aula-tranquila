@@ -11,8 +11,15 @@ export async function GET(request: Request) {
     
     const { searchParams } = new URL(request.url);
     const classroomId = searchParams.get('classroomId');
+    const aula_grado = searchParams.get('aula_grado');
+    const area_materia = searchParams.get('area_materia');
 
-    const plans = await getWeeklyPlans(classroomId || undefined, userId);
+    const plans = await getWeeklyPlans(
+      classroomId || undefined, 
+      userId, 
+      aula_grado || undefined, 
+      area_materia || undefined
+    );
 
     // Sort by most recent start date
     plans.sort((a: WeeklyPlan, b: WeeklyPlan) => new Date(b.weekStartDate).getTime() - new Date(a.weekStartDate).getTime());
