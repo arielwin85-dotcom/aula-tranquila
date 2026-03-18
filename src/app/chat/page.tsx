@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, User as UserIcon, Calendar, CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight, Clock, Loader2, Trash2, X } from 'lucide-react';
+import { Send, Sparkles, User as UserIcon, Calendar, CheckCircle2, AlertCircle, RefreshCw, FileText, ChevronRight, Clock, Loader2, Trash2, X, ClipboardList, BookOpen } from 'lucide-react';
 import { ChatMessage, WeeklyPlan, PlanDay, DayStatus } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -310,7 +310,7 @@ export default function ChatPage() {
           subjectId: selectedSubjectId,
           aula_grado: selectedClass?.name || 'Aula',
           area_materia: selectedSubject || 'Materia',
-          weekStartDate: new Date(startDate).toISOString(),
+          weekStartDate: startDate, // Usamos la fecha seleccionada
           numClasses: numClasses,
           days: mappedDays,
           messages: [...(allMessages[key] || currentMessages), newUserMsg],
@@ -563,21 +563,54 @@ export default function ChatPage() {
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-             {filteredHistory.map(plan => (
-                <div 
-                   key={plan.id}
-                   onClick={() => setActivePlan(plan)}
-                   className="p-5 bg-white/5 border border-white/5 rounded-3xl hover:border-brand-orange transition-all cursor-pointer group flex justify-between items-center"
-                >
-                   <div>
-                      <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-1">{formatLocalDate(plan.weekStartDate, { month: 'long', year: 'numeric' })}</p>
-                      <h4 className="text-white font-black group-hover:text-brand-orange transition-colors">Semana del {new Date(plan.weekStartDate).getDate()}</h4>
-                   </div>
-                   <button onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan.id); }} className="p-3 text-slate-700 hover:text-red-500 transition-colors">
-                     <Trash2 size={16} />
-                   </button>
+             {allPlans.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center opacity-30">
+                  <ClipboardList size={40} className="mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">No hay planificaciones guardadas</p>
                 </div>
-             ))}
+             ) : (
+                allPlans.map(plan => (
+                  <div 
+                    key={plan.id}
+                    onClick={() => setActivePlan(plan)}
+                    className={`p-6 bg-white/5 border rounded-[2rem] transition-all cursor-pointer group space-y-4 hover:bg-white/10 ${activePlan?.id === plan.id ? 'border-brand-orange shadow-xl' : 'border-white/5'}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <h4 className="text-white font-black text-sm group-hover:text-brand-orange transition-colors">
+                          {plan.aula_grado} — {plan.area_materia}
+                        </h4>
+                        <div className="flex items-center gap-3 text-[9px] font-black text-slate-500 uppercase tracking-[0.15em]">
+                           <span className="flex items-center gap-1"><Calendar size={10} /> {formatLocalDate(plan.weekStartDate)}</span>
+                           <span className="flex items-center gap-1"><BookOpen size={10} /> {plan.numClasses || plan.days?.length} Clases</span>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan.id); }} 
+                        className="p-2 text-slate-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                      {plan.days?.map((clase, idx) => (
+                        <div key={clase.id || idx} className="p-3 bg-black/20 rounded-xl border border-white/5 flex gap-3 items-center">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${clase.status === 'Completado' ? 'bg-green-500' : 'bg-brand-orange animate-pulse'}`} />
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-black text-white truncate uppercase">{clase.topic}</p>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter truncate">{clase.status}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button className="w-full py-2.5 bg-brand-orange/10 border border-brand-orange/20 rounded-xl text-brand-orange text-[9px] font-black uppercase tracking-widest hover:bg-brand-orange hover:text-white transition-all">
+                      Cargar en Panel
+                    </button>
+                  </div>
+                ))
+             )}
           </div>
         )}
       </div>

@@ -112,15 +112,20 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
 }
 
 export async function getWeeklyPlans(classroomId?: string, userId?: string): Promise<any[]> {
-  let query = db().from('planificaciones').select('*');
-  if (classroomId) query = query.eq('classroom_id', classroomId);
+  // Query normalizada con clases anidadas
+  let query = db().from('planificaciones').select(`
+    *,
+    planificacion_clases(*)
+  `);
+  
   if (userId) query = query.eq('user_id', userId);
 
-  const { data, error } = await query;
+  const { data, error } = await query.order('created_at', { ascending: false });
+  
   if (error) {
     console.error('Error fetching planificaciones:', error);
-    // Fallback attempt to old table if new one fails (during migration)
-    const oldRes = await db().from('weekly_plans').select('*');
+    // Fallback a tabla vieja si la nueva no existe o falla
+    const oldRes = await db().from('weekly_plans').select('*').order('created_at', { ascending: false });
     if (!oldRes.error) {
       return (oldRes.data || []).map((p: any) => ({
         ...p,
@@ -132,14 +137,26 @@ export async function getWeeklyPlans(classroomId?: string, userId?: string): Pro
   }
 
   return (data || []).map((p: any) => ({
-    ...p,
-    classroomId: p.classroom_id,
-    weekStartDate: p.fecha_inicio || p.week_start_date,
-    numClasses: p.cant_clases,
-    days: p.clases || p.days,
-    messages: p.chat_historial,
+    id: p.id,
+    userId: p.user_id,
     aula_grado: p.aula_grado,
-    area_materia: p.area_materia
+    area_materia: p.area_materia,
+    weekStartDate: p.fecha_inicio,
+    numClasses: p.cant_clases,
+    messages: p.chat_historial,
+    createdAt: p.created_at,
+    days: (p.planificacion_clases || [])
+      .sort((a: any, b: any) => a.numero_clase - b.numero_clase)
+      .map((c: any) => ({
+        id: c.id,
+        dayOfWeek: `Clase ${c.numero_clase}`,
+        topic: c.titulo,
+        description: c.descripcion,
+        objetivo: c.objetivo,
+        actividad: c.actividad,
+        status: c.estado === 'COMPLETADO' ? 'Completado' : 'Pendiente',
+        isHoliday: false
+      }))
   }));
 }
 
@@ -174,33 +191,42 @@ export async function saveClassroom(classroom: Classroom) {
 }
 
 export async function saveWeeklyPlan(plan: any) {
-  const payload = {
+  // 1. Cabezal
+  const planPayload = {
     id: plan.id,
     user_id: plan.userId,
-    classroom_id: plan.classroomId,
-    subject_id: plan.subjectId,
-    aula_grado: plan.aula_grado || 'Aula Sin Nombre',
-    area_materia: plan.area_materia || 'Materia Sin Nombre',
+    aula_grado: plan.aula_grado || 'Aula',
+    area_materia: plan.area_materia || 'Materia',
     fecha_inicio: plan.weekStartDate,
     cant_clases: plan.numClasses || plan.days?.length || 0,
-    clases: plan.days,
     chat_historial: plan.messages || [],
   };
 
-  const { data, error } = await db().from('planificaciones').upsert(payload);
-  
-  if (error) {
-    console.warn('Failed to save to planificaciones, trying weekly_plans fallback...', error.message);
-    // Fallback to old schema if table doesn't exist
-    return await db().from('weekly_plans').upsert({
-      id: plan.id,
-      classroom_id: plan.classroomId,
-      subject_id: plan.subjectId,
-      week_start_date: plan.weekStartDate,
-      days: plan.days,
-    });
+  const { error: errorPlan } = await db().from('planificaciones').upsert(planPayload);
+  if (errorPlan) throw errorPlan;
+
+  // 2. Detalle (Clases)
+  // Borramos clases previas para este plan_id
+  await db().from('planificacion_clases').delete().eq('planificacion_id', plan.id);
+
+  const clasesPayload = (plan.days || []).map((day: any, index: number) => ({
+    planificacion_id: plan.id,
+    numero_clase: index + 1,
+    fecha: plan.weekStartDate, // aproximación
+    titulo: day.topic,
+    descripcion: day.description || '',
+    objetivo: day.objetivo || '',
+    actividad: day.actividad || '',
+    estado: day.status === 'Completado' ? 'COMPLETADO' : 'PENDIENTE'
+  }));
+
+  const { error: errorClases } = await db().from('planificacion_clases').insert(clasesPayload);
+  if (errorClases) {
+    console.error('Error saving planificacion_clases:', errorClases);
+    // No lanzamos error para no romper todo si la tabla de clases falla pero el cabezal funcionó
   }
-  return data;
+
+  return { success: true };
 }
 
 export async function deleteWeeklyPlan(id: string) {

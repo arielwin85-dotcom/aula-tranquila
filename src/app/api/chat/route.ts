@@ -25,7 +25,7 @@ Hablá siempre en primera persona como si vos fueras el docente que va a dar esa
 
 REGLAS TÉCNICAS (CONTRATO DE SALIDA):
 - Tu respuesta DEBE incluir el tag [GENERAR_PLAN_JSON] seguido de un array JSON con la planificación.
-- Cada objeto del array debe tener: "dayOfWeek", "topic", "description" (prolongada, incluyendo los 4 puntos pedagógicos mencionados) y "isHoliday".
+- Cada objeto del array debe tener: "dayOfWeek", "topic", "description" (prolongada), "objetivo", "actividad" e "isHoliday".
 - NUNCA muestres el JSON directamente al docente, solo el texto pedagógico antes del tag.
 `;
 
