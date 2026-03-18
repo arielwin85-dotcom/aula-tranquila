@@ -7,6 +7,7 @@ import { Classroom, Student, User } from '@/types';
 import { getSubjectName } from "@/constants/subjects";
 import { NewClassModal } from '@/components/NewClassModal';
 import { StudentModal } from '@/components/StudentModal';
+import { EditarAlumno } from '@/components/EditarAlumno';
 import { 
   Users, UserPlus, FileEdit, CheckCircle2, AlertCircle, 
   BookOpen, Trash2, UserPlus2, FileDown, UserCog, ChevronDown,
@@ -14,7 +15,6 @@ import {
 } from 'lucide-react';
 import { GradeHistoryModal } from '@/components/GradeHistoryModal';
 import { GradesManagerModal } from '@/components/GradesManagerModal';
-import { supabase } from '@/lib/supabase';
 
 export default function ClasesPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -152,40 +152,13 @@ export default function ClasesPage() {
     }
   };
 
-  // BUG 2: Rebuilt Edit Handlers
   const handleEditarAlumno = (alumno: Student) => {
-    if (!alumno) return;
-    setAlumnoAEditar(alumno);
-    setModalEditarAbierto(true);
-  };
-
-  const handleGuardarEdicion = async (datosActualizados: Partial<Student>) => {
-    const dniToUpdate = alumnoAEditar?.dni || (alumnoAEditar as any)?.id;
-    if (!dniToUpdate) {
-      console.error('Identificador del alumno no encontrado');
-      alert("Error: No se pudo identificar al alumno para la actualización.");
+    if (!alumno || !alumno.dni) {
+      console.error('Alumno inválido:', alumno);
       return;
     }
-
-    setIsLoading(true);
-    try {
-      // Direct Supabase Update using DNI as PK
-      const { error } = await supabase
-        .from('students')
-        .update(datosActualizados)
-        .eq('dni', dniToUpdate);
-
-      if (error) throw error;
-
-      setModalEditarAbierto(false);
-      setAlumnoAEditar(null);
-      await fetchClassrooms(); 
-    } catch (err) {
-      console.error('Error al actualizar alumno:', err);
-      alert("Error al actualizar perfil en la base de datos.");
-    } finally {
-      setIsLoading(false);
-    }
+    setAlumnoAEditar(alumno);
+    setModalEditarAbierto(true);
   };
 
   const openHistoryModal = async (student: Student) => {
@@ -406,18 +379,20 @@ export default function ClasesPage() {
         subjects={selectedClass?.subjects || []}
       />
 
-      {/* BUG 2: Rebuilt Edit Modal Call */}
-      <StudentModal
-        isOpen={modalEditarAbierto}
-        modoEdicion={true}
-        alumnoInicial={alumnoAEditar}
-        onGuardar={handleGuardarEdicion}
-        onCerrar={() => {
-          setModalEditarAbierto(false);
-          setAlumnoAEditar(null);
-        }}
-        subjects={selectedClass?.subjects || []}
-      />
+      {modalEditarAbierto && alumnoAEditar && (
+        <EditarAlumno
+          alumno={alumnoAEditar}
+          onCerrar={() => {
+            setModalEditarAbierto(false);
+            setAlumnoAEditar(null);
+          }}
+          onGuardado={() => {
+            setModalEditarAbierto(false);
+            setAlumnoAEditar(null);
+            fetchClassrooms();
+          }}
+        />
+      )}
 
       <GradeHistoryModal
         isOpen={isHistoryModalOpen}
