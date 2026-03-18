@@ -51,8 +51,7 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
     // 2. Armar el objeto a actualizar SIN el DNI (no se modifica)
     const datosAActualizar = {
       name: safeName,              // ← Columna original en Supabase
-      dua_context_tags: dua_context_tags, // ← Columna original en Supabase
-      updated_at: new Date().toISOString()
+      dua_context_tags: dua_context_tags // ← Columna original en Supabase
     };
 
     console.log("Intentando UPDATE en Supabase para DNI:", dni);
