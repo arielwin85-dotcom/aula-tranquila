@@ -18,13 +18,9 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
   const gradesBySubject: Record<string, any[]> = {};
   const detailedGrades = student.detailedGrades || [];
 
-  detailedGrades.forEach(grade => {
-    const rawId = (grade.subject_id || grade.subjectId || '').toString();
-    const subject = subjects.find(s =>
-      (s.id && String(s.id) === rawId) ||
-      (s.name && String(s.name).toLowerCase() === rawId.toLowerCase())
-    );
-    const subjectName = subject?.name || getSubjectName(rawId);
+  detailedGrades.forEach((grade: any) => {
+    // BUG 1 Fix: Use the actual 'materia' field from Supabase
+    const subjectName = grade.materia || "Materia Desconocida";
     
     if (!gradesBySubject[subjectName]) {
       gradesBySubject[subjectName] = [];
@@ -33,7 +29,7 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
   });
 
   const generalAverage = detailedGrades.length
-    ? (detailedGrades.reduce((a, b) => a + (b.score || 0), 0) / detailedGrades.length).toFixed(1)
+    ? (detailedGrades.reduce((a, b: any) => a + (Number(b.nota) || 0), 0) / detailedGrades.length).toFixed(1)
     : "0.0";
 
   return (
@@ -70,7 +66,7 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
           ) : (
             <div className="space-y-10">
               {Object.entries(gradesBySubject).map(([subjectName, grades]) => {
-                const subjectAverage = (grades.reduce((a, b) => a + (b.score || 0), 0) / grades.length).toFixed(1);
+                const subjectAverage = (grades.reduce((a, b: any) => a + (Number(b.nota) || 0), 0) / grades.length).toFixed(1);
                 
                 return (
                   <div key={subjectName} className="space-y-4">
@@ -88,17 +84,19 @@ export function GradeHistoryModal({ isOpen, onClose, student, subjects }: GradeH
                     </div>
 
                     <div className="grid gap-3">
-                      {grades.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((grade, idx) => (
+                      {grades.sort((a: any, b: any) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).map((grade: any, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white/2 border border-white/5 p-4 rounded-2xl hover:bg-white/5 transition-all">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-white tracking-tight">{grade.topic || 'Evaluación'}</span>
+                            <span className="text-sm font-bold text-white tracking-tight">{grade.evaluacion || 'Evaluación'}</span>
                             <div className="flex items-center gap-2 mt-1 opacity-50">
                               <CalendarIcon size={10} />
-                              <span className="text-[9px] font-black uppercase tracking-widest">{new Date(grade.date).toLocaleDateString()}</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest">
+                                {grade.fecha ? new Date(grade.fecha + 'T00:00:00').toLocaleDateString('es-AR') : 'Sin fecha'}
+                              </span>
                             </div>
                           </div>
-                          <span className={`text-lg font-black ${grade.score >= 7 ? 'text-emerald-400' : grade.score >= 4 ? 'text-brand-orange' : 'text-rose-500'}`}>
-                            {grade.score} pts
+                          <span className={`text-lg font-black ${Number(grade.nota) >= 7 ? 'text-emerald-400' : Number(grade.nota) >= 4 ? 'text-brand-orange' : 'text-rose-500'}`}>
+                            {grade.nota ?? '—'} pts
                           </span>
                         </div>
                       ))}

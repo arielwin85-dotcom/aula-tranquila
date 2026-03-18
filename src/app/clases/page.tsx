@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { GradeHistoryModal } from '@/components/GradeHistoryModal';
 import { GradesManagerModal } from '@/components/GradesManagerModal';
+import { supabase } from '@/lib/supabase';
 
 export default function ClasesPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -24,7 +25,10 @@ export default function ClasesPage() {
   const [isClassModalOpen, setIsClassModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Classroom | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  
+  // BUG 2: New states for Rebuilt Edit Flow
+  const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
+  const [alumnoAEditar, setAlumnoAEditar] = useState<Student | null>(null);
   
   // Grade History Modal State
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -125,50 +129,57 @@ export default function ClasesPage() {
 
   const handleSaveStudent = async (studentData: Partial<Student>) => {
     if (!selectedClassId) return;
-    
-    // Safety guard to prevent crashes if something is null
-    if (!studentData.dni && !editingStudent) {
-      console.error("Missing student identification");
-      alert("No se pudo identificar al alumno.");
+    setIsLoading(true);
+    try {
+      const payload = {
+        classroomId: selectedClassId,
+        userId: user?.id,
+        ...studentData
+      };
+
+      await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      
+      await fetchClassrooms();
+      setIsStudentModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // BUG 2: Rebuilt Edit Handlers
+  const handleEditarAlumno = (alumno: Student) => {
+    if (!alumno) return;
+    setAlumnoAEditar(alumno);
+    setModalEditarAbierto(true);
+  };
+
+  const handleGuardarEdicion = async (datosActualizados: Partial<Student>) => {
+    if (!alumnoAEditar?.dni) {
+      console.error('DNI del alumno no encontrado');
       return;
     }
 
     setIsLoading(true);
     try {
-      if (editingStudent) {
-        // BUG 2 Fix: Safe access to DNI or ID with fallback
-        const studentId = editingStudent.dni || (editingStudent as any).id;
-        
-        if (!studentId) {
-          throw new Error("No se pudo encontrar el identificador del alumno");
-        }
+      const { error } = await supabase
+        .from('students') // Verified: real table name is 'students'
+        .update(datosActualizados)
+        .eq('dni', alumnoAEditar.dni);
 
-        await fetch(`/api/students/${studentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            classroomId: selectedClassId,
-            ...studentData
-          }),
-        });
-      } else {
-        const payload = {
-          classroomId: selectedClassId,
-          userId: user?.id,
-          ...studentData
-        };
+      if (error) throw error;
 
-        await fetch('/api/students', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-      await fetchClassrooms();
-      setEditingStudent(null);
-      setIsStudentModalOpen(false);
+      setModalEditarAbierto(false);
+      setAlumnoAEditar(null);
+      await fetchClassrooms(); // Recargar lista
     } catch (err) {
-      console.error(err);
+      console.error('Error al actualizar alumno:', err);
+      alert("Error al actualizar perfil.");
     } finally {
       setIsLoading(false);
     }
@@ -209,12 +220,6 @@ export default function ClasesPage() {
   };
 
   const openNewStudentModal = () => {
-    setEditingStudent(null);
-    setIsStudentModalOpen(true);
-  };
-
-  const openEditStudentModal = (student: Student) => {
-    setEditingStudent(student);
     setIsStudentModalOpen(true);
   };
 
@@ -396,9 +401,21 @@ export default function ClasesPage() {
 
       <StudentModal
         isOpen={isStudentModalOpen}
-        onClose={() => setIsStudentModalOpen(false)}
-        onSave={handleSaveStudent}
-        initialData={editingStudent}
+        onCerrar={() => setIsStudentModalOpen(false)}
+        onGuardar={handleSaveStudent}
+        subjects={selectedClass?.subjects || []}
+      />
+
+      {/* BUG 2: Rebuilt Edit Modal Call */}
+      <StudentModal
+        isOpen={modalEditarAbierto}
+        modoEdicion={true}
+        alumnoInicial={alumnoAEditar}
+        onGuardar={handleGuardarEdicion}
+        onCerrar={() => {
+          setModalEditarAbierto(false);
+          setAlumnoAEditar(null);
+        }}
         subjects={selectedClass?.subjects || []}
       />
 
@@ -636,7 +653,7 @@ export default function ClasesPage() {
                                                   <Plus size={8} className="absolute -top-1 -right-1 font-black" />
                                                </div>
                                             </button>
-                                            <button onClick={() => openEditStudentModal(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-slate-700 rounded-xl border border-white/10 transition-all" title="Editar Perfil"><FileText size={16} /></button>
+                                            <button onClick={() => handleEditarAlumno(student)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-slate-700 rounded-xl border border-white/10 transition-all" title="Editar Perfil"><FileText size={16} /></button>
                                             <button onClick={() => handleDeleteStudent(student.dni || (student as any).id)} className="p-3 bg-white/5 text-slate-500 hover:text-white hover:bg-red-600 rounded-xl border border-white/10 transition-all"><Trash2 size={16} /></button>
                                          </div>
                                       </td>
