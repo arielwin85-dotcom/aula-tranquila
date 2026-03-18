@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { Student } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 interface EditarAlumnoProps {
   alumno: Student;
@@ -13,23 +14,31 @@ interface EditarAlumnoProps {
 export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps) {
   const [name, setName] = useState("");
   const [dni, setDni] = useState("");
-  const [attendance, setAttendance] = useState(100);
   const [duaTagsInput, setDuaTagsInput] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("Cargando datos del alumno para editar:", alumno);
     setName(alumno.name || "");
     setDni(alumno.dni || "");
-    setAttendance(alumno.attendance || 100);
     const tags = Array.isArray(alumno.duaContextTags) ? alumno.duaContextTags : [];
     setDuaTagsInput(tags.join(", "));
   }, [alumno]);
 
-  const handleGuardar = async () => {
+  const handleGuardarCambios = async () => {
+    // 1. Validar que el DNI existe
+    if (!dni) {
+      console.error('Error: DNI no encontrado en los datos locales');
+      setError("Error interno: DNI no encontrado");
+      return;
+    }
+
     const safeName = (name || "").trim();
-    const safeDni = (dni || "").trim();
-    if (!safeName || !safeDni) return;
+    if (!safeName) {
+      setError("El nombre es obligatorio");
+      return;
+    }
 
     const dua_context_tags = (duaTagsInput || "")
       .split(",")
@@ -39,29 +48,45 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
     setGuardando(true);
     setError(null);
 
-    try {
-      const res = await fetch(`/api/students/${safeDni}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: safeName,
-          attendance: Number(attendance),
-          dua_context_tags,
-          duaContextTags: dua_context_tags,
-          classroomId: alumno.classroomId,
-        }),
-      });
+    // 2. Armar el objeto a actualizar SIN el DNI (no se modifica)
+    const datosAActualizar = {
+      name: safeName,              // ← Columna original en Supabase
+      dua_context_tags: dua_context_tags, // ← Columna original en Supabase
+      updated_at: new Date().toISOString()
+    };
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Error HTTP ${res.status}`);
+    console.log("Intentando UPDATE en Supabase para DNI:", dni);
+    console.log("Datos a enviar:", datosAActualizar);
+
+    try {
+      // 3. Hacer UPDATE en Supabase
+      const { data, error: supabaseError } = await supabase
+        .from('students')               // ← Tabla verificada
+        .update(datosAActualizar)
+        .eq('dni', dni)                 // ← PK verificada
+        .select();                      // .select() para confirmar impacto
+
+      if (supabaseError) {
+        console.error('Error en el UPDATE de Supabase:', supabaseError);
+        setError("Error al guardar: " + supabaseError.message);
+        setGuardando(false);
+        return;
       }
 
+      if (!data || data.length === 0) {
+        console.error('UPDATE no impactó ningún registro. Verificar que el DNI existe en la tabla students.');
+        setError("No se encontró el registro para actualizar (DNI: " + dni + ")");
+        setGuardando(false);
+        return;
+      }
+
+      console.log('Alumno actualizado correctamente:', data);
       setGuardando(false);
-      onGuardado();
+      onGuardado(); // cerrar modal y recargar lista
     } catch (err: any) {
+      console.error('Excepción al intentar guardar:', err);
+      setError("Error inesperado: " + err.message);
       setGuardando(false);
-      setError("Error al guardar: " + (err.message || "Error desconocido"));
     }
   };
 
@@ -111,19 +136,7 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Asistencia (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={attendance}
-                onChange={(e) => setAttendance(Number(e.target.value))}
-                className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black focus:border-brand-orange outline-none transition-all"
-              />
-            </div>
-
+          <div className="grid grid-cols-1 gap-8">
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                 Contexto DUA <span className="text-brand-orange text-[8px] italic">(IA Adaptativa)</span>
@@ -161,7 +174,7 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
             Cancelar
           </button>
           <button
-            onClick={handleGuardar}
+            onClick={handleGuardarCambios}
             disabled={!name.trim() || guardando}
             className="px-12 py-5 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[11px] shadow-2xl hover:bg-brand-orange hover:text-white hover:scale-105 active:scale-95 disabled:opacity-20 transition-all flex items-center justify-center gap-3"
           >
