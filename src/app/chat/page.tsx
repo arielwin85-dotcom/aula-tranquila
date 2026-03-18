@@ -105,20 +105,27 @@ export default function ChatPage() {
       p.weekStartDate.split('T')[0] === startDate
     );
     
-    if (matchedPlan) {
+    // Use ID to avoid loop if object reference changes but content is same
+    if (matchedPlan && matchedPlan.id !== activePlan?.id) {
       setActivePlan(matchedPlan);
-      // Sync messages from plan to chat history
+      
+      // Only sync messages if they exist and are different from current view
       if (matchedPlan.messages && matchedPlan.messages.length > 0) {
         const key = `${matchedPlan.classroomId}-${matchedPlan.subjectId}`;
-        setAllMessages(prev => ({
-          ...prev,
-          [key]: matchedPlan.messages || []
-        }));
+        const currentMsgs = allMessages[key];
+        
+        // Prevent setting messages if they match the existing ones (to avoid loop)
+        if (!currentMsgs || currentMsgs.length <= 1 || JSON.stringify(currentMsgs) !== JSON.stringify(matchedPlan.messages)) {
+          setAllMessages(prev => ({
+            ...prev,
+            [key]: matchedPlan.messages || []
+          }));
+        }
       }
-    } else {
+    } else if (!matchedPlan && activePlan !== null) {
       setActivePlan(null);
     }
-  }, [selectedSubjectId, selectedClassId, allPlans, startDate]);
+  }, [selectedSubjectId, selectedClassId, allPlans, startDate, activePlan?.id]);
 
   // Sidebar Suggestions
   useEffect(() => {
@@ -140,12 +147,17 @@ export default function ChatPage() {
       }
     };
     fetchSidebarDocs();
-  }, [activePlan, selectedClassId, selectedSubjectId, classrooms]);
+  }, [activePlan?.id, selectedClassId, selectedSubjectId, classrooms]);
 
   // Individual Day Resources
   useEffect(() => {
     const hydrateDayResources = async () => {
       if (!activePlan || classrooms.length === 0 || !selectedClassId || !selectedSubjectId) return;
+      
+      // Optimization: Only run if there are days that actually need resources
+      const needsHydration = activePlan.days.some(day => !day.isHoliday && (!day.resources || day.resources.length === 0));
+      if (!needsHydration) return;
+
       const currentClass = classrooms.find(c => c.id === selectedClassId);
       const gradeToken = currentClass ? currentClass.grade : '';
       const subjects = currentClass?.subjects || [];
@@ -182,7 +194,7 @@ export default function ChatPage() {
       }
     };
     hydrateDayResources();
-  }, [activePlan, selectedClassId, selectedSubjectId, classrooms]);
+  }, [activePlan?.id, selectedClassId, selectedSubjectId, classrooms]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
