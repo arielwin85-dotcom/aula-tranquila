@@ -19,18 +19,20 @@ export function StudentModal({ isOpen, onClose, onSave, initialData, subjects }:
   const [duaTagsInput, setDuaTagsInput] = useState("");
 
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name || "");
-      setDni(initialData.dni || (initialData as any).id || "");
-      setAttendance(initialData.attendance || 100);
-      setDuaTagsInput((initialData.duaContextTags || []).join(", "));
-    } else {
-      setName("");
-      setDni("");
-      setAttendance(100);
-      setDuaTagsInput("");
+    if (isOpen) {
+      if (initialData) {
+        setName(initialData.name || "");
+        setDni(initialData.dni || (initialData as any).id || "");
+        setAttendance(initialData.attendance || 100);
+        setDuaTagsInput((initialData.duaContextTags || []).join(", "));
+      } else {
+        setName("");
+        setDni("");
+        setAttendance(100);
+        setDuaTagsInput("");
+      }
     }
-  }, [initialData, isOpen, subjects]);
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 

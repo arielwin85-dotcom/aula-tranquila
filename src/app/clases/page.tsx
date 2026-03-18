@@ -125,10 +125,24 @@ export default function ClasesPage() {
 
   const handleSaveStudent = async (studentData: Partial<Student>) => {
     if (!selectedClassId) return;
+    
+    // Safety guard to prevent crashes if something is null
+    if (!studentData.dni && !editingStudent) {
+      console.error("Missing student identification");
+      alert("No se pudo identificar al alumno.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (editingStudent) {
+        // BUG 2 Fix: Safe access to DNI or ID with fallback
         const studentId = editingStudent.dni || (editingStudent as any).id;
+        
+        if (!studentId) {
+          throw new Error("No se pudo encontrar el identificador del alumno");
+        }
+
         await fetch(`/api/students/${studentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -160,9 +174,29 @@ export default function ClasesPage() {
     }
   };
 
-  const openHistoryModal = (student: Student) => {
-    setSelectedStudentForHistory(student);
-    setIsHistoryModalOpen(true);
+  const openHistoryModal = async (student: Student) => {
+    // BUG 1 Fix: Fetch real-time grades from DB before opening modal
+    setIsLoading(true);
+    try {
+      const dni = student.dni || (student as any).id;
+      const res = await fetch(`/api/notas?dni=${dni}&classroomId=${selectedClassId}`);
+      if (!res.ok) throw new Error("Error al obtener notas");
+      const grades = await res.json();
+      
+      // Update the student object with the latest grades
+      setSelectedStudentForHistory({
+        ...student,
+        detailedGrades: grades
+      });
+      setIsHistoryModalOpen(true);
+    } catch (err) {
+      console.error("Failed to load grades:", err);
+      // Fallback: use whatever we have in memory
+      setSelectedStudentForHistory(student);
+      setIsHistoryModalOpen(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openGradesManager = (student: Student) => {
@@ -184,118 +218,137 @@ export default function ClasesPage() {
     setIsStudentModalOpen(true);
   };
 
-  const handleDownloadClassReport = () => {
+  const handleDownloadClassReport = async () => {
     if (!selectedClass) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
+    setIsLoading(true);
+    
+    try {
+      // BUG 3 Fix: Pre-fetch ALL notes for all students in the class
+      const studentsWithGrades = await Promise.all(
+        selectedClass.students.map(async (s) => {
+          const dni = s.dni || (s as any).id;
+          const res = await fetch(`/api/notas?dni=${dni}&classroomId=${selectedClassId}`);
+          const grades = res.ok ? await res.json() : [];
+          return { ...s, detailedGrades: grades };
+        })
+      );
 
-    const html = `
-      <html>
-        <head>
-          <title>Informe Pedagógico - ${selectedClass.name}</title>
-          <style>
-            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
-            h1 { color: #f97316; font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; font-size: 28px; letter-spacing: -0.02em; }
-            .header-info { margin-bottom: 40px; border-bottom: 4px solid #f97316; padding-bottom: 20px; }
-            .class-meta { color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
-            
-            .student-card { margin-bottom: 40px; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; page-break-inside: avoid; }
-            .student-header { background: #f8fafc; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-            .student-name { font-family: 'Montserrat', sans-serif; font-weight: 900; color: #0f172a; font-size: 18px; text-transform: uppercase; }
-            .student-dni { color: #f97316; font-weight: 800; font-size: 12px; }
-            
-            .content-section { padding: 20px; }
-            .subject-group { margin-bottom: 25px; }
-            .subject-title { font-weight: 900; text-transform: uppercase; font-size: 12px; color: #64748b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; }
-            .subject-avg { color: #f97316; }
-            
-            .grade-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: #475569; }
-            .grade-topic { font-weight: 600; }
-            .grade-score { font-weight: 800; color: #0f172a; }
-            
-            .dua-tags { margin-top: 15px; display: flex; gap: 5px; flex-wrap: wrap; }
-            .tag { background: #fff7ed; color: #c2410c; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 1px solid #ffedd5; }
-            
-            .general-avg-box { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-            .general-avg-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
-            .general-avg-value { font-size: 20px; font-weight: 900; }
-            
-            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; letter-spacing: 0.2em; }
-          </style>
-        </head>
-        <body>
-          <div class="header-info">
-            <h1>Aula Tranquila</h1>
-            <div class="class-meta">Informe Pedagógico de Clase | ${selectedClass.name} | Ciclo ${selectedClass.year}</div>
-          </div>
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) return;
 
-          ${selectedClass.students.map(s => {
-            const gradesBySubject: Record<string, any[]> = {};
-            const detailed = s.detailedGrades || [];
-            
-            detailed.forEach(g => {
-              const rawId = String(g.subject_id || g.subjectId || '');
-              const subject = selectedClass.subjects.find(sub => 
-                 String(sub.id) === rawId || String(sub.name).toLowerCase() === rawId.toLowerCase()
-              );
-              const sName = subject?.name || getSubjectName(rawId);
-              if (!gradesBySubject[sName]) gradesBySubject[sName] = [];
-              gradesBySubject[sName].push(g);
-            });
+      const html = `
+        <html>
+          <head>
+            <title>Informe Pedagógico - ${selectedClass.name}</title>
+            <style>
+              @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+              h1 { color: #f97316; font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; font-size: 28px; letter-spacing: -0.02em; }
+              .header-info { margin-bottom: 40px; border-bottom: 4px solid #f97316; padding-bottom: 20px; }
+              .class-meta { color: #64748b; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; }
+              
+              .student-card { margin-bottom: 40px; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; page-break-inside: avoid; }
+              .student-header { background: #f8fafc; padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+              .student-name { font-family: 'Montserrat', sans-serif; font-weight: 900; color: #0f172a; font-size: 18px; text-transform: uppercase; }
+              .student-dni { color: #f97316; font-weight: 800; font-size: 12px; }
+              
+              .content-section { padding: 20px; }
+              .subject-group { margin-bottom: 25px; }
+              .subject-title { font-weight: 900; text-transform: uppercase; font-size: 12px; color: #64748b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+              .subject-avg { color: #f97316; }
+              
+              .grade-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: #475569; }
+              .grade-topic { font-weight: 600; }
+              .grade-score { font-weight: 800; color: #0f172a; }
+              
+              .dua-tags { margin-top: 15px; display: flex; gap: 5px; flex-wrap: wrap; }
+              .tag { background: #fff7ed; color: #c2410c; padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 1px solid #ffedd5; }
+              
+              .general-avg-box { background: #0f172a; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+              .general-avg-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; }
+              .general-avg-value { font-size: 20px; font-weight: 900; }
+              
+              .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; letter-spacing: 0.2em; }
+            </style>
+          </head>
+          <body>
+            <div class="header-info">
+              <h1>Aula Tranquila</h1>
+              <div class="class-meta">Informe Pedagógico de Clase | ${selectedClass.name} | Ciclo ${selectedClass.year}</div>
+            </div>
 
-            const genAvg = detailed.length 
-              ? (detailed.reduce((a, b) => a + (b.score || 0), 0) / detailed.length).toFixed(1)
-              : "0.0";
+            ${studentsWithGrades.map(s => {
+              const gradesBySubject: Record<string, any[]> = {};
+              const detailed = s.detailedGrades || [];
+              
+              detailed.forEach((g: any) => {
+                const rawId = String(g.subject_id || g.subjectId || '');
+                const subject = selectedClass.subjects.find(sub => 
+                   String(sub.id) === rawId || String(sub.name).toLowerCase() === rawId.toLowerCase()
+                );
+                const sName = subject?.name || getSubjectName(rawId);
+                if (!gradesBySubject[sName]) gradesBySubject[sName] = [];
+                gradesBySubject[sName].push(g);
+              });
 
-            return `
-              <div class="student-card">
-                <div class="student-header">
-                  <div class="student-name">${s.name}</div>
-                  <div class="student-dni">DNI: ${s.dni || (s as any).id || "S/D"}</div>
-                </div>
-                
-                <div class="content-section">
-                  ${Object.entries(gradesBySubject).map(([sub, gs]) => {
-                    const subAvg = (gs.reduce((a, b) => a + (b.score || 0), 0) / gs.length).toFixed(1);
-                    return `
-                      <div class="subject-group">
-                        <div class="subject-title">
-                          <span>📚 ${sub}</span>
-                          <span class="subject-avg">Promedio: ${subAvg}</span>
-                        </div>
-                        ${gs.map(g => `
-                          <div class="grade-item">
-                            <span class="grade-topic">${g.topic || 'Evaluación'} <span style="font-size: 9px; opacity: 0.5; font-weight: normal;">(${new Date(g.date).toLocaleDateString()})</span></span>
-                            <span class="grade-score">${g.score}</span>
+              const genAvg = detailed.length 
+                ? (detailed.reduce((a: number, b: any) => a + (Number(b.nota) || b.score || 0), 0) / detailed.length).toFixed(1)
+                : "0.0";
+
+              return `
+                <div class="student-card">
+                  <div class="student-header">
+                    <div class="student-name">${s.name}</div>
+                    <div class="student-dni">DNI: ${s.dni || (s as any).id || "S/D"}</div>
+                  </div>
+                  
+                  <div class="content-section">
+                    ${Object.entries(gradesBySubject).map(([sub, gs]: [string, any[]]) => {
+                      const subAvg = (gs.reduce((a: number, b: any) => a + (Number(b.nota) || b.score || 0), 0) / gs.length).toFixed(1);
+                      return `
+                        <div class="subject-group">
+                          <div class="subject-title">
+                            <span>📚 ${sub}</span>
+                            <span class="subject-avg">Promedio: ${subAvg}</span>
                           </div>
-                        `).join('')}
-                      </div>
-                    `;
-                  }).join('')}
+                          ${gs.map((g: any) => `
+                            <div class="grade-item">
+                              <span class="grade-topic">${g.topic || 'Evaluación'} <span style="font-size: 9px; opacity: 0.5; font-weight: normal;">(${new Date(g.fecha || g.date).toLocaleDateString()})</span></span>
+                              <span class="grade-score">${g.nota || g.score}</span>
+                            </div>
+                          `).join('')}
+                        </div>
+                      `;
+                    }).join('')}
 
-                  ${Object.keys(gradesBySubject).length === 0 ? '<p style="color: #94a3b8; font-size: 12px; font-style: italic;">Sin notas registradas aún.</p>' : ''}
+                    ${Object.keys(gradesBySubject).length === 0 ? '<p style="color: #94a3b8; font-size: 12px; font-style: italic;">Sin notas registradas aún.</p>' : ''}
 
-                  <div class="dua-tags">
-                    ${(s.duaContextTags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                    <div class="dua-tags">
+                      ${(s.duaContextTags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+                    </div>
+                  </div>
+
+                  <div class="general-avg-box">
+                    <span class="general-avg-label">Promedio General</span>
+                    <span class="general-avg-value">${genAvg}</span>
                   </div>
                 </div>
+              `;
+            }).join('')}
 
-                <div class="general-avg-box">
-                  <span class="general-avg-label">Promedio General</span>
-                  <span class="general-avg-value">${genAvg}</span>
-                </div>
-              </div>
-            `;
-          }).join('')}
-
-          <div class="footer">Generado por Aula Tranquila v4.1.0 • ${new Date().toLocaleDateString()}</div>
-          <script>window.print();</script>
-        </body>
-      </html>
-    `;
-    printWindow.document.write(html);
-    printWindow.document.close();
+            <div class="footer">Generado por Aula Tranquila v4.1.1 • ${new Date().toLocaleDateString()}</div>
+            <script>window.print();</script>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } catch (err) {
+      console.error("Failed to generate PDF:", err);
+      alert("Error al generar el PDF. Verifica la conexión.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDeleteStudent = async (studentId: string) => {
