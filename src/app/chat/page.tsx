@@ -349,7 +349,63 @@ export default function ChatPage() {
 
   const handleDownloadPDF = () => {
     if (!activePlan) return;
-    window.print();
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    // Use current state to build the print version
+    const html = `
+      <html>
+        <head>
+          <title>Planificación - Aula Tranquila</title>
+          <style>
+             body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; }
+             h1 { color: #f97316; margin-bottom: 5px; font-weight: 900; }
+             .header { border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
+             .clase { margin-bottom: 30px; padding: 25px; border-radius: 20px; border: 1px solid #f1f5f9; background: #fff; page-break-inside: avoid; }
+             .fecha { font-weight: 800; color: #f97316; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; font-family: monospace; }
+             .titulo { font-size: 20px; font-weight: 900; margin-bottom: 12px; color: #0f172a; }
+             .desc { font-size: 14px; line-height: 1.7; color: #475569; white-space: pre-wrap; }
+             .estado { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 15px; color: #94a3b8; border-top: 1px dashed #f1f5f9; pt: 10px; display: block; }
+             .footer { margin-top: 60px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 2px solid #f97316; padding-top: 20px; font-weight: bold; }
+             @media print {
+               body { padding: 20px; }
+               .clase { border: none; border-bottom: 1px solid #e2e8f0; border-radius: 0; padding: 20px 0; }
+               .no-print { display: none; }
+             }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+             <h1>Planificación de Clases</h1>
+             <p style="font-size: 14px; font-weight: 700; color: #64748b; margin: 0;">Materia: ${selectedSubject} • Ciclo Lectivo</p>
+             <p style="font-size: 12px; font-weight: 600; color: #94a3b8; margin: 4px 0 0 0;">Semana del ${formatLocalDate(activePlan.weekStartDate, { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+          </div>
+          
+          ${activePlan.days.map(day => `
+            <div class="clase">
+              <div class="fecha">📅 ${day.dayOfWeek} ${new Date(day.date).getDate()}</div>
+              <div class="titulo">📌 ${day.topic}</div>
+              <div class="desc">${day.description}</div>
+              <span class="estado">Estado: ${day.status}</span>
+            </div>
+          `).join('')}
+
+          <div class="footer">
+            GENERADO POR AULA TRANQUILA - SOFTWARE DE GESTIÓN PEDAGÓGICA • ${new Date().toLocaleDateString()}
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   return (
@@ -400,8 +456,9 @@ export default function ChatPage() {
                 <input 
                   type="date"
                   value={startDate}
+                  min={new Date().toISOString().split('T')[0]}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange uppercase"
+                  className="w-full p-2.5 bg-brand-navy border border-white/10 rounded-xl text-white text-[10px] font-bold outline-none focus:border-brand-orange"
                 />
              </div>
              <div className="space-y-1.5">
