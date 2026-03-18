@@ -287,11 +287,8 @@ export default function ClasesPage() {
               const detailed = s.detailedGrades || [];
               
               detailed.forEach((g: any) => {
-                const rawId = String(g.subject_id || g.subjectId || '');
-                const subject = selectedClass.subjects.find(sub => 
-                   String(sub.id) === rawId || String(sub.name).toLowerCase() === rawId.toLowerCase()
-                );
-                const sName = subject?.name || getSubjectName(rawId);
+                // BUG 3 Fix: Use the correct 'materia' field from Supabase
+                const sName = g.materia || "Materia Desconocida";
                 if (!gradesBySubject[sName]) gradesBySubject[sName] = [];
                 gradesBySubject[sName].push(g);
               });
@@ -318,8 +315,8 @@ export default function ClasesPage() {
                           </div>
                           ${gs.map((g: any) => `
                             <div class="grade-item">
-                              <span class="grade-topic">${g.topic || 'Evaluación'} <span style="font-size: 9px; opacity: 0.5; font-weight: normal;">(${new Date(g.fecha || g.date).toLocaleDateString()})</span></span>
-                              <span class="grade-score">${g.nota || g.score}</span>
+                              <span class="grade-topic">${g.evaluacion || 'Evaluación'} <span style="font-size: 9px; opacity: 0.5; font-weight: normal;">(${new Date(g.fecha || g.date).toLocaleDateString()})</span></span>
+                              <span class="grade-score">${g.nota ?? (g.score || '—')}</span>
                             </div>
                           `).join('')}
                         </div>
@@ -341,7 +338,7 @@ export default function ClasesPage() {
               `;
             }).join('')}
 
-            <div class="footer">Generado por Aula Tranquila v4.1.1 • ${new Date().toLocaleDateString()}</div>
+            <div class="footer">Generado por Aula Tranquila v4.1.3 • ${new Date().toLocaleDateString()}</div>
             <script>window.print();</script>
           </body>
         </html>
