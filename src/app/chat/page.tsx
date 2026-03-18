@@ -1,6 +1,24 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { 
+  Send, 
+  Sparkles, 
+  History, 
+  MessageCircle, 
+  Calendar, 
+  BookOpen, 
+  Users, 
+  FileText, 
+  Printer, 
+  ChevronRight, 
+  Loader2, 
+  User, 
+  Download,
+  MoreVertical,
+  Plus,
+  Settings
+} from 'lucide-react';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 interface Mensaje { role: 'user' | 'assistant'; content: string; }
@@ -46,10 +64,9 @@ export default function ChatPage() {
       if (user) {
         setUserId(user.id);
         await cargarHistorial(user.id);
-        // Saludo inicial del agente
         setMensajes([{
           role: 'assistant',
-          content: `¡Hola! Estoy listo para ayudarte a planificar ${areaMateria} para ${aulaGrado}. ¿Tenés algún tema específico en mente o querés que arme la planificación para las ${cantClases} clases desde ${fechaInicio}?`
+          content: `¡Hola! Estoy listo para ayudarte a planificar **${areaMateria}** para **${aulaGrado}**. ¿Tenés algún tema específico en mente o querés que arme la planificación para las ${cantClases} clases desde ${fechaInicio}?`
         }]);
       }
     };
@@ -60,7 +77,7 @@ export default function ChatPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [mensajes]);
 
-  // ── Helpers de fechas hábiles ──────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────
   const generarFechasHabiles = (inicio: string, cantidad: number): string[] => {
     const fechas: string[] = [];
     const fecha = new Date(inicio + 'T12:00:00');
@@ -79,11 +96,8 @@ export default function ChatPage() {
     return dias[new Date(fechaStr + 'T12:00:00').getDay()];
   };
 
-  // ── Guardar planificación en Supabase ──────────────────────────────────
   const guardarPlanificacion = async (clases: Clase[]) => {
     if (!userId) return;
-
-    // Asignar fechas hábiles si el agente no las calculó bien
     const fechasHabiles = generarFechasHabiles(fechaInicio, clases.length);
     const clasesConFechas = clases.map((c, i) => ({
       ...c,
@@ -91,7 +105,6 @@ export default function ChatPage() {
       dia_semana: nombreDia(fechasHabiles[i] || c.fecha)
     }));
 
-    // Guardar cabecera
     const { data: plan, error: errorPlan } = await supabase
       .from('planificaciones')
       .insert([{
@@ -103,413 +116,282 @@ export default function ChatPage() {
       }])
       .select().single();
 
-    if (errorPlan) {
-      console.error('Error guardando planificación:', errorPlan);
-      return;
-    }
+    if (errorPlan) return;
 
-    // Guardar clases
-    const { error: errorClases } = await supabase
-      .from('planificacion_clases')
-      .insert(clasesConFechas.map(c => ({
-        planificacion_id: plan.id,
-        numero_clase: c.numero_clase,
-        fecha: c.fecha,
-        dia_semana: c.dia_semana,
-        titulo: c.titulo,
-        objetivo: c.objetivo || '',
-        contenido: c.contenido || '',
-        actividades: c.actividades || '',
-        recursos: c.recursos || '',
-        evaluacion: c.evaluacion || '',
-        estado: 'PENDIENTE'
-      })));
+    await supabase.from('planificacion_clases').insert(clasesConFechas.map(c => ({
+      planificacion_id: plan.id,
+      numero_clase: c.numero_clase,
+      fecha: c.fecha,
+      dia_semana: c.dia_semana,
+      titulo: c.titulo,
+      objetivo: c.objetivo || '',
+      contenido: c.contenido || '',
+      actividades: c.actividades || '',
+      recursos: c.recursos || '',
+      evaluacion: c.evaluacion || '',
+      estado: 'PENDIENTE'
+    })));
 
-    if (errorClases) {
-      console.error('Error guardando clases:', errorClases);
-      return;
-    }
-
-    // Guardar en memoria (contenidos_dados)
-    await supabase.from('contenidos_dados').insert(
-      clasesConFechas.map(c => ({
-        user_id: userId,
-        aula_grado: aulaGrado,
-        area_materia: areaMateria,
-        tema: c.titulo,
-        fecha_dada: c.fecha
-      }))
-    );
+    await supabase.from('contenidos_dados').insert(clasesConFechas.map(c => ({
+      user_id: userId, aula_grado: aulaGrado, area_materia: areaMateria,
+      tema: c.titulo, fecha_dada: c.fecha
+    })));
 
     setClasesPanelDerecho(clasesConFechas);
     await cargarHistorial(userId);
   };
 
-  // ── Cargar historial ───────────────────────────────────────────────────
   const cargarHistorial = async (uid: string) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('planificaciones')
       .select(`
         id, aula_grado, area_materia, fecha_inicio, cant_clases, created_at,
-        planificacion_clases (
-          id, numero_clase, fecha, dia_semana,
-          titulo, objetivo, contenido, actividades,
-          recursos, evaluacion, estado
-        )
+        planificacion_clases (*)
       `)
       .eq('user_id', uid)
       .order('created_at', { ascending: false });
-
-    if (error) { console.error('Error cargando historial:', error); return; }
     setHistorial(data || []);
   };
 
-  // ── Procesar respuesta del agente ──────────────────────────────────────
   const procesarRespuesta = async (rawText: string) => {
     try {
       const jsonMatch = rawText.match(/\[GENERAR_PLAN_JSON\]\s*(\{[\s\S]*\})/);
-
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[1]);
         if (parsed.planificacion && Array.isArray(parsed.planificacion)) {
           await guardarPlanificacion(parsed.planificacion);
-          // Mostrar solo el texto antes del JSON en el chat
           const textoVisible = rawText.split('[GENERAR_PLAN_JSON]')[0].trim();
           agregarMensaje('assistant', textoVisible || 'Planificación finalizada ✅');
           return;
         }
       }
-      // Sin JSON → mostrar respuesta normal
       agregarMensaje('assistant', rawText);
-
     } catch (error) {
-      console.error('Error procesando respuesta:', error);
-      agregarMensaje('assistant', 'Hubo un error generando la planificación. Por favor intentá de nuevo.');
+      agregarMensaje('assistant', 'Hubo un error generando la planificación.');
     }
   };
 
-  // ── Enviar mensaje ─────────────────────────────────────────────────────
   const enviarMensaje = async () => {
     if (!input.trim() || cargando) return;
-
     const mensajeUsuario = input.trim();
     setInput('');
     agregarMensaje('user', mensajeUsuario);
     setCargando(true);
 
     try {
-      const nuevosMensajes = [
-        ...mensajes,
-        { role: 'user' as const, content: mensajeUsuario }
-      ];
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: nuevosMensajes,
-          context: {
-            aulaGrado,
-            areaMateria,
-            fechaInicio,
-            cantClases: parseInt(cantClases),
-            userId
-          }
+          messages: [...mensajes, { role: 'user', content: mensajeUsuario }],
+          context: { aulaGrado, areaMateria, fechaInicio, cantClases: parseInt(cantClases), userId }
         })
       });
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const data = await res.json();
-      console.log('Respuesta status:', res.status);
-      console.log('Respuesta data:', data);
-
       if (data.error) throw new Error(data.error);
-
       await procesarRespuesta(data.response);
-
     } catch (error) {
-      console.error('Error enviando mensaje:', error);
-      agregarMensaje('assistant', 'Error de conexión. Por favor intentá de nuevo.');
-    } finally {
-      setCargando(false);
-    }
+      agregarMensaje('assistant', 'Error de conexión.');
+    } finally { setCargando(false); }
   };
 
   const agregarMensaje = (role: 'user' | 'assistant', content: string) => {
     setMensajes(prev => [...prev, { role, content }]);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      enviarMensaje();
-    }
-  };
-
-  // ── Generar PDF ────────────────────────────────────────────────────────
-  const generarPDF = async (planId?: string) => {
-    // Si se pasa un planId específico, buscar en historial
-    // Si no, usar las clases actuales del panel derecho
-    const clases = planId
-      ? historial.find(p => p.id === planId)?.planificacion_clases || []
-      : clasesPanelDerecho;
-
-    const plan = planId
-      ? historial.find(p => p.id === planId)
-      : { aula_grado: aulaGrado, area_materia: areaMateria, fecha_inicio: fechaInicio };
-
-    if (!clases.length) {
-      alert('No hay planificación para exportar.');
-      return;
-    }
-
-    // Usar la librería de PDF que ya está en el proyecto
-    // Generar contenido del PDF con las clases
-    const contenidoPDF = clases
-      .sort((a, b) => (a.numero_clase || 0) - (b.numero_clase || 0))
-      .map(c => `
-CLASE ${c.numero_clase} — ${c.dia_semana} ${c.fecha}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 ${c.titulo}
-🎯 Objetivo: ${c.objetivo}
-📖 Contenido: ${c.contenido}
-🎮 Actividades: ${c.actividades}
-📦 Recursos: ${c.recursos}
-✅ Evaluación: ${c.evaluacion}
-      `).join('\n');
-
-    console.log('PDF generado para:', plan?.aula_grado, plan?.area_materia);
-    // Conectar con la función de PDF existente en el proyecto pasándole contenidoPDF
-    
-    // Fallback: mostrar en una ventana nueva si no hay generador de PDF nativo configurado
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`<pre style="font-family: monospace; white-space: pre-wrap; padding: 40px;">${contenidoPDF}</pre>`);
-      printWindow.document.close();
-      printWindow.print();
-    }
-  };
-
-  // ── Render ─────────────────────────────────────────────────────────────
+  // ── Render Components ────────────────────────────────────────────────
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#0f172a', color: 'white' }}>
-
-      {/* Panel izquierdo — Chat */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid #1e293b' }}>
-
-        {/* Tabs */}
-        <div style={{ display: 'flex', background: '#1e293b' }}>
-          <button onClick={() => setTabActiva('chat')}
-            style={{ 
-              flex: 1, padding: '15px', 
-              background: tabActiva === 'chat' ? '#e85d2f' : 'transparent',
-              border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer'
-            }}>
-            CHAT
-          </button>
-          <button onClick={() => setTabActiva('historial')}
-            style={{ 
-              flex: 1, padding: '15px', 
-              background: tabActiva === 'historial' ? '#e85d2f' : 'transparent',
-              border: 'none', color: 'white', fontWeight: 'bold', cursor: 'pointer'
-            }}>
-            HISTORIAL
-          </button>
-        </div>
-
-        {tabActiva === 'chat' ? (
-          <>
-            {/* Combos */}
-            <div style={{ display: 'flex', gap: '8px', padding: '16px', flexWrap: 'wrap', background: '#0f172a', borderBottom: '1px solid #1e293b' }}>
-              <select value={aulaGrado} onChange={e => setAulaGrado(e.target.value)}
-                style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}>
-                {['1er Grado 2026','2do Grado 2026','3er Grado 2026',
-                  '4to Grado 2026','5to Grado 2026','6to Grado 2026','7mo Grado 2026']
-                  .map(g => <option key={g}>{g}</option>)}
-              </select>
-
-              <select value={areaMateria} onChange={e => setAreaMateria(e.target.value)}
-                style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}>
-                {['Lengua y Literatura','Matemática','Ciencias Naturales',
-                  'Ciencias Sociales','Formación Ética','Educación Física',
-                  'Música','Plástica','Teatro','Tecnología']
-                  .map(m => <option key={m}>{m}</option>)}
-              </select>
-
-              <input
-                type="date"
-                value={fechaInicio}
-                onChange={e => setFechaInicio(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
-              />
-
-              <select value={cantClases} onChange={e => setCantClases(e.target.value)}
-                style={{ background: '#1e293b', color: 'white', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}>
-                {['1','2','3','4','5'].map(n => (
-                  <option key={n}>{n} {n === '1' ? 'Clase' : 'Clases'}</option>
-                ))}
-              </select>
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-2rem)] gap-4 pb-4 animate-in fade-in duration-500">
+      
+      {/* Panel Izquierdo: Chat / Historial */}
+      <div className="flex-1 flex flex-col bg-brand-navy/50 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+        
+        {/* Header con Tabs y Selectores */}
+        <div className="p-6 border-b border-white/5 bg-black/20">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-6">
+            {/* Toggle Chat/Historial */}
+            <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 w-full sm:w-auto">
+              <button 
+                onClick={() => setTabActiva('chat')}
+                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${tabActiva === 'chat' ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20' : 'text-slate-500 hover:text-white'}`}
+              >
+                <MessageCircle size={14} /> CHAT
+              </button>
+              <button 
+                onClick={() => setTabActiva('historial')}
+                className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${tabActiva === 'historial' ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20' : 'text-slate-500 hover:text-white'}`}
+              >
+                <History size={14} /> HISTORIAL
+              </button>
             </div>
 
-            {/* Mensajes */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+            {/* Status Agente */}
+            <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Agente en Línea</span>
+            </div>
+          </div>
+
+          {tabActiva === 'chat' && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Grado</label>
+                <select value={aulaGrado} onChange={e => setAulaGrado(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all">
+                  {['1er Grado 2026','2do Grado 2026','3er Grado 2026','4to Grado 2026','5to Grado 2026','6to Grado 2026','7mo Grado 2026'].map(g => <option key={g} className="bg-brand-navy">{g}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Materia</label>
+                <select value={areaMateria} onChange={e => setAreaMateria(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all">
+                  {['Lengua y Literatura','Matemática','Ciencias Naturales','Ciencias Sociales','Educación Física','Artes Visuales'].map(m => <option key={m} className="bg-brand-navy">{m}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Inicio</label>
+                <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Clases</label>
+                <select value={cantClases} onChange={e => setCantClases(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all">
+                  {['1','2','3','4','5'].map(n => <option key={n} className="bg-brand-navy" value={n}>{n} {n==='1'?'Clase':'Clases'}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Zona de Contenido (Chat o Historial) */}
+        <div className="flex-1 overflow-y-auto p-6 scroll-smooth custom-scrollbar">
+          {tabActiva === 'chat' ? (
+            <div className="space-y-6">
               {mensajes.map((m, i) => (
-                <div key={i} style={{
-                  marginBottom: '16px',
-                  textAlign: m.role === 'user' ? 'right' : 'left'
-                }}>
-                  <div style={{
-                    display: 'inline-block', padding: '12px 16px',
-                    borderRadius: '16px', maxWidth: '85%',
-                    background: m.role === 'user' ? '#e85d2f' : '#1e293b',
-                    color: 'white',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    lineHeight: '1.5'
-                  }}>
-                    {m.content}
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div className={`flex gap-4 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-lg ${m.role === 'user' ? 'bg-brand-orange text-white' : 'bg-white/10 text-brand-orange'}`}>
+                      {m.role === 'user' ? <User size={20} /> : <Sparkles size={20} />}
+                    </div>
+                    <div className={`p-5 rounded-[2rem] text-sm leading-relaxed font-medium shadow-xl ${m.role === 'user' ? 'bg-brand-orange text-white rounded-tr-none' : 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-none'}`}>
+                      {m.content}
+                    </div>
                   </div>
                 </div>
               ))}
               {cargando && (
-                <div style={{ textAlign: 'left', padding: '10px' }}>
-                  <span style={{ color: '#e85d2f', fontWeight: 'bold' }}>Preparando planificación...</span>
+                <div className="flex justify-start animate-pulse">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-brand-orange">
+                      <Loader2 size={20} className="animate-spin" />
+                    </div>
+                    <span className="text-[10px] font-black text-brand-orange uppercase tracking-[.2em]">IA Procesando...</span>
+                  </div>
                 </div>
               )}
               <div ref={chatEndRef} />
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {historial.length === 0 ? (
+                <div className="col-span-full h-64 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-white/5 rounded-[3rem]">
+                   <History size={48} className="mb-4 opacity-20" />
+                   <p className="text-[10px] font-black uppercase tracking-widest">Sin historial acumulado</p>
+                </div>
+              ) : (
+                historial.map(plan => (
+                  <div key={plan.id} className="bg-black/20 border border-white/5 rounded-[2.5rem] p-6 hover:border-brand-orange/30 transition-all group relative overflow-hidden">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-brand-orange shadow-inner group-hover:scale-110 transition-all">
+                        <Calendar size={24} />
+                      </div>
+                      <div className="flex gap-2">
+                         <button onClick={() => { setClasesPanelDerecho(plan.planificacion_clases); setTabActiva('chat'); }} className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl transition-all border border-white/5 shadow-lg"><ChevronRight size={18} /></button>
+                      </div>
+                    </div>
+                    <h3 className="text-white font-black text-lg font-montserrat tracking-tight mb-1">{plan.area_materia}</h3>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">{plan.aula_grado}</p>
+                    <div className="flex items-center gap-3 text-[9px] font-black text-brand-orange uppercase tracking-widest bg-brand-orange/5 px-4 py-2 rounded-xl w-fit">
+                        <BookOpen size={12} /> {plan.cant_clases} Clases
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
-            {/* Input */}
-            <div style={{ display: 'flex', padding: '20px', gap: '10px', background: '#0f172a', borderTop: '1px solid #1e293b' }}>
-              <input
+        {/* Input Flotante */}
+        {tabActiva === 'chat' && (
+          <div className="p-6 bg-black/40 border-t border-white/5 backdrop-blur-md">
+            <div className="relative flex items-center gap-4 bg-white/5 border border-white/10 p-2 pl-6 rounded-[2rem] focus-within:border-brand-orange/50 focus-within:ring-4 ring-brand-orange/5 transition-all shadow-2xl">
+              <input 
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escribí tu tema o decí 'dale' para comenzar..."
-                style={{ 
-                  flex: 1, padding: '12px', borderRadius: '12px', 
-                  background: '#1e293b', border: '1px solid #334155', 
-                  color: 'white', outline: 'none'
-                }}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), enviarMensaje())}
+                placeholder="Pedí tu planificación o decí 'dale'..."
+                className="flex-1 bg-transparent border-none text-white text-sm font-bold placeholder:text-slate-600 outline-none"
                 disabled={cargando}
               />
               <button 
-                onClick={enviarMensaje} 
+                onClick={enviarMensaje}
                 disabled={cargando || !input.trim()}
-                style={{ 
-                  padding: '12px 24px', background: '#e85d2f', 
-                  color: 'white', border: 'none', borderRadius: '12px', 
-                  fontWeight: 'bold', cursor: 'pointer', opacity: (cargando || !input.trim()) ? 0.5 : 1
-                }}>
-                ENVIAR
+                className="bg-brand-orange hover:bg-brand-orange/80 text-white p-4 rounded-[1.5rem] shadow-xl shadow-brand-orange/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-30 flex items-center justify-center"
+              >
+                <Send size={20} />
               </button>
             </div>
-          </>
-        ) : (
-          /* Historial */
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-            {historial.length === 0 ? (
-              <p style={{ color: '#64748b', textAlign: 'center', marginTop: '40px' }}>
-                No hay planificaciones guardadas aún.
-              </p>
-            ) : (
-              historial.map(plan => (
-                <div key={plan.id} style={{
-                  marginBottom: '20px', padding: '20px',
-                  background: '#1e293b', borderRadius: '16px',
-                  border: '1px solid #334155'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <strong style={{ fontSize: '18px', display: 'block' }}>{plan.area_materia}</strong>
-                      <span style={{ color: '#94a3b8', fontSize: '14px' }}>{plan.aula_grado} • Inicio: {plan.fecha_inicio}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => {
-                        setClasesPanelDerecho(plan.planificacion_clases);
-                        setTabActiva('chat');
-                      }} style={{ background: '#334155', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>
-                        Ver
-                      </button>
-                      <button onClick={() => generarPDF(plan.id)}
-                        style={{ background: '#e85d2f', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer' }}>
-                        PDF
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: '15px', display: 'grid', gap: '10px' }}>
-                    {plan.planificacion_clases
-                      .sort((a, b) => (a.numero_clase || 0) - (b.numero_clase || 0))
-                      .map(clase => (
-                        <div key={clase.id} style={{
-                          padding: '10px', background: '#0f172a', borderRadius: '10px',
-                          border: '1px solid #1e293b'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ fontSize: '12px', color: '#e85d2f', fontWeight: 'bold' }}>CLASE {clase.numero_clase}</span>
-                            <span style={{ fontSize: '12px', color: '#64748b' }}>{clase.dia_semana} {clase.fecha}</span>
-                          </div>
-                          <div style={{ marginTop: '4px', fontWeight: 'bold' }}>{clase.titulo}</div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              ))
-            )}
           </div>
         )}
       </div>
 
-      {/* Panel derecho — Clases generadas */}
-      <div style={{
-        width: '400px', padding: '24px',
-        background: '#0f172a', overflowY: 'auto',
-        borderLeft: '1px solid #1e293b'
-      }}>
+      {/* Panel Derecho: Planificación Activa */}
+      <div className="w-full lg:w-[450px] flex flex-col gap-6 scroll-smooth overflow-y-auto pr-2 custom-scrollbar lg:h-full">
         {clasesPanelDerecho.length === 0 ? (
-          <div style={{ textAlign: 'center', color: '#475569', marginTop: '50%' }}>
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📅</div>
-            <p style={{ fontWeight: 'bold' }}>Sin plan activo</p>
-            <p style={{ fontSize: '14px' }}>Iniciá un chat para generar tu semana.</p>
+          <div className="flex-1 bg-brand-navy/30 border-2 border-dashed border-white/5 rounded-[3.5rem] flex flex-col items-center justify-center p-12 text-center">
+            <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-slate-700 mb-8 border border-white/5 shadow-inner">
+               <BookOpen size={48} className="opacity-20" />
+            </div>
+            <h3 className="text-white font-black text-xl mb-4 font-montserrat tracking-tight">Sin plan activo</h3>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-loose max-w-[200px]">Iniciá una sesión de chat para estructurar tu planificación semanal.</p>
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>Planificación Activa</h2>
-              <button onClick={() => generarPDF()} 
-                style={{ background: '#e85d2f', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                📄 PDF
+            <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-brand-orange opacity-5 rounded-full blur-3xl group-hover:scale-150 transition-all duration-1000" />
+              <div className="flex justify-between items-center mb-8 relative z-10">
+                <div>
+                  <h2 className="text-2xl font-black text-white font-montserrat tracking-tight">Planificación</h2>
+                  <p className="text-[9px] font-black text-brand-orange uppercase tracking-[.3em]">IA OPTIMIZADA</p>
+                </div>
+                <button className="p-4 bg-white text-brand-navy rounded-2xl hover:bg-brand-peach transition-all shadow-xl hover:scale-105 active:scale-95">
+                   <Printer size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-6 relative z-10">
+                {clasesPanelDerecho.sort((a,b)=>a.numero_clase-b.numero_clase).map((clase, i) => (
+                  <div key={i} className="bg-white/5 border border-white/5 rounded-[2rem] p-6 hover:bg-white/10 transition-all group/item shadow-inner">
+                    <div className="flex justify-between items-start mb-4">
+                      <span className="text-[10px] font-black text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-lg uppercase tracking-widest">CLASE {clase.numero_clase}</span>
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{clase.dia_semana} {clase.fecha.split('-').reverse().join('/')}</span>
+                    </div>
+                    <h4 className="text-white font-black text-md font-montserrat mb-4 tracking-tight group-hover/item:text-brand-orange transition-colors">{clase.titulo}</h4>
+                    <div className="grid gap-4">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 animate-in fade-in"><Plus size={8} /> Objetivo</span>
+                        <p className="text-[11px] text-slate-400 font-bold leading-relaxed">{clase.objetivo}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Plus size={8} /> Actividades</span>
+                        <p className="text-[11px] text-slate-400 font-bold leading-relaxed italic">{clase.actividades}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button className="w-full mt-8 py-5 bg-white text-brand-navy rounded-[1.8rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all shadow-2xl hover:bg-brand-peach hover:scale-[1.02]">
+                 <Download size={18} /> Descargar Paquete Completo
               </button>
             </div>
-            {clasesPanelDerecho
-              .sort((a, b) => (a.numero_clase || 0) - (b.numero_clase || 0))
-              .map((clase, i) => (
-                <div key={i} style={{
-                  marginBottom: '20px', padding: '20px',
-                  background: '#1e293b', borderRadius: '16px',
-                  border: '1px solid #e85d2f44',
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <span style={{ color: '#e85d2f', fontWeight: 'bold', fontSize: '13px' }}>CLASE {clase.numero_clase}</span>
-                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>{clase.dia_semana} {clase.fecha}</span>
-                  </div>
-                  <h3 style={{ margin: '0 0 10px 0', fontSize: '18px' }}>{clase.titulo}</h3>
-                  
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '10px', color: '#e85d2f', fontWeight: 'bold', textTransform: 'uppercase' }}>Objetivo</span>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#cbd5e1' }}>{clase.objetivo}</p>
-                    </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '10px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>Actividades</span>
-                      <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>{clase.actividades}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
           </>
         )}
       </div>
