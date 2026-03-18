@@ -15,24 +15,30 @@ export async function POST(req: NextRequest) {
     const { messages, context } = body;
     const { aulaGrado, areaMateria, fechaInicio, cantClases, userId } = context;
 
-    // 1. Obtener contenidos previos de Supabase
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // 1. Obtener contenidos previos de Supabase (Opcional para que no explote)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const { data: contenidosPrevios } = await supabase
-      .from('contenidos_dados')
-      .select('tema, fecha_dada')
-      .eq('user_id', userId)
-      .eq('aula_grado', aulaGrado)
-      .eq('area_materia', areaMateria)
-      .order('fecha_dada', { ascending: false })
-      .limit(20);
+    let listaPrevios = 'No se pudo acceder a la memoria (faltan llaves de Supabase en Vercel).';
 
-    const listaPrevios = contenidosPrevios && contenidosPrevios.length > 0
-      ? contenidosPrevios.map(c => `- ${c.tema} (${c.fecha_dada})`).join('\n')
-      : 'Ninguno aún — es la primera planificación de esta materia.';
+    if (supabaseUrl && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      const { data: contenidosPrevios } = await supabase
+        .from('contenidos_dados')
+        .select('tema, fecha_dada')
+        .eq('user_id', userId)
+        .eq('aula_grado', aulaGrado)
+        .eq('area_materia', areaMateria)
+        .order('fecha_dada', { ascending: false })
+        .limit(20);
+
+      if (contenidosPrevios && contenidosPrevios.length > 0) {
+        listaPrevios = contenidosPrevios.map(c => `- ${c.tema} (${c.fecha_dada})`).join('\n');
+      } else {
+        listaPrevios = 'Ninguno aún — es la primera planificación de esta materia.';
+      }
+    }
 
     // 2. System prompt
     const systemPrompt = `Sos un asistente de planificación escolar para docentes argentinos de primaria (1° a 7° grado).
