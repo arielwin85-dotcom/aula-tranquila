@@ -26,7 +26,7 @@ export default function ClasesPage() {
   const [editingClass, setEditingClass] = useState<Classroom | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   
-  // BUG 2: New states for Rebuilt Edit Flow
+  // BUG 2 & 4: Rebuilt Edit Flow (v4.1.4)
   const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
   const [alumnoAEditar, setAlumnoAEditar] = useState<Student | null>(null);
   
@@ -160,26 +160,29 @@ export default function ClasesPage() {
   };
 
   const handleGuardarEdicion = async (datosActualizados: Partial<Student>) => {
-    if (!alumnoAEditar?.dni) {
-      console.error('DNI del alumno no encontrado');
+    const dniToUpdate = alumnoAEditar?.dni || (alumnoAEditar as any)?.id;
+    if (!dniToUpdate) {
+      console.error('Identificador del alumno no encontrado');
+      alert("Error: No se pudo identificar al alumno para la actualización.");
       return;
     }
 
     setIsLoading(true);
     try {
+      // Direct Supabase Update using DNI as PK
       const { error } = await supabase
-        .from('students') // Verified: real table name is 'students'
+        .from('students')
         .update(datosActualizados)
-        .eq('dni', alumnoAEditar.dni);
+        .eq('dni', dniToUpdate);
 
       if (error) throw error;
 
       setModalEditarAbierto(false);
       setAlumnoAEditar(null);
-      await fetchClassrooms(); // Recargar lista
+      await fetchClassrooms(); 
     } catch (err) {
       console.error('Error al actualizar alumno:', err);
-      alert("Error al actualizar perfil.");
+      alert("Error al actualizar perfil en la base de datos.");
     } finally {
       setIsLoading(false);
     }
@@ -385,7 +388,7 @@ export default function ClasesPage() {
     <div className="max-w-7xl mx-auto pb-20 relative animate-in fade-in duration-700">
       {/* Visible Version Marker to help diagnose cache issues */}
       <div className="fixed top-2 right-2 z-[9999] px-3 py-1 bg-white/10 backdrop-blur-xl border border-white/20 rounded-full text-[8px] font-black uppercase tracking-widest text-white/40 pointer-events-none">
-        PRODUCTION BUILD v4.1.0 • PANEL STABLE
+        PRODUCTION BUILD v4.1.4 • PANEL STABLE
       </div>
       
       <NewClassModal 
@@ -674,7 +677,7 @@ export default function ClasesPage() {
              </div>
            )}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v4.1.0 - Panel Stable</span>
+               <span>Aula Tranquila v4.1.4 - Panel Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>

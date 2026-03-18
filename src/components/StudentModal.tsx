@@ -25,7 +25,9 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
         setName(alumnoInicial.name || "");
         setDni(alumnoInicial.dni || (alumnoInicial as any).id || "");
         setAttendance(alumnoInicial.attendance || 100);
-        setDuaTagsInput((alumnoInicial.duaContextTags || []).join(", "));
+        // Robust check for duaContextTags (v4.1.4)
+        const tags = Array.isArray(alumnoInicial.duaContextTags) ? alumnoInicial.duaContextTags : [];
+        setDuaTagsInput(tags.join(", "));
       } else {
         setName("");
         setDni("");
@@ -43,7 +45,11 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
 
     if (!safeName || !safeDni) return;
     
-    const duaContextTags = duaTagsInput.split(",").map((t) => t.trim()).filter((t) => t.length > 0);
+    // Split and filter tags safely
+    const duaContextTags = (duaTagsInput || "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
     
     if (onGuardar) {
       onGuardar({ 
@@ -86,8 +92,8 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
                  type="text"
                  value={dni}
                  onChange={(e) => setDni(e.target.value)}
-                 disabled={modoEdicion}
-                 className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold placeholder:text-slate-700 focus:border-brand-orange outline-none transition-all disabled:opacity-50"
+                 readOnly={modoEdicion}
+                 className={`w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-bold placeholder:text-slate-700 focus:border-brand-orange outline-none transition-all ${modoEdicion ? "opacity-30 cursor-not-allowed border-none shadow-none" : ""}`}
                  placeholder="Ej: 40555666"
                />
             </div>
