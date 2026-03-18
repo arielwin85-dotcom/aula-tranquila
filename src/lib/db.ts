@@ -312,7 +312,6 @@ export async function upsertStudent(student: any) {
       classroom_id: student.classroom_id || student.classroomId,
       user_id: student.user_id || student.userId,
       name: student.name,
-      attendance: student.attendance,
       dua_context_tags: student.dua_context_tags || student.duaContextTags || [],
     }).select();
     

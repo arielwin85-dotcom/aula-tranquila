@@ -415,7 +415,7 @@ export default function ClasesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
            <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Mis Clases</h1>
-           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Gestioná la asistencia, notas y seguimiento DUA de tus alumnos.</p>
+           <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Gestioná las notas y seguimiento DUA de tus alumnos.</p>
         </div>
         <button 
           onClick={openNewClassModal}

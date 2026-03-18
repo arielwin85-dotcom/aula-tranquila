@@ -74,7 +74,7 @@ export default function SoportePage() {
       title: 'Mis Clases',
       icon: MessageSquare,
       desc: 'El centro de gestión de tus aulas y alumnos.',
-      content: 'Acá organizás todas tus clases y alumnos en un solo lugar. Podés crear aulas por grado y año lectivo, agregar alumnos con su información pedagógica, registrar asistencia, cargar notas detalladas por tema y materia, y visualizar el promedio de cada estudiante. También podés etiquetar a los alumnos con contexto DUA (Diseño Universal para el Aprendizaje) y generar un informe PDF completo de cada clase con un solo clic.'
+      content: 'Acá organizás todas tus clases y alumnos en un solo lugar. Podés crear aulas por grado y año lectivo, agregar alumnos con su información pedagógica, cargar notas detalladas por tema y materia, y visualizar el promedio de cada estudiante. También podés etiquetar a los alumnos con contexto DUA (Diseño Universal para el Aprendizaje) y generar un informe PDF completo de cada clase con un solo clic.'
     },
     {
       id: 'copiloto',

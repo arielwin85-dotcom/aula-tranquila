@@ -16,7 +16,6 @@ interface StudentModalProps {
 export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoEdicion, subjects }: StudentModalProps) {
   const [name, setName] = useState("");
   const [dni, setDni] = useState("");
-  const [attendance, setAttendance] = useState(100);
   const [duaTagsInput, setDuaTagsInput] = useState("");
 
   useEffect(() => {
@@ -24,14 +23,12 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
       if (alumnoInicial) {
         setName(alumnoInicial.name || "");
         setDni(alumnoInicial.dni || (alumnoInicial as any).id || "");
-        setAttendance(alumnoInicial.attendance || 100);
         // Robust check for duaContextTags (v4.1.4)
         const tags = Array.isArray(alumnoInicial.duaContextTags) ? alumnoInicial.duaContextTags : [];
         setDuaTagsInput(tags.join(", "));
       } else {
         setName("");
         setDni("");
-        setAttendance(100);
         setDuaTagsInput("");
       }
     }
@@ -55,7 +52,6 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
       onGuardar({ 
         dni: safeDni, 
         name: safeName, 
-        attendance: Number(attendance), 
         duaContextTags, 
       });
     }
@@ -110,19 +106,7 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Asistencia (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={attendance}
-                  onChange={(e) => setAttendance(Number(e.target.value))}
-                  className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black text-brand-orange focus:border-brand-orange outline-none transition-all"
-                />
-             </div>
-
+          <div className="grid grid-cols-1 gap-8">
              <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                    Contexto DUA <span className="text-brand-orange text-[8px] italic">(IA Adaptativa)</span>

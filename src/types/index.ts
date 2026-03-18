@@ -25,7 +25,6 @@ export interface Student {
   name: string;
   grades: number[]; // Legacy simple grades
   detailedGrades?: GradeEntry[]; // New structured grades
-  attendance: number; // Porcentaje 0-100
   duaContextTags: string[]; // Ej: ['TDAH', 'Dislexia Viso-Espacial', 'Altas Capacidades']
 }
 

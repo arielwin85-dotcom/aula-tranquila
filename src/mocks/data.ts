@@ -23,10 +23,10 @@ export const mockClassrooms: Classroom[] = [
       { id: 'sub-nat1', name: 'Ciencias Naturales' }
     ],
     students: [
-      { dni: '10000001', classroomId: 'grado-1a', name: 'Martina Rossi', grades: [8, 9, 8.5], attendance: 95, duaContextTags: [] },
-      { dni: '10000002', classroomId: 'grado-1a', name: 'Facundo Pérez', grades: [5, 6, 6.5], attendance: 80, duaContextTags: ['TDAH'] },
-      { dni: '10000003', classroomId: 'grado-1a', name: 'Valentina Silva', grades: [9.5, 10, 9], attendance: 100, duaContextTags: ['Altas Capacidades'] },
-      { dni: '10000004', classroomId: 'grado-1a', name: 'Tomás Castro', grades: [7, 7, 6], attendance: 85, duaContextTags: ['Dislexia'] },
+      { dni: '10000001', classroomId: 'grado-1a', name: 'Martina Rossi', grades: [8, 9, 8.5], duaContextTags: [] },
+      { dni: '10000002', classroomId: 'grado-1a', name: 'Facundo Pérez', grades: [5, 6, 6.5], duaContextTags: ['TDAH'] },
+      { dni: '10000003', classroomId: 'grado-1a', name: 'Valentina Silva', grades: [9.5, 10, 9], duaContextTags: ['Altas Capacidades'] },
+      { dni: '10000004', classroomId: 'grado-1a', name: 'Tomás Castro', grades: [7, 7, 6], duaContextTags: ['Dislexia'] },
     ]
   },
   {
@@ -40,8 +40,8 @@ export const mockClassrooms: Classroom[] = [
        { id: 'sub-fis7', name: 'Física y Química' }
     ],
     students: [
-      { dni: '10000005', classroomId: 'grado-7b', name: 'Camila Domínguez', grades: [7, 8], attendance: 90, duaContextTags: [] },
-      { dni: '10000006', classroomId: 'grado-7b', name: 'Mateo López', grades: [4, 5], attendance: 75, duaContextTags: ['Déficit de Atención'] },
+      { dni: '10000005', classroomId: 'grado-7b', name: 'Camila Domínguez', grades: [7, 8], duaContextTags: [] },
+      { dni: '10000006', classroomId: 'grado-7b', name: 'Mateo López', grades: [4, 5], duaContextTags: ['Déficit de Atención'] },
     ]
   }
 ];

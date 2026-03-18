@@ -8,7 +8,6 @@ interface NewStudentModalProps {
   onClose: () => void;
   onSave: (studentData: {
     name: string;
-    attendance: number;
     grades: number[];
     duaContextTags: string[];
   }) => void;
@@ -16,7 +15,6 @@ interface NewStudentModalProps {
 
 export function NewStudentModal({ isOpen, onClose, onSave }: NewStudentModalProps) {
   const [name, setName] = useState("");
-  const [attendance, setAttendance] = useState(100);
   const [gradesInput, setGradesInput] = useState("");
   const [duaTagsInput, setDuaTagsInput] = useState("");
 
@@ -37,14 +35,12 @@ export function NewStudentModal({ isOpen, onClose, onSave }: NewStudentModalProp
 
     onSave({
       name: name.trim(),
-      attendance: Number(attendance),
       grades,
       duaContextTags,
     });
 
     // Reset Form
     setName("");
-    setAttendance(100);
     setGradesInput("");
     setDuaTagsInput("");
     onClose();
@@ -81,18 +77,6 @@ export function NewStudentModal({ isOpen, onClose, onSave }: NewStudentModalProp
              />
           </div>
           
-          <div>
-             <label className="block text-sm font-medium text-slate-700 mb-1">Asistencia (%)</label>
-             <input
-               type="number"
-               min="0"
-               max="100"
-               value={attendance}
-               onChange={(e) => setAttendance(Number(e.target.value))}
-               className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-             />
-          </div>
-
           <div>
              <label className="block text-sm font-medium text-slate-700 mb-1">Notas Iniciales (separadas por coma)</label>
              <input
