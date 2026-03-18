@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { Student } from "@/types";
-import { supabase } from "@/lib/supabase";
 
 interface EditarAlumnoProps {
   alumno: Student;
@@ -32,7 +31,7 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
     const safeDni = (dni || "").trim();
     if (!safeName || !safeDni) return;
 
-    const duaContextTags = (duaTagsInput || "")
+    const dua_context_tags = (duaTagsInput || "")
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
@@ -40,20 +39,32 @@ export function EditarAlumno({ alumno, onCerrar, onGuardado }: EditarAlumnoProps
     setGuardando(true);
     setError(null);
 
-    const { error: supabaseError } = await supabase
-      .from("students")
-      .update({ name: safeName, attendance: Number(attendance), duaContextTags })
-      .eq("dni", safeDni);
+    try {
+      const res = await fetch(`/api/students/${safeDni}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: safeName,
+          attendance: Number(attendance),
+          dua_context_tags,
+          duaContextTags: dua_context_tags,
+          classroomId: alumno.classroomId,
+        }),
+      });
 
-    setGuardando(false);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Error HTTP ${res.status}`);
+      }
 
-    if (supabaseError) {
-      setError("Error al guardar: " + supabaseError.message);
-      return;
+      setGuardando(false);
+      onGuardado();
+    } catch (err: any) {
+      setGuardando(false);
+      setError("Error al guardar: " + (err.message || "Error desconocido"));
     }
-
-    onGuardado();
   };
+
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4">

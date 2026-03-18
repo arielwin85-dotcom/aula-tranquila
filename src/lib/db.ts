@@ -48,48 +48,63 @@ export async function getSubjects(): Promise<Subject[]> {
 }
 
 export async function getClassrooms(userId?: string): Promise<Classroom[]> {
+  // 1. Fetch classrooms with students
   let query = db().from('classrooms').select('*, students_list:students(*, grades_list:grades(*))');
   if (userId) query = query.eq('user_id', userId);
 
   const { data, error } = await query;
-  if (error) {
-    // Fallback if joined tables don't exist yet (migration period)
-    const { data: fallbackData, error: fallbackError } = await db().from('classrooms').select('*');
-    if (fallbackError) throw fallbackError;
-    return (fallbackData || []).map((c: any) => ({
-      ...c,
-      userId: c.user_id,
-      students: c.students || [],
-    }));
+  if (error || !data) {
+    const { data: fallback, error: fbErr } = await db().from('classrooms').select('*');
+    if (fbErr) throw fbErr;
+    return (fallback || []).map((c: any) => ({ ...c, userId: c.user_id, students: c.students || [] }));
   }
 
-  return (data || []).map((c: any) => {
-    // Ensure subjects have IDs (Healer)
+  // 2. Fetch all "notas" (new system) for all classrooms to avoid N+1
+  const allStudentDnis = data.flatMap((c: any) => (c.students_list || []).map((s: any) => s.dni));
+  const { data: allNotas, error: notasErr } = allStudentDnis.length > 0 
+    ? await db().from('notas').select('*').in('alumno_dni', allStudentDnis)
+    : { data: [], error: null };
+
+  return data.map((c: any) => {
     const subjects = (c.subjects || []).map((s: any) => ({
       ...s,
       id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
     }));
 
-    const normalizedStudents: Student[] = (c.students_list || []).map((s: any) => ({
-      ...s,
-      classroomId: s.classroom_id,
-      duaContextTags: s.dua_context_tags || [],
-      detailedGrades: (s.grades_list || []).map((g: any) => ({
-        ...g,
-        subjectId: g.subject_id || g.subjectId, 
-      })),
-      grades: (s.grades_list || []).map((g: any) => g.score)
-    }));
+    const normalizedStudents: Student[] = (c.students_list || []).map((s: any) => {
+      // Find notas for this specific student
+      const studentNotas = (allNotas || []).filter((n: any) => String(n.alumno_dni) === String(s.dni));
+      
+      const detailedGrades = studentNotas.length > 0
+        ? studentNotas.map((n: any) => ({
+            id: n.id,
+            studentDni: n.alumno_dni,
+            subjectId: n.materia,
+            topic: n.evaluacion || '',
+            score: Number(n.nota) || 0,
+            date: n.fecha || '',
+          }))
+        : (s.grades_list || []).map((g: any) => ({
+            ...g,
+            subjectId: g.subject_id || g.subjectId,
+          }));
 
-    // Find legacy students that are NOT yet in the normalized table
-    // Match by ID or Name as a bridge during migration
-    const legacyStudents = (c.students || []).filter((ls: any) => 
+      return {
+        ...s,
+        classroomId: s.classroom_id,
+        duaContextTags: s.dua_context_tags || [],
+        detailedGrades,
+        grades: detailedGrades.map((g: any) => g.score),
+      };
+    });
+
+    const legacyStudents = (c.students || []).filter((ls: any) =>
       !normalizedStudents.some((ns: Student) => String(ns.dni) === String(ls.dni || ls.id))
     );
 
     return {
       ...c,
-      subjects, // Repaired subjects
+      subjects,
       userId: c.user_id,
       students: [...normalizedStudents, ...legacyStudents]
     };
@@ -267,19 +282,27 @@ export async function deleteStudentFromLegacy(dni: string, classroomId: string) 
 
 export async function deleteStudentFromDB(dni: string, classroomId: string) {
   try {
-    // 1. Try deleting from normalized students table
-    const { error } = await db().from('students').delete().eq('dni', dni);
-    if (!error) {
-      // Also clean up from legacy to be sure
-      await deleteStudentFromLegacy(dni, classroomId);
-      return true;
-    }
-  } catch (e) {
-    console.error('Students table might not exist yet:', e);
-  }
+    // 1. Delete notas (new grades system) - cascade by alumno_dni
+    await db().from('notas').delete().eq('alumno_dni', dni);
 
-  // 2. Fallback: Legacy JSON delete
-  return deleteStudentFromLegacy(dni, classroomId);
+    // 2. Delete grades (old grades table) - cascade by student_dni
+    await db().from('grades').delete().eq('student_dni', dni);
+
+    // 3. Delete the student record itself
+    const { error } = await db().from('students').delete().eq('dni', dni);
+    if (error) {
+      console.error('Error deleting from students table:', error);
+    }
+
+    // 4. Also clean up from legacy classrooms.students array
+    await deleteStudentFromLegacy(dni, classroomId);
+
+    return true;
+  } catch (e) {
+    console.error('Error in cascade delete:', e);
+    // Fallback: at minimum remove from legacy
+    return deleteStudentFromLegacy(dni, classroomId);
+  }
 }
 
 export async function upsertStudent(student: any) {
