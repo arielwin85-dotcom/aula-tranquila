@@ -264,57 +264,38 @@ la continuación según lo que ya dimos?`
       return;
     }
 
+    try {
+      const response = await fetch('/api/planificaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          aulaGrado,
+          areaMateria,
+          fechaInicio,
+          cantClases,
+          clases: clasesConFechas
+        })
+      });
 
-    const { data: plan, error: errorPlan } = await supabase
-      .from('planificaciones')
-      .insert([{
-        user_id: userId,
-        aula_grado: aulaGrado,
-        area_materia: areaMateria,
-        fecha_inicio: fechaInicio,
-        cant_clases: parseInt(cantClases)
-      }])
-      .select().single();
+      const data = await response.json();
 
-    if (errorPlan) {
-      console.error('Error insertando planificacion:', errorPlan);
-      alert('Error en base de datos (Plan): ' + errorPlan.message);
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al guardar');
+      }
+
       setGuardando(false);
-      return;
+      setGuardadoOk(true);
+      setTimeout(() => setGuardadoOk(false), 5000);
+      await cargarHistorial(userId);
+
+    } catch (err: any) {
+      console.error('Error guardando planificación:', err);
+      alert('Error al guardar en el historial: ' + err.message);
+      setGuardando(false);
     }
-
-
-    const { error: errorClases } = await supabase.from('planificacion_clases').insert(clasesConFechas.map(c => ({
-      planificacion_id: plan.id,
-      numero_clase: c.numero_clase,
-      fecha: c.fecha,
-      dia_semana: c.dia_semana,
-      titulo: c.titulo,
-      objetivo: c.objetivo || '',
-      contenido: c.contenido || '',
-      actividades: c.actividades || '',
-      recursos: c.recursos || '',
-      evaluacion: c.evaluacion || '',
-      ejemplos_orientativos: c.ejemplos_orientativos || '',
-      estado: 'PENDIENTE'
-    })));
-
-    if (errorClases) {
-      console.error('Error insertando clases:', errorClases);
-      alert('Error en base de datos (Clases): ' + errorClases.message + '\nVerificá si la tabla tiene la columna ejemplos_orientativos');
-    }
-
-
-    await supabase.from('contenidos_dados').insert(clasesConFechas.map(c => ({
-      user_id: userId, aula_grado: aulaGrado, area_materia: areaMateria,
-      tema: c.titulo, fecha_dada: c.fecha
-    })));
-
-    setGuardando(false);
-    setGuardadoOk(true);
-    setTimeout(() => setGuardadoOk(false), 5000);
-    await cargarHistorial(userId);
   };
+
 
 
 
