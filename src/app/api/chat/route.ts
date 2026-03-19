@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         .eq('aula_grado', nombreGrado)
         .eq('area_materia', areaMateria)
         .order('fecha_dada', { ascending: false })
-        .limit(10);
+        .limit(100);
 
       if (previos && previos.length > 0) {
         contenidosPrevios = previos.map(p => `${p.tema} (${p.fecha_dada})`).join(', ');
@@ -102,7 +102,7 @@ CONTEXTO ACTUAL:
 - Mes del año: ${mesActual} (esto determina en qué punto 
   del año escolar argentino están — marzo=inicio, 
   julio=mitad, noviembre=cierre)
-- Temas ya dados: ${contenidosPrevios}${contextoMemoria}
+- Temas ya dados (HISTORIAL COMPLETO): ${contenidosPrevios}${contextoMemoria}
 
 CONOCIMIENTO QUE DEBÉS APLICAR SIEMPRE:
 
@@ -179,8 +179,8 @@ Clase 4: aplicación en contexto real o lúdico
 Clase 5: integración + evaluación informal
 
 NUNCA:
-- Repetir temas de la lista de contenidos previos
-- Dar contenido de un grado superior al indicado
+- Repetir temas de la lista de HISTORIAL COMPLETO (prohibido).
+- Dar contenido de un grado superior al indicado.
 - Proponer actividades que los niños de ese grado 
   no pueden hacer (ej: leer solos en 1er grado 
   en marzo)
