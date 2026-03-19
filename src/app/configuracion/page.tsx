@@ -78,20 +78,20 @@ export default function ConfiguracionPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Sidebar Mini - Tab Navigation Layout Style */}
-        <div className="md:col-span-1 space-y-2">
-          <button className="w-full flex items-center gap-3 px-4 py-3 bg-white text-purple-600 rounded-2xl font-bold shadow-sm border border-purple-100">
+        <div className="md:col-span-1 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-4 md:pb-0 px-2 md:px-0 scrollbar-hide">
+          <button className="flex-shrink-0 w-auto md:w-full flex items-center justify-center md:justify-start gap-3 px-6 py-3 bg-white text-brand-orange rounded-2xl font-bold shadow-sm border border-brand-orange/20">
             <User size={18} />
             Perfil
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
+          <button className="flex-shrink-0 w-auto md:w-full flex items-center justify-center md:justify-start gap-3 px-6 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
             <Lock size={18} />
             Seguridad
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
+          <button className="flex-shrink-0 w-auto md:w-full flex items-center justify-center md:justify-start gap-3 px-6 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
             <Bell size={18} />
             Notificaciones
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
+          <button className="flex-shrink-0 w-auto md:w-full flex items-center justify-center md:justify-start gap-3 px-6 py-3 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all">
              <CreditCard size={18} />
              Facturación
           </button>

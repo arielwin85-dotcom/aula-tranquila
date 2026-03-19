@@ -140,9 +140,9 @@ export default function GeneradorPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20 animate-in fade-in duration-500">
-      <div className="mb-10 text-center">
-        <h1 className="text-4xl font-black text-white mb-3 font-montserrat tracking-tight">Valuaciones y Contenidos</h1>
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] max-w-xl mx-auto">Dejá que el Super Agente IA redacte el material perfecto.</p>
+      <div className="mb-10 text-center px-4 pt-14 md:pt-0">
+        <h1 className="text-3xl md:text-4xl font-black text-white mb-3 font-montserrat tracking-tight">Valuaciones y Contenidos</h1>
+        <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] max-w-xl mx-auto leading-relaxed">Dejá que el Super Agente IA redacte el material perfecto.</p>
       </div>
 
       {!resultReady ? (

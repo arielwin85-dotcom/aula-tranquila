@@ -124,15 +124,15 @@ export default function EvidenciasPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
-      <div className="mb-10 flex justify-between items-end">
+      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
         <div>
-          <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Evidencias IA</h1>
+          <h1 className="text-2xl md:text-4xl font-black text-white mb-2 font-montserrat tracking-tight pt-14 md:pt-0">Evidencias IA</h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Corrección inteligente de pruebas y seguimiento pedagógico.</p>
         </div>
         {results.length > 0 && (
           <button 
             onClick={handlePrint}
-            className="flex items-center gap-3 px-8 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-brand-peach transition-all shadow-2xl"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-brand-peach transition-all shadow-2xl"
           >
             <Printer size={18} />
             Imprimir Informe (${results.length})
@@ -217,23 +217,23 @@ export default function EvidenciasPage() {
                
                {currentResult ? (
                   <div className="animate-in fade-in slide-in-from-right-12 duration-1000 flex flex-col h-full relative z-10">
-                     <div className="flex flex-col md:flex-row items-center justify-between mb-10 pb-10 border-b border-white/5 gap-8">
-                        <div className="flex items-center gap-6">
-                           <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl ${currentResult.identified ? 'bg-brand-orange text-white' : 'bg-red-500 text-white'}`}>
-                              <User size={40} />
-                           </div>
-                           <div>
-                              <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Análisis de Alumno</p>
-                              <h3 className="font-black text-white text-3xl tracking-tight font-montserrat">
-                                {currentResult.studentName || 'IDENTIFICACIÓN PENDIENTE'}
-                              </h3>
-                              {!currentResult.identified && (
-                                <p className="text-[10px] font-black text-red-500 flex items-center gap-2 mt-2 uppercase tracking-widest">
-                                  <AlertCircle size={14} /> Nombre no legible en la captura
-                                </p>
-                              )}
-                           </div>
-                        </div>
+                         <div className="flex flex-col md:flex-row items-center justify-between mb-10 pb-10 border-b border-white/5 gap-8">
+                            <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                               <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl shrink-0 ${currentResult.identified ? 'bg-brand-orange text-white' : 'bg-red-500 text-white'}`}>
+                                  <User size={40} />
+                               </div>
+                               <div>
+                                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Análisis de Alumno</p>
+                                  <h3 className="font-black text-white text-2xl md:text-3xl tracking-tight font-montserrat">
+                                    {currentResult.studentName || 'IDENTIFICACIÓN PENDIENTE'}
+                                  </h3>
+                                  {!currentResult.identified && (
+                                    <p className="text-[10px] font-black text-red-500 flex items-center justify-center sm:justify-start gap-2 mt-2 uppercase tracking-widest">
+                                      <AlertCircle size={14} /> No legible
+                                    </p>
+                                  )}
+                               </div>
+                            </div>
                         <div className="bg-white/5 border border-white/10 text-white p-8 rounded-[2.5rem] text-center shadow-inner min-w-[160px] relative overflow-hidden group">
                            <div className="absolute top-0 left-0 w-full h-1 bg-brand-orange opacity-50 group-hover:opacity-100 transition-all" />
                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Nota Sugerida</p>

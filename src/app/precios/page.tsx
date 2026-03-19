@@ -45,7 +45,7 @@ export default function PreciosPage() {
          </div>
 
          {/* Plan Docente Pro */}
-         <div className="bg-gradient-to-b from-purple-600 to-purple-800 rounded-3xl p-8 border-2 border-purple-400 shadow-xl relative scale-105 transform z-10 transition-transform hover:scale-110 duration-300">
+         <div className="bg-gradient-to-b from-purple-600 to-purple-800 rounded-3xl p-8 border-2 border-purple-400 shadow-xl relative scale-100 md:scale-105 transform z-10 transition-transform hover:scale-110 duration-300">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wider shadow-sm flex items-center gap-1">
                <Star size={12} className="fill-white" /> MÁS ELEGIDO
             </div>
