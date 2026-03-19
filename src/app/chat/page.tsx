@@ -713,7 +713,7 @@ la continuación según lo que ya dimos?`
                     <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center text-brand-orange">
                       <Loader2 size={20} className="animate-spin" />
                     </div>
-                    <span className="text-[10px] font-black text-brand-orange uppercase tracking-[.2em]">IA Procesando...</span>
+                    <span className="text-[10px] font-black text-brand-orange uppercase tracking-[.2em]">Asistente Procesando...</span>
                   </div>
                 </div>
               )}

@@ -36,7 +36,7 @@ export default function Dashboard() {
   }, []);
 
   const ACTIONS = [
-    { name: 'IA Pedagógica', icon: Zap, color: 'brand-orange', link: '/chat', desc: 'Sugerencia de clases y secuencias.' },
+    { name: 'Asistente Pedagógico', icon: Zap, color: 'brand-orange', link: '/chat', desc: 'Sugerencia de clases y secuencias.' },
     { name: 'Planificación Normativa', icon: FileText, color: 'brand-blue', link: '/normativa', desc: 'Basado en diseños curriculares.' },
     { name: 'Mis Clases', icon: Users, color: 'emerald-500', link: '/clases', desc: 'Gestión de alumnos y aulas.' },
     { name: 'Biblioteca', icon: Library, color: 'brand-peach', link: '/biblioteca', desc: 'Tus archivos de Google Drive.' },
@@ -99,7 +99,7 @@ export default function Dashboard() {
               {isLoading ? (
                  <div className="p-20 flex flex-col items-center justify-center text-slate-600 gap-4">
                     <div className="w-10 h-10 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin"></div>
-                    <span className="text-[10px] font-black uppercase tracking-widest">Cargando tu aula...</span>
+                    <span className="text-[10px] font-black text-brand-orange uppercase tracking-[.2em]">Asistente Procesando...</span>
                  </div>
               ) : classrooms.length === 0 ? (
                  <div className="p-20 text-center">

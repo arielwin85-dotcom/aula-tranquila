@@ -78,10 +78,10 @@ export default function SoportePage() {
     },
     {
       id: 'copiloto',
-      title: '✦ IA Pedagógica',
+      title: '✦ Asistente Pedagógico',
       icon: MessageSquare,
       desc: 'Tu asistente personal para el día a día.',
-      content: 'La IA Pedagógica te ayuda a planificar tus clases de forma dinámica. Podés escribirle qué temas diste anteriormente y ella te sugerirá la siguiente secuencia lógica basada en los contenidos curriculares. Incluye un calendario semanal interactivo donde podés marcar feriados, editar temas y regenerar clases específicas en segundos.'
+      content: 'El Asistente Pedagógico te ayuda a planificar tus clases de forma dinámica. Podés escribirle qué temas diste anteriormente y él te sugerirá la siguiente secuencia lógica basada en los contenidos curriculares. Incluye un calendario semanal interactivo donde podés marcar feriados, editar temas y regenerar clases específicas en segundos.'
     },
     {
       id: 'normativa',

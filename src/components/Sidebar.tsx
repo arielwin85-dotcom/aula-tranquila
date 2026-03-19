@@ -46,7 +46,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navItems = [
     { name: 'Inicio', href: '/', icon: Home },
     { name: 'Mis Clases', href: '/clases', icon: Users },
-    { name: '✦ IA Pedagógica', href: '/chat', icon: MessageSquareText },
+    { name: '✦ Asistente Pedagógico', href: '/chat', icon: MessageSquareText },
     { name: 'Planificación Normativa', href: '/normativa', icon: BookOpenCheck },
     { name: 'Valuaciones y Contenidos Rápido', href: '/generador', icon: Sparkles },
     { name: 'Evidencias', href: '/evidencias', icon: FileVideo }, 
