@@ -34,8 +34,30 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { userId, aulaGrado, areaMateria, fechaInicio, cantClases, clases } = body;
 
-    if (!userId || !clases) {
+    if (!userId || !clases || !clases.length) {
       return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
+    }
+
+    // --- VALIDACIÓN DE DUPLICADOS ---
+    // Verificar si alguna de las fechas ya tiene clases para este docente/grado/materia
+    const fechasNuevas = clases.map((c: any) => c.fecha);
+    
+    // Deberíamos buscar en planificacion_clases vinculando con planificaciones por id
+    const { data: existentes, error: errorCheck } = await supabase
+      .from('planificacion_clases')
+      .select('fecha, planificaciones!inner(user_id, aula_grado, area_materia)')
+      .eq('planificaciones.user_id', userId)
+      .eq('planificaciones.aula_grado', aulaGrado)
+      .eq('planificaciones.area_materia', areaMateria)
+      .in('fecha', fechasNuevas);
+
+    if (errorCheck) {
+       console.error('Error verificando duplicados:', errorCheck);
+    } else if (existentes && existentes.length > 0) {
+      const fechasDups = existentes.map(e => e.fecha.split('-').reverse().join('/'));
+      return NextResponse.json({ 
+        error: `Ya existen clases planificadas para las siguientes fechas: ${fechasDups.join(', ')}. No se puede duplicar la planificación.` 
+      }, { status: 409 }); // 409 Conflict
     }
 
     // 1. Insertar Cabezal
