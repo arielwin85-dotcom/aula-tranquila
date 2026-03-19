@@ -85,15 +85,16 @@ const TarjetaClase = ({ clase }: { clase: Clase }) => {
           )}
 
           {clase.ejemplos_orientativos && (
-            <div className="mt-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 shadow-inner">
-              <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+            <div className="mt-4 bg-sky-500/10 border border-sky-500/20 rounded-xl p-4 shadow-inner">
+              <div className="text-[9px] font-black text-sky-400 uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
                 <Sparkles size={10} /> EJEMPLOS ORIENTATIVOS
               </div>
-              <p className="text-[12px] text-emerald-50/70 font-bold leading-relaxed whitespace-pre-line">
+              <p className="text-[12px] text-sky-50/70 font-bold leading-relaxed whitespace-pre-line">
                 {clase.ejemplos_orientativos}
               </p>
             </div>
           )}
+
 
           {clase.actividades && (
             <div className="mt-4">
