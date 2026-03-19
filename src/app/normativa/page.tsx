@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Classroom, Subject } from '@/types';
 
-type PlanType = 'Anual' | 'Mensual' | 'Semanal';
+type PlanType = 'Anual' | 'Mensual';
 
 // Constantes globales
 const MESES = [
@@ -337,7 +337,7 @@ export default function NormativaPage() {
   };
 
   const handlePrint = () => {
-    if (activePlanType === 'Anual' || activePlanType === 'Semanal') {
+    if (activePlanType === 'Anual') {
        const printWindow = window.open('', '_blank');
        if (!printWindow) return;
 
@@ -449,7 +449,7 @@ export default function NormativaPage() {
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Tipo de Planificación</label>
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
-                  {(['Anual', 'Mensual', 'Semanal'] as PlanType[]).map(type => (
+                  {(['Anual', 'Mensual'] as PlanType[]).map(type => (
                     <button
                       key={type}
                       onClick={() => setActivePlanType(type)}
