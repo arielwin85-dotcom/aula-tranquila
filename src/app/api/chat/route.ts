@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     let contenidosPrevios = 'Ninguno aún';
+    let contextoMemoria = '';
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      // A. Contenidos rápidos (para el prompt)
       const { data: previos } = await supabase
         .from('contenidos_dados')
         .select('tema, fecha_dada')
@@ -46,6 +49,43 @@ export async function POST(req: NextRequest) {
 
       if (previos && previos.length > 0) {
         contenidosPrevios = previos.map(p => `${p.tema} (${p.fecha_dada})`).join(', ');
+      }
+
+      // B. Historial detallado de últimas 5 planificaciones
+      const { data: planificacionesPrevias } = await supabase
+        .from('planificaciones')
+        .select(`
+          fecha_inicio,
+          planificacion_clases (
+            numero_clase, fecha, titulo
+          )
+        `)
+        .eq('user_id', userId)
+        .eq('aula_grado', nombreGrado)
+        .eq('area_materia', areaMateria)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      const tieneHistorial = planificacionesPrevias && planificacionesPrevias.length > 0;
+
+      if (tieneHistorial) {
+        const resumenPrevio = planificacionesPrevias
+          .slice().reverse() // cronológico
+          .flatMap(plan =>
+            (plan.planificacion_clases || [])
+              .sort((a: any, b: any) => a.numero_clase - b.numero_clase)
+              .map((c: any) => `- ${c.fecha}: ${c.titulo}`)
+          ).join('\n');
+
+        const clasesUltimoPlan = planificacionesPrevias[0].planificacion_clases
+          ?.sort((a: any, b: any) => b.numero_clase - a.numero_clase);
+        
+        const ultimaClase = clasesUltimoPlan?.[0]?.titulo || 'N/A';
+        const ultimaFecha = clasesUltimoPlan?.[0]?.fecha || 'N/A';
+
+        contextoMemoria = `\nHISTORIAL EXISTENTE (orden cronológico):
+${resumenPrevio}
+Última clase dada: "${ultimaClase}" (fecha: ${ultimaFecha})\n`;
       }
     }
 
@@ -62,7 +102,7 @@ CONTEXTO ACTUAL:
 - Mes del año: ${mesActual} (esto determina en qué punto 
   del año escolar argentino están — marzo=inicio, 
   julio=mitad, noviembre=cierre)
-- Temas ya dados: ${contenidosPrevios}
+- Temas ya dados: ${contenidosPrevios}${contextoMemoria}
 
 CONOCIMIENTO QUE DEBÉS APLICAR SIEMPRE:
 
@@ -146,6 +186,7 @@ NUNCA:
       model: 'gemini-2.0-flash',
       systemInstruction: systemPrompt
     });
+
 
 
     console.log('Iniciando chat con Gemini (historial length original:', messages.length - 1, ')');
