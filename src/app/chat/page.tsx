@@ -62,39 +62,46 @@ export default function ChatPage() {
 
 
   // ── Inicialización ─────────────────────────────────────────────────────
-  const cargarClasesDocente = async (uid: string) => {
-    const { data: clases, error } = await supabase
-      .from('classrooms')
-      .select('id, name, grade, subjects')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: true });
-
-    if (error) { console.error('Error cargando clases:', error); return; }
-
-    setClasesDocente(clases || []);
-
-    if (clases && clases.length > 0) {
-      setAulaGradoSeleccionado(clases[0]);
-      setAulaGrado(clases[0].name || clases[0].grade);
+  const cargarClasesDocente = async () => {
+    try {
+      const res = await fetch('/api/classrooms');
+      const clases = await res.json();
       
-      // Adaptación para subjects que pueden ser array de strings o de objetos
-      const subs = (clases[0].subjects || []).map((s: any) => typeof s === 'string' ? s : s.name);
-      setMateriasDisponibles(subs);
-      setAreaMateria(subs[0] || '');
+      if (clases.error) throw new Error(clases.error);
+
+      setClasesDocente(clases || []);
+
+      if (clases && clases.length > 0) {
+        setAulaGradoSeleccionado(clases[0]);
+        setAulaGrado(clases[0].name || clases[0].grade);
+        
+        // Adaptación para subjects que pueden ser array de strings o de objetos
+        const subs = (clases[0].subjects || []).map((s: any) => typeof s === 'string' ? s : s.name);
+        setMateriasDisponibles(subs);
+        setAreaMateria(subs[0] || '');
+      }
+    } catch (error) {
+      console.error('Error cargando clases desde API:', error);
     }
   };
 
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        await cargarClasesDocente(user.id);
-        await cargarHistorial(user.id);
+      try {
+        const meRes = await fetch('/api/auth/me');
+        const meData = await meRes.json();
+        if (meData.user) {
+          setUserId(meData.user.id);
+          await cargarClasesDocente();
+          await cargarHistorial(meData.user.id);
+        }
+      } catch (err) {
+        console.error("Initialization failed in ChatPage", err);
       }
     };
     init();
   }, []);
+
 
   // Saludo automático al cambiar combo
   useEffect(() => {
