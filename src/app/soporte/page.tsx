@@ -14,7 +14,10 @@ import {
   HelpCircle,
   AlertTriangle,
   Sparkles,
-  Loader2
+  Loader2,
+  Home,
+  Users,
+  FolderOpen
 } from 'lucide-react';
 
 type TabType = 'tutorial' | 'ticket';
@@ -70,39 +73,53 @@ export default function SoportePage() {
 
   const tutorialTabs = [
     {
+      id: 'inicio',
+      title: '🏠 Inicio (Tu Tablero)',
+      icon: Home,
+      desc: 'El control central de tu día.',
+      content: '• Gestión Rápida: Hacé clic directo en los nombres de tus clases para entrar a gestionarlas.\n• Créditos: Arriba a la derecha ves cuánta "magia" (créditos de IA) te queda para el mes.\n• Navegación: Abajo tenés botones gigantes para ir a cualquier parte sin perderte.'
+    },
+    {
       id: 'clases',
-      title: 'Mis Clases',
-      icon: MessageSquare,
-      desc: 'El centro de gestión de tus aulas y alumnos.',
-      content: 'Acá organizás todas tus clases y alumnos en un solo lugar. Podés crear aulas por grado y año lectivo, agregar alumnos con su información pedagógica, cargar notas detalladas por tema y materia, y visualizar el promedio de cada estudiante. También podés etiquetar a los alumnos con contexto DUA (Diseño Universal para el Aprendizaje) y generar un informe PDF completo de cada clase con un solo clic.'
+      title: '👥 Mis Clases',
+      icon: Users,
+      desc: 'Tu libro de temas y alumnos.',
+      content: '1. Creá tu aula: Poné el nombre (ej: 4to A) y elegí las materias.\n2. Cargá alumnos: Usá el botón "+ Nuevo Alumno". Solo necesitás el nombre.\n3. Calificá: Hacé clic en un alumno para ponerle notas. Agregá el tema y la fecha para que el sistema calcule el promedio solo.\n4. Informes: Entrá a tu clase y dale a "Descargar PDF" para tener un resumen listo para entregar a dirección.'
     },
     {
       id: 'copiloto',
       title: '✦ Asistente Pedagógico',
       icon: MessageSquare,
-      desc: 'Tu asistente personal para el día a día.',
-      content: 'El Asistente Pedagógico te ayuda a planificar tus clases de forma dinámica. Podés escribirle qué temas diste anteriormente y él te sugerirá la siguiente secuencia lógica basada en los contenidos curriculares. Incluye un calendario semanal interactivo donde podés marcar feriados, editar temas y regenerar clases específicas en segundos.'
+      desc: 'Tu compañero para armar clases.',
+      content: '1. Seleccioná arriba: Elegí para qué grado y qué materia querés ayuda.\n2. Hablale: Escribí como si fuera un colega (ej: "Mañana quiero dar los volcanes, ¿qué puedo hacer?").\n3. Revisá: A la derecha te arma las clases completas con objetivos y actividades.\n4. Guardá e Imprimí: Al final dale al botón de la impresora para llevarlo al aula.'
     },
     {
       id: 'normativa',
-      title: 'Planificación Normativa',
+      title: '📄 Planificación Normativa',
       icon: ScrollText,
-      desc: 'Alineación perfecta con los diseños curriculares.',
-      content: 'Subí el diseño curricular de tu jurisdicción (PDF o texto). Nuestra IA analizará los contenidos obligatorios y generará un plan anual detallado, mes a mes, con objetivos de aprendizaje y ejemplos de actividades concretas que respetan estrictamente la ley educativa.'
+      desc: 'Alineación con el diseño curricular.',
+      content: '1. Subí tu ley: Cargá el PDF del Diseño Curricular de tu provincia/jurisdicción.\n2. Elegí el modo: Podés pedir la planificación de TODO EL AÑO o de UN MES específico.\n3. Memoria: Si ya hiciste Marzo, podés saltar a Junio y el sistema sabrá qué temas ya "deberían" haber visto los chicos.\n4. PDF con Índice: Generá un documento profesional con todos los contenidos organizados.'
     },
     {
       id: 'evidencias',
-      title: 'Evidencias',
+      title: '📸 Evidencias (Corrector)',
       icon: Camera,
-      desc: 'Corrección inteligente de trabajos y exámenes.',
-      content: 'Subí fotos de los exámenes realizados por tus alumnos. La IA reconocerá la escritura a mano, identificará aciertos y errores, y generará un informe pedagógico con fortalezas y áreas de mejora, sugiriendo incluso una calificación lista para registrar.'
+      desc: 'Corrección con solo una foto.',
+      content: '1. Foto clara: Sacale una foto al examen o trabajo del alumno.\n2. Subí y esperá: El sistema lee la letra cursiva o imprenta del chico.\n3. Pedagógico: Te va a decir qué hizo bien, qué hizo mal y qué nota le corresponde según su progreso.'
     },
     {
       id: 'generador',
-      title: 'Valuaciones y Contenidos Rápido',
+      title: '✨ Recursos Rápidos',
       icon: Sparkles,
-      desc: 'Evaluaciones y actividades en un clic.',
-      content: '¿Necesitás una prueba de opción múltiple, una rúbrica o una secuencia didáctica urgente? Seleccioná la materia, el tema y el tipo de recurso. La IA redactará el documento completo listo para imprimir, adaptado al nivel y grado de tu clase.'
+      desc: 'Pruebas y actividades en un clic.',
+      content: '• ¿Necesitás una prueba rápido? Elegí "Evaluación", poné el tema y el grado. Te la redacta completa.\n• ¿Rúbricas? También las hace. Elegí el tipo de recurso y ¡listo para imprimir!'
+    },
+    {
+      id: 'biblioteca',
+      title: '📚 Mi Biblioteca',
+      icon: FolderOpen,
+      desc: 'Buscador de tus propios archivos.',
+      content: '• Escribí qué buscás (ej: "Célula") y el sistema buscará en TUS archivos de Google Drive.\n• No pierdas tiempo abriendo carpetas; buscalo acá y abrilo directo.'
     }
   ];
 
@@ -143,7 +160,7 @@ export default function SoportePage() {
               </div>
               <h3 className="text-2xl font-black text-white mb-2 font-montserrat tracking-tight">{tab.title}</h3>
               <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-4">{tab.desc}</p>
-              <p className="text-slate-400 leading-relaxed font-bold text-sm">
+              <p className="text-slate-400 leading-relaxed font-bold text-sm whitespace-pre-line">
                 {tab.content}
               </p>
               <div className="mt-8 flex items-center gap-2 text-white/40 font-black text-[10px] uppercase tracking-widest cursor-pointer hover:text-brand-orange transition-all">
