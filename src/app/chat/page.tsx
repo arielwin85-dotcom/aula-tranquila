@@ -300,24 +300,36 @@ la continuación según lo que ya dimos?`
     }
   };
 
-
   const procesarRespuesta = async (rawText: string) => {
     try {
-      const jsonMatch = rawText.match(/\[GENERAR_PLAN_JSON\]\s*(\{[\s\S]*\})/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[1]);
+      // Intentar encontrar JSON con el tag específico o con bloques de código markdown
+      const tagMatch = rawText.match(/\[GENERAR_PLAN_JSON\]\s*(\{[\s\S]*\})/);
+      const mdMatch = rawText.match(/```json\s*(\{[\s\S]*\})\s*```/);
+      
+      const jsonStr = tagMatch ? tagMatch[1] : (mdMatch ? mdMatch[1] : null);
+
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         if (parsed.planificacion && Array.isArray(parsed.planificacion)) {
+          // 1. Guardar y actualizar panel (esto dispara el cambio de estado)
           await guardarPlanificacion(parsed.planificacion);
-          const textoVisible = rawText.split('[GENERAR_PLAN_JSON]')[0].trim();
+          
+          // 2. Limpiar el texto del chat (quitar el JSON y dejar solo el mensaje de éxito)
+          let textoVisible = rawText.split('[GENERAR_PLAN_JSON]')[0];
+          textoVisible = textoVisible.split('```json')[0].trim();
+          
           agregarMensaje('assistant', textoVisible || 'Planificación finalizada ✅');
           return;
         }
       }
+      // Si no hay JSON, mostrar el texto normal
       agregarMensaje('assistant', rawText);
     } catch (error) {
-      agregarMensaje('assistant', 'Hubo un error generando la planificación.');
+      console.error('Error procesando respuesta del agente:', error);
+      agregarMensaje('assistant', 'Recibí la planificación pero hubo un error al procesarla. Por favor, intentá de nuevo.');
     }
   };
+
 
   const enviarMensaje = async () => {
     if (!input.trim() || cargando) return;

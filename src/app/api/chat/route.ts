@@ -139,6 +139,11 @@ Cuando el docente confirme, respondé EXACTAMENTE así:
 'Planificación finalizada ✅'
 Y luego el JSON con el tag [GENERAR_PLAN_JSON]
 
+IMPORTANTE: 
+- Respondé SOLO la frase de éxito y el tag.
+- NO uses bloques de código con triple comilla (\` \` \`json).
+- El JSON debe ir pegado inmediatamente después del tag.
+
 El JSON debe tener esta estructura con contenido 
 MUY DETALLADO — no es un resumen, es una guía 
 completa para el docente:
@@ -186,7 +191,6 @@ NUNCA:
       model: 'gemini-2.0-flash',
       systemInstruction: systemPrompt
     });
-
 
 
     console.log('Iniciando chat con Gemini (historial length original:', messages.length - 1, ')');
