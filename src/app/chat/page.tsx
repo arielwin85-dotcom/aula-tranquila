@@ -186,16 +186,16 @@ la continuación según lo que ya dimos?`
   };
 
   const cargarHistorial = async (uid: string) => {
-    const { data } = await supabase
-      .from('planificaciones')
-      .select(`
-        id, aula_grado, area_materia, fecha_inicio, cant_clases, created_at,
-        planificacion_clases (*)
-      `)
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false });
-    setHistorial(data || []);
+    try {
+      const res = await fetch(`/api/planificaciones?userId=${uid}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setHistorial(data || []);
+    } catch (error) {
+      console.error('Error cargando historial:', error);
+    }
   };
+
 
   const procesarRespuesta = async (rawText: string) => {
     try {
