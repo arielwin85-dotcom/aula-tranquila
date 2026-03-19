@@ -278,6 +278,8 @@ la continuación según lo que ya dimos?`
 
     if (errorPlan) {
       console.error('Error insertando planificacion:', errorPlan);
+      alert('Error en base de datos (Plan): ' + errorPlan.message);
+      setGuardando(false);
       return;
     }
 
@@ -299,6 +301,7 @@ la continuación según lo que ya dimos?`
 
     if (errorClases) {
       console.error('Error insertando clases:', errorClases);
+      alert('Error en base de datos (Clases): ' + errorClases.message + '\nVerificá si la tabla tiene la columna ejemplos_orientativos');
     }
 
 
@@ -321,8 +324,9 @@ la continuación según lo que ya dimos?`
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setHistorial(data || []);
-    } catch (error) {
-      console.error('Error cargando historial:', error);
+    } catch (err: any) {
+      console.error('Error cargando historial:', err);
+      alert('Error cargando historial: ' + err.message);
     }
   };
 
@@ -631,7 +635,8 @@ la continuación según lo que ya dimos?`
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(() => {
                 const filtrado = historial.filter(h => 
-                  h.aula_grado === aulaGrado && h.area_materia === areaMateria
+                  h.aula_grado?.trim() === aulaGrado?.trim() && 
+                  h.area_materia?.trim() === areaMateria?.trim()
                 );
                 
                 if (filtrado.length === 0) {
