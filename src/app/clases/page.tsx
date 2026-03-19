@@ -429,7 +429,7 @@ export default function ClasesPage() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         
         {/* Panel Lateral: Lista de Aulas */}
-        <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
+        <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6 max-h-[300px] lg:max-h-none overflow-y-auto lg:overflow-visible custom-scrollbar">
           <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
              <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/5">
                 <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Aulas Activas</h2>
@@ -484,7 +484,7 @@ export default function ClasesPage() {
            {selectedClass ? (
              <div className="flex flex-col flex-1">
                 {/* Header Classroom */}
-                <div className="p-8 md:p-12 border-b border-white/5 bg-white/5 flex flex-col md:flex-row justify-between items-start gap-8">
+                <div className="p-6 md:p-12 border-b border-white/5 bg-white/5 flex flex-col md:flex-row justify-between items-start gap-8">
                     <div className="flex-1">
                        <div className="flex flex-col mb-4">
                          <div className="flex items-center gap-4 mb-2">
@@ -541,7 +541,7 @@ export default function ClasesPage() {
                 </div>
 
                 {/* Grid / Lista de Alumnos */}
-                <div className="flex-1">
+                <div className="flex-1 table-responsive-container">
                    {!selectedClass.students || selectedClass.students.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-20 text-center space-y-6 opacity-20">
                          <div className="w-24 h-24 bg-white/5 rounded-[3rem] flex items-center justify-center">

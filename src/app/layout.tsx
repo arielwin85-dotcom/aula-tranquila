@@ -10,6 +10,7 @@ const poppins = Poppins({ weight: ['400', '500', '600', '700'], subsets: ['latin
 export const metadata: Metadata = {
   title: 'Aula Tranquila - Tu Copiloto Docente',
   description: 'Una IA que conoce a tus alumnos tanto como vos. Centraliza planificación, evaluación y gestión del aula.',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({

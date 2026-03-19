@@ -61,7 +61,7 @@ export function StudentModal({ isOpen, onCerrar, onGuardar, alumnoInicial, modoE
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4">
-      <div className="bg-brand-navy border border-white/10 rounded-[3.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+      <div className="bg-brand-navy border border-white/10 rounded-[3.5rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-300 modal-container-responsive flex flex-col max-h-[90vh]">
         
         {/* Header */}
         <div className="px-10 py-8 border-b border-white/5 flex justify-between items-center bg-white/5">

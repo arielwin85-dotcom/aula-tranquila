@@ -28,10 +28,19 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
       {/* Botón Hamburguesa (Solo Móvil) */}
       <button 
         onClick={() => setIsMobileMenuOpen(true)}
-        className="lg:hidden fixed top-6 left-6 z-50 p-4 bg-brand-navy border border-white/10 text-white rounded-2xl shadow-xl active:scale-95 transition-all"
+        className="lg:hidden fixed top-4 left-4 z-[1001] bg-brand-orange border-none rounded-lg p-2.5 text-white shadow-xl active:scale-95 transition-all flex items-center justify-center"
+        aria-label="Abrir menú"
       >
-        <Menu size={24} />
+        <Menu size={20} strokeWidth={3} />
       </button>
+
+      {/* Overlay (Solo Móvil cuando está abierto) */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-xl animate-in fade-in duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
       <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       

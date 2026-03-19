@@ -605,10 +605,9 @@ la continuación según lo que ya dimos?`
 
   // ── Render Components ────────────────────────────────────────────────
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-2rem)] gap-4 pb-4 animate-in fade-in duration-500">
-      
+    <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[calc(100vh-8rem)] items-stretch">
       {/* Panel Izquierdo: Chat / Historial */}
-      <div className="flex-1 flex flex-col bg-brand-navy/50 backdrop-blur-xl border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+      <div className="flex-1 flex flex-col bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden min-h-[500px] lg:min-h-0">
         
         {/* Header con Tabs y Selectores */}
         <div className="p-6 border-b border-white/5 bg-black/20">
@@ -816,7 +815,7 @@ la continuación según lo que ya dimos?`
         )}
       </div>
 
-      <div className="w-full lg:w-[450px] flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar lg:h-full">
+      <div className="w-full lg:w-[450px] flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar min-h-[400px] lg:h-full border-t lg:border-t-0 border-white/5 pt-6 lg:pt-0">
         {clasesPanelDerecho.length === 0 ? (
           <div className="flex-1 bg-brand-navy/30 border-2 border-dashed border-white/5 rounded-[3.5rem] flex flex-col items-center justify-center p-12 text-center">
             <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-slate-700 mb-8 border border-white/5 shadow-inner">

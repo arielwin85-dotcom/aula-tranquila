@@ -41,4 +41,49 @@
     font-family: var(--font-montserrat), sans-serif;
     font-weight: 700;
   }
+
+  /* --- RESPONSIVE RULES (v.1.0) --- */
+  
+  * {
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+
+    /* Touch Targets */
+    button, 
+    select, 
+    input,
+    .nav-item,
+    .btn-responsive {
+      min-height: 44px !important;
+    }
+
+    /* Table Responsiveness */
+    .table-responsive-container {
+      display: block;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+    }
+
+    table {
+      min-width: 600px;
+    }
+
+    /* Modals Responsive */
+    .modal-container-responsive {
+      width: 95vw !important;
+      max-width: unset !important;
+      max-height: 90vh !important;
+      overflow-y: auto !important;
+      margin: 0 auto !important;
+      border-radius: 1.5rem !important;
+    }
+  }
 }

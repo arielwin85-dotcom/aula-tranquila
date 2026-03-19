@@ -395,15 +395,15 @@ export default function NormativaPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
-      <div className="mb-10 flex justify-between items-end">
-        <div>
-          <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Planificación Normativa</h1>
+      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-4xl font-black text-white mb-2 font-montserrat tracking-tight pt-14 md:pt-0">Planificación Normativa</h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Generá planificaciones alineadas 100% con las resoluciones provinciales.</p>
         </div>
         {generatedPlan && (
            <button 
              onClick={handlePrint}
-             className="flex items-center gap-2 px-8 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-brand-peach transition-all shadow-2xl"
+             className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-brand-peach transition-all shadow-2xl w-full sm:w-auto"
            >
              <Printer size={18} />
              Imprimir Plan
@@ -411,9 +411,9 @@ export default function NormativaPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Panel de Configuración */}
-        <div className="lg:col-span-4 flex flex-col gap-8">
+        <div className="lg:col-span-4 flex flex-col gap-8 w-full">
           <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl p-8 group">
             <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-6">1. Datos del Curso</h2>
             
@@ -507,7 +507,7 @@ export default function NormativaPage() {
         </div>
 
         {/* Panel de Resultados */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-8 w-full mt-8 lg:mt-0">
            <div className="bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden min-h-[750px] flex flex-col relative">
               {!generatedPlan ? (
                  <div className="flex-1 flex flex-col items-center justify-center text-center p-16">

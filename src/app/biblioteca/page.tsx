@@ -99,22 +99,24 @@ export default function BibliotecaPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl p-6 mb-12 max-w-3xl mx-auto focus-within:ring-8 focus-within:ring-brand-blue/10 focus-within:border-brand-blue/40 transition-all">
-        <form onSubmit={handleSearch} className="flex items-center gap-4">
-           <Search className="text-slate-600 ml-4" size={28} />
-           <input 
-             type="text" 
-             value={query}
-             onChange={(e) => setQuery(e.target.value)}
-             placeholder="Ej: sistema solar 4to grado..."
-             className="flex-1 bg-transparent text-xl text-white placeholder:text-slate-700 font-black focus:outline-none"
-           />
+      <div className="bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl p-4 sm:p-6 mb-12 max-w-3xl mx-auto focus-within:ring-8 focus-within:ring-brand-blue/10 focus-within:border-brand-blue/40 transition-all">
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-center gap-4">
+           <div className="flex items-center w-full sm:w-auto flex-1 gap-4">
+             <Search className="text-slate-600 ml-2" size={24} />
+             <input 
+               type="text" 
+               value={query}
+               onChange={(e) => setQuery(e.target.value)}
+               placeholder="Ej: sistema solar..."
+               className="flex-1 bg-transparent text-lg text-white placeholder:text-slate-700 font-black focus:outline-none"
+             />
+           </div>
            <button 
              type="submit"
              disabled={isSearching || !query.trim()}
-             className="bg-brand-orange text-white px-10 py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs hover:scale-105 disabled:opacity-50 transition-all shadow-xl shadow-brand-orange/20 flex items-center gap-3"
+             className="w-full sm:w-auto bg-brand-orange text-white px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:scale-105 disabled:opacity-50 transition-all shadow-xl shadow-brand-orange/20 flex items-center justify-center gap-3"
            >
-             {isSearching ? <Loader2 size={20} className="animate-spin" /> : 'Buscar'}
+             {isSearching ? <Loader2 size={18} className="animate-spin" /> : 'Buscar'}
            </button>
         </form>
       </div>
