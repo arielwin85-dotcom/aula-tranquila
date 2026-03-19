@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { 
   LifeBuoy, 
   BookOpen, 
@@ -77,6 +78,7 @@ export default function SoportePage() {
       title: '🏠 Inicio (Tu Tablero)',
       icon: Home,
       desc: 'El control central de tu día.',
+      href: '/',
       content: '• Gestión Rápida: Hacé clic directo en los nombres de tus clases para entrar a gestionarlas.\n• Créditos: Arriba a la derecha ves cuánta "magia" (créditos de IA) te queda para el mes.\n• Navegación: Abajo tenés botones gigantes para ir a cualquier parte sin perderte.'
     },
     {
@@ -84,6 +86,7 @@ export default function SoportePage() {
       title: '👥 Mis Clases',
       icon: Users,
       desc: 'Tu libro de temas y alumnos.',
+      href: '/clases',
       content: '1. Creá tu aula: Poné el nombre (ej: 4to A) y elegí las materias.\n2. Cargá alumnos: Usá el botón "+ Nuevo Alumno". Solo necesitás el nombre.\n3. Calificá: Hacé clic en un alumno para ponerle notas. Agregá el tema y la fecha para que el sistema calcule el promedio solo.\n4. Informes: Entrá a tu clase y dale a "Descargar PDF" para tener un resumen listo para entregar a dirección.'
     },
     {
@@ -91,6 +94,7 @@ export default function SoportePage() {
       title: '✦ Asistente Pedagógico',
       icon: MessageSquare,
       desc: 'Tu compañero para armar clases.',
+      href: '/chat',
       content: '1. Seleccioná arriba: Elegí para qué grado y qué materia querés ayuda.\n2. Hablale: Escribí como si fuera un colega (ej: "Mañana quiero dar los volcanes, ¿qué puedo hacer?").\n3. Revisá: A la derecha te arma las clases completas con objetivos y actividades.\n4. Guardá e Imprimí: Al final dale al botón de la impresora para llevarlo al aula.'
     },
     {
@@ -98,6 +102,7 @@ export default function SoportePage() {
       title: '📄 Planificación Normativa',
       icon: ScrollText,
       desc: 'Alineación con el diseño curricular.',
+      href: '/normativa',
       content: '1. Subí tu ley: Cargá el PDF del Diseño Curricular de tu provincia/jurisdicción.\n2. Elegí el modo: Podés pedir la planificación de TODO EL AÑO o de UN MES específico.\n3. Memoria: Si ya hiciste Marzo, podés saltar a Junio y el sistema sabrá qué temas ya "deberían" haber visto los chicos.\n4. PDF con Índice: Generá un documento profesional con todos los contenidos organizados.'
     },
     {
@@ -105,6 +110,7 @@ export default function SoportePage() {
       title: '📸 Evidencias (Corrector)',
       icon: Camera,
       desc: 'Corrección con solo una foto.',
+      href: '/evidencias',
       content: '1. Foto clara: Sacale una foto al examen o trabajo del alumno.\n2. Subí y esperá: El sistema lee la letra cursiva o imprenta del chico.\n3. Pedagógico: Te va a decir qué hizo bien, qué hizo mal y qué nota le corresponde según su progreso.'
     },
     {
@@ -112,6 +118,7 @@ export default function SoportePage() {
       title: '✨ Recursos Rápidos',
       icon: Sparkles,
       desc: 'Pruebas y actividades en un clic.',
+      href: '/generador',
       content: '• ¿Necesitás una prueba rápido? Elegí "Evaluación", poné el tema y el grado. Te la redacta completa.\n• ¿Rúbricas? También las hace. Elegí el tipo de recurso y ¡listo para imprimir!'
     },
     {
@@ -119,6 +126,7 @@ export default function SoportePage() {
       title: '📚 Mi Biblioteca',
       icon: FolderOpen,
       desc: 'Buscador de tus propios archivos.',
+      href: '/biblioteca',
       content: '• Escribí qué buscás (ej: "Célula") y el sistema buscará en TUS archivos de Google Drive.\n• No pierdas tiempo abriendo carpetas; buscalo acá y abrilo directo.'
     }
   ];
@@ -163,9 +171,9 @@ export default function SoportePage() {
               <p className="text-slate-400 leading-relaxed font-bold text-sm whitespace-pre-line">
                 {tab.content}
               </p>
-              <div className="mt-8 flex items-center gap-2 text-white/40 font-black text-[10px] uppercase tracking-widest cursor-pointer hover:text-brand-orange transition-all">
+              <Link href={tab.href} className="mt-8 flex items-center gap-2 text-brand-orange font-black text-[10px] uppercase tracking-widest cursor-pointer hover:underline transition-all group-hover:translate-x-1 decoration-2 underline-offset-4">
                 Explorar módulo <ChevronRight size={14} />
-              </div>
+              </Link>
             </div>
           ))}
         </div>
