@@ -61,8 +61,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ reply: textReply });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Generator API Error:', error);
-    return NextResponse.json({ error: 'Error al generar el material' }, { status: 500 });
+    
+    // Specific check for leaked API key error
+    if (error.message?.includes('reported as leaked') || error.status === 403) {
+      return NextResponse.json({ 
+        error: 'Tu API Key de Gemini ha sido BLOQUEADA por Google porque se detectó que se filtró públicamente. Por favor, genera una nueva clave en Google AI Studio y actualiza tu archivo .env.local',
+        details: 'API_KEY_LEAKED'
+      }, { status: 403 });
+    }
+
+    return NextResponse.json({ 
+      error: 'Error al generar el material. Verifica tu conexión y que la API Key sea válida.',
+      details: error.message 
+    }, { status: 500 });
   }
 }

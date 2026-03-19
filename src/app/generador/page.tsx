@@ -26,6 +26,8 @@ export default function GeneradorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultReady, setResultReady] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
 
   useEffect(() => {
     const fetchClassrooms = async () => {
@@ -85,9 +87,14 @@ export default function GeneradorPage() {
         const data = await res.json();
         setGeneratedContent(data.reply);
         setResultReady(true);
+        setErrorMessage("");
+      } else {
+        const errorData = await res.json();
+        setErrorMessage(errorData.error || "Ocurrió un error inesperado.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Generation failed", err);
+      setErrorMessage("No se pudo conectar con el servidor de IA.");
     } finally {
       setIsGenerating(false);
     }
@@ -234,11 +241,24 @@ export default function GeneradorPage() {
                  </div>
                )}
 
+               {errorMessage && (
+                  <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-3xl flex items-start gap-4 mt-2 animate-in slide-in-from-top-4">
+                     <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">!</div>
+                     <div>
+                        <h4 className="font-black text-red-500 text-xs uppercase tracking-widest mb-1 italic">Error de Generación</h4>
+                        <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase tracking-tight">
+                           {errorMessage}
+                        </p>
+                     </div>
+                  </div>
+               )}
+
                <button 
                   type="submit" 
                   disabled={isGenerating || !topic}
                   className="mt-6 w-full py-6 bg-brand-orange text-white rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-2xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
                >
+
                   {isGenerating ? (
                      <>
                         <Loader2 size={24} className="animate-spin" />

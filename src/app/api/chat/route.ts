@@ -8,12 +8,17 @@ export async function POST(req: NextRequest) {
   console.log('=== API CHAT LLAMADA ===');
   try {
     const body = await req.json();
-    console.log('Body recibido:', JSON.stringify(body));
+    console.log('=== API LLAMADA ===');
     console.log('GEMINI_API_KEY existe:', !!process.env.GEMINI_API_KEY);
-    console.log('SUPABASE_URL existe:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
     
     const { messages, context } = body;
     const { aulaGrado, areaMateria, fechaInicio, cantClases, userId } = context;
+    
+    console.log('Grado:', aulaGrado);
+    console.log('Materia:', areaMateria);
+    console.log('Fecha Inicio:', fechaInicio);
+    console.log('Cant Clases:', cantClases);
+
 
     // 1. Obtener contenidos previos de Supabase (Opcional para que no explote)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -40,40 +45,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. System prompt
-    const systemPrompt = `Sos un asistente de planificación escolar para docentes argentinos de primaria (1° a 7° grado).
+    // 2. System prompt especializado (Argentina)
+    const systemPrompt = `Sos un docente especializado en pedagogía escolar argentina con experiencia en todos los grados de primaria.
 
-CONTEXTO DEL DOCENTE:
+CONTEXTO:
 - Grado: ${aulaGrado}
 - Materia: ${areaMateria}
 - Fecha de inicio: ${fechaInicio}
-- Cantidad de clases a planificar: ${cantClases}
-- Temas ya dados en esta materia: 
+- Clases a planificar: ${cantClases}
+- Temas ya dados: 
 ${listaPrevios}
 
-COMPORTAMIENTO EN EL CHAT:
-- Saludá brevemente cuando el docente inicia la conversación
-- Podés hacer MÁXIMO 1 pregunta corta si necesitás aclarar algo
-- Cuando el docente diga "dale", "ok", "sí", "comenzá", "adelante" o similar → generá la planificación completa de inmediato
-- Después de generar respondé SOLO: "Planificación finalizada ✅" seguido del JSON
-- Para cualquier otro mensaje respondé en máximo 2 líneas
+COMPORTAMIENTO:
+1. Saludá con el grado y materia específicos.
+2. Hacé MÁXIMO 2 preguntas cortas para entender qué necesita el docente.
+3. Cuando el docente diga "dale", "ok", "sí", "comenzá" o similar → generá la planificación completa de inmediato.
+4. Al generar respondé SOLO: "Planificación finalizada ✅" seguido del JSON con el tag [GENERAR_PLAN_JSON]
+5. Para cualquier otro mensaje respondé en máximo 2 líneas.
 
-REGLAS PEDAGÓGICAS OBLIGATORIAS:
-- Solo clases de lunes a viernes (nunca sábado ni domingo)
-- Cada clase cubre 4 a 5 horas con los alumnos
-- Progresión gradual: de lo simple a lo complejo
-- NUNCA repetir temas que figuren en la lista de temas ya dados
-- Incluir al menos una actividad lúdica o práctica por clase
-- Adaptar el nivel exacto al grado:
-  * 1° grado: inicio lectoescritura, números al 10, reconocimiento del entorno
-  * 2° grado: consolidación lectura, sumas y restas simples, oraciones
-  * 3° grado: lectura comprensiva, multiplicación, textos cortos
-  * 4° grado: análisis textual, división, gramática básica
-  * 5° grado: producción de textos, fracciones, historia regional
-  * 6° grado: textos argumentativos, decimales, ciencias naturales
-  * 7° grado: pensamiento crítico, álgebra básica, ciudadanía
+REGLAS PEDAGÓGICAS:
+- Solo clases de lunes a viernes.
+- Cada clase: 4 a 5 horas con los alumnos.
+- Nunca repetir temas de la lista de temas ya dados.
+- Adaptá el nivel al grado exacto:
+  * 1° a 3°: alfabetización, operaciones básicas, entorno.
+  * 4° a 7°: comprensión lectora, pensamiento crítico, ciencias, historia.
+- Incluir actividad lúdica o práctica por clase.
 
-CUANDO GENERES LA PLANIFICACIÓN escribí exactamente esto:
+CUANDO GENERES escribe exactamente:
 Planificación finalizada ✅
 [GENERAR_PLAN_JSON]
 {
@@ -82,15 +81,16 @@ Planificación finalizada ✅
       "numero_clase": 1,
       "fecha": "YYYY-MM-DD",
       "dia_semana": "Lunes",
-      "titulo": "Título claro de la clase",
-      "objetivo": "Al finalizar la clase el alumno podrá...",
-      "contenido": "Desarrollo detallado del contenido para 4-5 horas de clase...",
-      "actividades": "Actividad práctica o lúdica concreta...",
-      "recursos": "Materiales necesarios...",
-      "evaluacion": "Cómo evaluar informalmente..."
+      "titulo": "Título de la clase",
+      "objetivo": "Objetivo pedagógico...",
+      "contenido": "Desarrollo para 4-5 horas...",
+      "actividades": "Actividad práctica o lúdica...",
+      "recursos": "Materiales...",
+      "evaluacion": "Criterio de evaluación..."
     }
   ]
 }`;
+
 
     // 3. Llamar a Gemini
     if (!process.env.GEMINI_API_KEY) {

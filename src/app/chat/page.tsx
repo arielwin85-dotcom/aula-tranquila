@@ -46,10 +46,13 @@ export default function ChatPage() {
   const [historial, setHistorial] = useState<Planificacion[]>([]);
   const [tabActiva, setTabActiva] = useState<'chat' | 'historial'>('chat');
   const [userId, setUserId] = useState<string>('');
+  const [clasesDocente, setClasesDocente] = useState<any[]>([]);
+  const [materiasDisponibles, setMateriasDisponibles] = useState<string[]>([]);
+  const [aulaGradoSeleccionado, setAulaGradoSeleccionado] = useState<any>(null);
 
   // Combos del formulario
-  const [aulaGrado, setAulaGrado] = useState('1er Grado 2026');
-  const [areaMateria, setAreaMateria] = useState('Lengua y Literatura');
+  const [aulaGrado, setAulaGrado] = useState('');
+  const [areaMateria, setAreaMateria] = useState('');
   const [fechaInicio, setFechaInicio] = useState(
     new Date().toISOString().split('T')[0]
   );
@@ -57,21 +60,55 @@ export default function ChatPage() {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+
   // ── Inicialización ─────────────────────────────────────────────────────
+  const cargarClasesDocente = async (uid: string) => {
+    const { data: clases, error } = await supabase
+      .from('classrooms')
+      .select('id, name, grade, subjects')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: true });
+
+    if (error) { console.error('Error cargando clases:', error); return; }
+
+    setClasesDocente(clases || []);
+
+    if (clases && clases.length > 0) {
+      setAulaGradoSeleccionado(clases[0]);
+      setAulaGrado(clases[0].name || clases[0].grade);
+      
+      // Adaptación para subjects que pueden ser array de strings o de objetos
+      const subs = (clases[0].subjects || []).map((s: any) => typeof s === 'string' ? s : s.name);
+      setMateriasDisponibles(subs);
+      setAreaMateria(subs[0] || '');
+    }
+  };
+
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
+        await cargarClasesDocente(user.id);
         await cargarHistorial(user.id);
-        setMensajes([{
-          role: 'assistant',
-          content: `¡Hola! Estoy listo para ayudarte a planificar **${areaMateria}** para **${aulaGrado}**. ¿Tenés algún tema específico en mente o querés que arme la planificación para las ${cantClases} clases desde ${fechaInicio}?`
-        }]);
       }
     };
     init();
   }, []);
+
+  // Saludo automático al cambiar combo
+  useEffect(() => {
+    if (!aulaGrado || !areaMateria) return;
+
+    setMensajes([{
+      role: 'assistant',
+      content: `¡Bienvenido/a! Soy tu asistente pedagógico. 
+Voy a ayudarte a planificar **${aulaGrado}** — **${areaMateria}**. 
+¿Tenés algún tema específico en mente, o querés que proponga 
+la continuación según lo que ya dimos?`
+    }]);
+  }, [aulaGrado, areaMateria]);
+
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -199,6 +236,78 @@ export default function ChatPage() {
     setMensajes(prev => [...prev, { role, content }]);
   };
 
+  const handlePrintPlan = (plan: Planificacion | Clase[]) => {
+    const isArray = Array.isArray(plan);
+    const clases = isArray ? plan : plan.planificacion_clases;
+    const info = isArray ? { area_materia: areaMateria, aula_grado: aulaGrado } : plan;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Planificación - ${info.area_materia}</title>
+          <style>
+            body { font-family: 'Arial', sans-serif; padding: 40px; color: #000; line-height: 1.5; }
+            .header { border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px; }
+            .header h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+            .header p { margin: 5px 0; font-size: 14px; font-weight: bold; }
+            .clase { margin-bottom: 40px; page-break-inside: avoid; border: 1px solid #eee; padding: 20px; border-radius: 10px; }
+            .clase-header { display: flex; justify-content: space-between; border-bottom: 1px solid #000; margin-bottom: 15px; padding-bottom: 5px; }
+            .clase-title { font-size: 18px; font-weight: bold; color: #d97706; margin: 10px 0; }
+            .section { margin-bottom: 15px; }
+            .section-title { font-[8px]; font-weight: bold; text-transform: uppercase; color: #666; display: block; margin-bottom: 5px; }
+            .section-content { font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Planificación Docente</h1>
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+              <p>MATERIA: ${info.area_materia}</p>
+              <p>CURSO: ${info.aula_grado}</p>
+            </div>
+            <p>FECHA DE INICIO: ${!isArray ? (plan as Planificacion).fecha_inicio : fechaInicio}</p>
+          </div>
+          ${clases.sort((a,b)=>a.numero_clase-b.numero_clase).map(c => `
+            <div class="clase">
+              <div class="clase-header">
+                <strong>CLASE ${c.numero_clase}</strong>
+                <span>${c.dia_semana} ${c.fecha.split('-').reverse().join('/')}</span>
+              </div>
+              <div class="clase-title">${c.titulo}</div>
+              <div class="section">
+                <span class="section-title">Objetivo</span>
+                <div class="section-content">${c.objetivo}</div>
+              </div>
+              <div class="section">
+                <span class="section-title">Contenido</span>
+                <div class="section-content">${c.contenido}</div>
+              </div>
+              <div class="section">
+                <span class="section-title">Actividades</span>
+                <div class="section-content">${c.actividades}</div>
+              </div>
+              <div class="section">
+                <span class="section-title">Recursos</span>
+                <div class="section-content">${c.recursos}</div>
+              </div>
+              <div class="section">
+                <span class="section-title">Evaluación</span>
+                <div class="section-content">${c.evaluacion}</div>
+              </div>
+            </div>
+          `).join('')}
+          <script>window.print();</script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+
   // ── Render Components ────────────────────────────────────────────────
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-2rem)] gap-4 pb-4 animate-in fade-in duration-500">
@@ -236,14 +345,35 @@ export default function ChatPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-in slide-in-from-top-2 duration-300">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Grado</label>
-                <select value={aulaGrado} onChange={e => setAulaGrado(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all">
-                  {['1er Grado 2026','2do Grado 2026','3er Grado 2026','4to Grado 2026','5to Grado 2026','6to Grado 2026','7mo Grado 2026'].map(g => <option key={g} className="bg-brand-navy">{g}</option>)}
+                <select 
+                  value={aulaGradoSeleccionado?.id} 
+                  onChange={e => {
+                    const clase = clasesDocente.find(c => c.id === e.target.value);
+                    setAulaGradoSeleccionado(clase);
+                    setAulaGrado(clase?.name || clase?.grade || '');
+                    const subs = (clase?.subjects || []).map((s: any) => typeof s === 'string' ? s : s.name);
+                    setMateriasDisponibles(subs);
+                    setAreaMateria(subs[0] || '');
+                  }} 
+                  className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all"
+                >
+                  {clasesDocente.map(c => (
+                    <option key={c.id} value={c.id} className="bg-brand-navy">{c.name || c.grade}</option>
+                  ))}
+                  {clasesDocente.length === 0 && <option value="" className="bg-brand-navy">Sin clases</option>}
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Materia</label>
-                <select value={areaMateria} onChange={e => setAreaMateria(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all">
-                  {['Lengua y Literatura','Matemática','Ciencias Naturales','Ciencias Sociales','Educación Física','Artes Visuales'].map(m => <option key={m} className="bg-brand-navy">{m}</option>)}
+                <select 
+                  value={areaMateria} 
+                  onChange={e => setAreaMateria(e.target.value)} 
+                  className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all"
+                >
+                  {materiasDisponibles.map(m => (
+                    <option key={m} value={m} className="bg-brand-navy">{m}</option>
+                  ))}
+                  {materiasDisponibles.length === 0 && <option value="" className="bg-brand-navy">N/A</option>}
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
@@ -303,16 +433,37 @@ export default function ChatPage() {
                         <Calendar size={24} />
                       </div>
                       <div className="flex gap-2">
-                         <button onClick={() => { setClasesPanelDerecho(plan.planificacion_clases); setTabActiva('chat'); }} className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl transition-all border border-white/5 shadow-lg"><ChevronRight size={18} /></button>
+                         <button 
+                           onClick={() => { 
+                             setClasesPanelDerecho(plan.planificacion_clases); 
+                             setAulaGrado(plan.aula_grado);
+                             setAreaMateria(plan.area_materia);
+                             setTabActiva('chat'); 
+                           }} 
+                           className="p-3 bg-brand-orange/10 hover:bg-brand-orange text-brand-orange hover:text-white rounded-xl transition-all border border-brand-orange/20 shadow-lg flex items-center gap-2 text-[9px] font-black uppercase tracking-widest"
+                           title="Cargar en Panel"
+                         >
+                           <ChevronRight size={16} /> VER
+                         </button>
+                         <button 
+                           onClick={() => handlePrintPlan(plan)} 
+                           className="p-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl transition-all border border-white/5 shadow-lg"
+                           title="Imprimir PDF"
+                         >
+                            <Printer size={16} />
+                         </button>
+
                       </div>
                     </div>
                     <h3 className="text-white font-black text-lg font-montserrat tracking-tight mb-1">{plan.area_materia}</h3>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">{plan.aula_grado}</p>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{plan.aula_grado}</p>
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-4">Inicia: {plan.fecha_inicio.split('-').reverse().join('/')}</p>
                     <div className="flex items-center gap-3 text-[9px] font-black text-brand-orange uppercase tracking-widest bg-brand-orange/5 px-4 py-2 rounded-xl w-fit">
                         <BookOpen size={12} /> {plan.cant_clases} Clases
                     </div>
                   </div>
                 ))
+
               )}
             </div>
           )}
@@ -361,9 +512,13 @@ export default function ChatPage() {
                   <h2 className="text-2xl font-black text-white font-montserrat tracking-tight">Planificación</h2>
                   <p className="text-[9px] font-black text-brand-orange uppercase tracking-[.3em]">IA OPTIMIZADA</p>
                 </div>
-                <button className="p-4 bg-white text-brand-navy rounded-2xl hover:bg-brand-peach transition-all shadow-xl hover:scale-105 active:scale-95">
-                   <Printer size={20} />
-                </button>
+                 <button 
+                   onClick={() => handlePrintPlan(clasesPanelDerecho)}
+                   className="p-4 bg-white text-brand-navy rounded-2xl hover:bg-brand-peach transition-all shadow-xl hover:scale-105 active:scale-95"
+                 >
+                    <Printer size={20} />
+                 </button>
+
               </div>
 
               <div className="space-y-6 relative z-10">
@@ -388,9 +543,13 @@ export default function ChatPage() {
                 ))}
               </div>
 
-              <button className="w-full mt-8 py-5 bg-white text-brand-navy rounded-[1.8rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all shadow-2xl hover:bg-brand-peach hover:scale-[1.02]">
-                 <Download size={18} /> Descargar Paquete Completo
-              </button>
+               <button 
+                 onClick={() => handlePrintPlan(clasesPanelDerecho)}
+                 className="w-full mt-8 py-5 bg-white text-brand-navy rounded-[1.8rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all shadow-2xl hover:bg-brand-peach hover:scale-[1.02]"
+               >
+                  <Download size={18} /> Descargar Paquete Completo
+               </button>
+
             </div>
           </>
         )}
