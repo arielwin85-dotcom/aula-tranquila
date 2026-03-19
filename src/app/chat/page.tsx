@@ -41,11 +41,18 @@ const TarjetaClase = ({ clase, aulaGrado }: { clase: Clase, aulaGrado: string })
   const [expandida, setExpandida] = useState(false);
   const [recursosDrive, setRecursosDrive] = useState<any[]>([]);
   const [buscando, setBuscando] = useState(false);
+  const [haBuscado, setHaBuscado] = useState(false);
 
   useEffect(() => {
-    if (expandida && recursosDrive.length === 0 && !buscando) {
+    setHaBuscado(false);
+    setRecursosDrive([]);
+  }, [clase.titulo, aulaGrado]);
+
+  useEffect(() => {
+    if (expandida && !haBuscado && !buscando && clase.titulo && aulaGrado) {
       const buscar = async () => {
         setBuscando(true);
+        setHaBuscado(true);
         try {
           const q = encodeURIComponent(`${clase.titulo} ${aulaGrado}`);
           const res = await fetch(`/api/biblioteca/search?q=${q}`);
@@ -61,7 +68,7 @@ const TarjetaClase = ({ clase, aulaGrado }: { clase: Clase, aulaGrado: string })
       };
       buscar();
     }
-  }, [expandida, clase.titulo, aulaGrado, recursosDrive.length, buscando]);
+  }, [expandida, haBuscado, buscando, clase.titulo, aulaGrado]);
   
   return (
     <div className={`mb-4 bg-brand-navy border border-white/5 rounded-2xl overflow-hidden transition-all ${expandida ? 'ring-1 ring-brand-orange/30' : ''}`}>
