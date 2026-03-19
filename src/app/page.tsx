@@ -62,32 +62,32 @@ export default function Dashboard() {
       </div>
       
       {/* Sistema en Crecimiento - Banner Destacado */}
-      <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="bg-brand-navy border-l-4 border-brand-orange p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-          <div className="absolute right-0 top-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Zap size={140} className="text-brand-orange rotate-12" />
+      <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <div className="bg-brand-navy border-l-4 border-brand-orange p-6 md:p-8 rounded-[2rem] shadow-2xl relative overflow-hidden group">
+          <div className="absolute right-0 top-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Zap size={100} className="text-brand-orange rotate-12" />
           </div>
           <div className="relative z-10">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-brand-orange/10 flex items-center justify-center text-brand-orange shadow-inner">
-                <Sparkles size={28} />
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange shadow-inner">
+                <Sparkles size={20} />
               </div>
               <div>
-                <h2 className="text-xl md:text-3xl font-black text-white font-montserrat tracking-tight">Aula Tranquila está Creciendo</h2>
+                <h2 className="text-lg md:text-xl font-black text-white font-montserrat tracking-tight leading-none">Aula Tranquila está Creciendo</h2>
                 <div className="flex items-center gap-2 mt-1">
-                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                   <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Evolución en Tiempo Real</span>
+                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                   <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Evolución</span>
                 </div>
               </div>
             </div>
-            <p className="text-sm md:text-lg text-slate-400 font-bold leading-relaxed max-w-3xl">
+            <p className="text-xs md:text-sm text-slate-400 font-bold leading-relaxed max-w-2xl">
               Nuestro sistema se está ajustando cada vez más a tus necesidades para brindarte una solución placentera en el tiempo. 
               Gracias a ustedes, seguimos evolucionando: lo que hoy no está, se irá incorporando a través de tu necesidad y el feedback directo de la gente.
             </p>
-            <div className="mt-8">
+            <div className="mt-6">
                <Link 
                  href="/soporte" 
-                 className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-brand-orange uppercase tracking-widest hover:bg-brand-orange hover:text-white transition-all shadow-xl"
+                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-brand-orange uppercase tracking-widest hover:bg-brand-orange hover:text-white transition-all shadow-xl"
                >
                  Dejar mi Sugerencia / Feedback <ArrowRight size={14} />
                </Link>
