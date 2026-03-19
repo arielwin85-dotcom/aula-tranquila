@@ -16,14 +16,22 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Classroom } from '@/types'
+import { Classroom, User } from '@/types'
 import { currentUser } from '@/mocks/data'
 
 export default function Dashboard() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Cargar Usuario
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setUser(data.user))
+      .catch(err => console.error("Error fetching user:", err));
+
+    // 2. Cargar Clases
     fetch('/api/classrooms')
       .then(res => res.json())
       .then(data => {
@@ -47,12 +55,14 @@ export default function Dashboard() {
     { name: 'Configuración', icon: Settings, color: 'brand-navy', link: '/configuracion', desc: 'Ajustes de tu cuenta.' },
   ];
 
+  const userName = user?.name?.split(' ')[0] || 'Docente';
+
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700">
       {/* Header */}
       <div className="mb-10 flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">¡Hola, {currentUser.name.split(' ')[0]}! 👋</h1>
+          <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">¡Hola, {userName}! 👋</h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Es un buen día para recuperar tus tardes. ¿Qué planificamos hoy?</p>
         </div>
         <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
