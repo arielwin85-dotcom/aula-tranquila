@@ -323,9 +323,11 @@ la continuación según lo que ya dimos?`
   }, [historial, clasesPanelDerecho.length]);
 
   const procesarRespuesta = async (rawText: string) => {
+    console.log('Procesando respuesta del agente:', rawText);
     try {
-      // 1. Intentar extraer el JSON de forma mucho más robusta
       let jsonStr = null;
+      
+      // 1. Buscar patrón [GENERAR_PLAN_JSON]
       const tag = '[GENERAR_PLAN_JSON]';
       const tagIndex = rawText.indexOf(tag);
       
@@ -335,21 +337,23 @@ la continuación según lo que ya dimos?`
         const lastBrace = afterTag.lastIndexOf('}');
         if (firstBrace !== -1 && lastBrace > firstBrace) {
           jsonStr = afterTag.substring(firstBrace, lastBrace + 1);
-        } else {
-          jsonStr = afterTag;
         }
-      } else {
-        // Fallback: buscar un bloque de código markdown o el primer '{' que parezca una planificación
-        const mdMatch = rawText.match(/```json\s*(\{[\s\S]*\})\s*```/);
-        if (mdMatch) {
-          jsonStr = mdMatch[1];
-        } else {
-          const firstBrace = rawText.indexOf('{"planificacion"');
-          if (firstBrace !== -1) {
-            const lastBrace = rawText.lastIndexOf('}');
-            if (lastBrace > firstBrace) {
-              jsonStr = rawText.substring(firstBrace, lastBrace + 1);
-            }
+      }
+
+      // 2. Fallback: buscar bloques markdown
+      if (!jsonStr) {
+        const mdMatch = rawText.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+        if (mdMatch) jsonStr = mdMatch[1];
+      }
+
+      // 3. Fallback: buscar el primer '{' y el último '}' que contenga "planificacion"
+      if (!jsonStr) {
+        const firstBrace = rawText.indexOf('{');
+        const lastBrace = rawText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          const possible = rawText.substring(firstBrace, lastBrace + 1);
+          if (possible.includes('"planificacion"') || possible.includes('clases')) {
+            jsonStr = possible;
           }
         }
       }
@@ -357,32 +361,37 @@ la continuación según lo que ya dimos?`
       if (jsonStr) {
         try {
           const parsed = JSON.parse(jsonStr);
-          if (parsed.planificacion && Array.isArray(parsed.planificacion)) {
-            // Actualizar panel (el guardado es secundario si falla la DB)
-            await guardarPlanificacion(parsed.planificacion);
+          const clases = parsed.planificacion || parsed.clases || (Array.isArray(parsed) ? parsed : null);
+
+          if (clases && Array.isArray(clases)) {
+            await guardarPlanificacion(clases);
             
             // Limpiar mensaje del chat
             let msgVisible = rawText.split('[GENERAR_PLAN_JSON]')[0];
-            msgVisible = msgVisible.split('```json')[0];
-            msgVisible = msgVisible.split('{"planificacion"')[0].trim();
+            msgVisible = msgVisible.split('```')[0];
+            msgVisible = msgVisible.split('{"planificacion"')[0];
+            msgVisible = msgVisible.replace(jsonStr, '').trim();
             
-            agregarMensaje('assistant', msgVisible || 'Planificación finalizada ✅');
+            // Si después de limpiar no queda nada o queda el JSON roto, usar texto por defecto
+            if (!msgVisible || msgVisible.includes('{')) {
+              msgVisible = 'Planificación finalizada ✅';
+            }
+            
+            agregarMensaje('assistant', msgVisible);
             return;
           }
         } catch (e) {
-          console.error('JSON.parse failed on extracted string:', e);
+          console.error('Error al parsear JSON extraído:', e, jsonStr);
         }
       }
 
-      // Si no pudimos parsear nada, mostramos el mensaje original
-      agregarMensaje('assistant', rawText);
+      // Si llegamos acá, mostramos el texto tal cual (pero intentamos ocultar el JSON si es muy largo)
+      agregarMensaje('assistant', rawText.length > 500 ? rawText.substring(0, 500) + '...' : rawText);
     } catch (error) {
-      console.error('procesarRespuesta main error:', error);
+      console.error('Error crítico en procesarRespuesta:', error);
       agregarMensaje('assistant', rawText);
     }
-
   };
-
 
   const enviarMensaje = async () => {
     if (!input.trim() || cargando) return;
