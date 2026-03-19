@@ -1,16 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+async function getAuthUser() {
+  const cookieStore = await cookies();
+  return cookieStore.get('auth_session')?.value;
+}
+
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId');
+  const userId = await getAuthUser();
 
   if (!userId) {
-    return NextResponse.json({ error: 'UserId required' }, { status: 400 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { data, error } = await supabase
@@ -31,11 +36,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { userId, aulaGrado, areaMateria, fechaInicio, cantClases, clases } = body;
+    const userId = await getAuthUser();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!userId || !clases || !clases.length) {
-      return NextResponse.json({ error: 'Faltan datos' }, { status: 400 });
+    const body = await req.json();
+    const { aulaGrado, areaMateria, fechaInicio, cantClases, clases } = body;
+
+    if (!clases || !clases.length) {
+      return NextResponse.json({ error: 'Faltan clases' }, { status: 400 });
     }
 
     // --- VALIDACIÓN DE DUPLICADOS ---
@@ -106,6 +116,11 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const userId = await getAuthUser();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -113,7 +128,19 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Id required' }, { status: 400 });
     }
 
-    // Primero traer info para limpiar contenidos_dados si es necesario (opcional pero recomendado)
+    // Verificar propiedad antes de borrar
+    const { data: existingPlan } = await supabase
+      .from('planificaciones')
+      .select('user_id')
+      .eq('id', id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!existingPlan) {
+      return NextResponse.json({ error: 'Forbidden or Not found' }, { status: 403 });
+    }
+
+    // Traer info para limpiar contenidos_dados
     const { data: plan } = await supabase
       .from('planificaciones')
       .select('user_id, aula_grado, area_materia, planificacion_clases(titulo)')
@@ -131,7 +158,7 @@ export async function DELETE(req: NextRequest) {
         .in('tema', temas);
     }
 
-    // Borrar clases (si no hay cascada)
+    // Borrar clases
     await supabase.from('planificacion_clases').delete().eq('planificacion_id', id);
 
     // Borrar plan

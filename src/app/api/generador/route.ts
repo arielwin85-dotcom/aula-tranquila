@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const SYSTEM_PROMPT = `
-Eres un SUPER AGENTE DE INTELIGENCIA ARTIFICIAL especializado en diseño pedagógico para educación primaria en Argentina. 
+ERES UN SUPER AGENTE DE INTELIGENCIA ARTIFICIAL especializado en diseño pedagógico para educación primaria en Argentina. 
 Tu objetivo es simplificar el trabajo del docente creando recursos educativos de ALTA CALIDAD, listos para usar, descargar e imprimir.
 
 [TU PERFIL]
@@ -27,6 +28,13 @@ Recibirás: Clase (Grado/Nivel), Materia, Tipo de Recurso, Tema Principal, Instr
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { classroom, subjectName, resourceType, topic, instructions, duaTags } = await request.json();
 
     const apiKey = process.env.GEMINI_API_KEY;

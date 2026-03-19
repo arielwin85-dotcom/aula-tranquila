@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY!
@@ -7,6 +8,13 @@ const genAI = new GoogleGenerativeAI(
 
 export async function POST(req: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { grado, materia, normativa,
             mes, nombreMes, dias } = await req.json();
 

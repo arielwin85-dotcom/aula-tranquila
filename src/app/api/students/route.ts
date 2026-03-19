@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { upsertStudent, upsertGrade, getStudents, getFullStudent, deleteStudentFromLegacy } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { getStudents, getClassrooms, getFullStudent, upsertStudent, upsertGrade, deleteStudentFromLegacy } from '@/lib/db';
 import { Student } from '@/types';
 
-// GET students for a classroom
+// GET students for a classroom (Secure)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,6 +11,19 @@ export async function GET(request: Request) {
 
     if (!classroomId) {
       return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
+    }
+
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify classroom belongs to user
+    const classrooms = await getClassrooms(userId);
+    if (!classrooms.find(c => c.id === classroomId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const students = await getStudents(classroomId);
@@ -20,19 +34,34 @@ export async function GET(request: Request) {
   }
 }
 
-// POST a new student into a specific classroom
+// POST a new student into a specific classroom (Secure)
 export async function POST(request: Request) {
   try {
     const studentData: Student = await request.json();
-    
-    if (!studentData.classroomId) {
+    const classroomId = studentData.classroomId;
+
+    if (!classroomId) {
       return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
     }
 
-    // 1. Hybrid Upsert Student
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify classroom belongs to user
+    const classrooms = await getClassrooms(userId);
+    if (!classrooms.find(c => c.id === classroomId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // 1. Hybrid Upsert Student (Force userId matching session)
     const result = await upsertStudent({
       ...studentData,
       dni: studentData.dni, 
+      userId: userId, // Ensure correct ownership in DB
     });
 
     if (!result) throw new Error('Failed to create student in hybrid storage');
@@ -44,13 +73,13 @@ export async function POST(request: Request) {
           ...grade,
           id: undefined, 
           studentDni: studentData.dni,
-          classroomId: studentData.classroomId,
+          classroomId: classroomId,
         });
       }
     }
 
     // 3. Migration: Ensure no duplicates in legacy JSON
-    await deleteStudentFromLegacy(studentData.dni, studentData.classroomId);
+    await deleteStudentFromLegacy(studentData.dni, classroomId);
 
     // 4. Return Fully Hydrated Student
     const fullStudent = await getFullStudent(studentData.dni);

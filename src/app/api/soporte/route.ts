@@ -47,8 +47,18 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const tickets = await getTickets();
-    return NextResponse.json(tickets);
+    // Only return tickets belonging to the user
+    // (In a real app, you might want an admin view too)
+    const filteredTickets = tickets.filter(t => t.userId === userId);
+    return NextResponse.json(filteredTickets);
   } catch (error) {
     return NextResponse.json({ error: 'Error al obtener tickets' }, { status: 500 });
   }
@@ -56,6 +66,13 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { id, status } = await request.json();
     const tickets = await getTickets();
     const ticketIndex = tickets.findIndex(t => t.id === id);
@@ -65,6 +82,12 @@ export async function PATCH(request: Request) {
     }
 
     const ticket = tickets[ticketIndex];
+
+    // Verify ownership
+    if (ticket.userId !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     ticket.status = status;
     
     await saveTicket(ticket);

@@ -4,13 +4,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+import { cookies } from 'next/headers';
+
 export async function POST(req: NextRequest) {
   console.log('=== API CHAT LLAMADA ===');
   try {
+    const cookieStore = await cookies();
+    const userIdFromSession = cookieStore.get('auth_session')?.value;
+
+    if (!userIdFromSession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
-    console.log('=== API LLAMADA ===');
-    console.log('GEMINI_API_KEY existe:', !!process.env.GEMINI_API_KEY);
-    
     const { 
       messages, 
       context 
@@ -22,8 +28,10 @@ export async function POST(req: NextRequest) {
       fechaInicio, 
       cantClases, 
       mesActual,
-      userId 
     } = context;
+
+    // Force userId from session
+    const userId = userIdFromSession;
 
     console.log('--- CONTEXTO RECIBIDO ---');
     console.log(`Grado: ${nombreGrado}, Materia: ${areaMateria}, Mes: ${mesActual}`);

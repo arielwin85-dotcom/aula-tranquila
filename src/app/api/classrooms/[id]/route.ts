@@ -9,13 +9,24 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const updatedClassroom: Classroom = await request.json();
-    const classrooms = await getClassrooms();
     
+    // Verify ownership
+    const classrooms = await getClassrooms(userId);
     const index = classrooms.findIndex(c => c.id === id);
     if (index === -1) {
-      return NextResponse.json({ error: 'Classroom not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    // Force correct userId
+    updatedClassroom.userId = userId;
 
     // Keep existing students if not provided in the update
     updatedClassroom.students = updatedClassroom.students || classrooms[index].students;
@@ -29,12 +40,27 @@ export async function PUT(
   }
 }
 
+import { cookies } from 'next/headers';
+
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify ownership
+    const classrooms = await getClassrooms(userId);
+    if (!classrooms.find(c => c.id === id)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     await deleteClassroom(id);
     
     return NextResponse.json({ success: true });

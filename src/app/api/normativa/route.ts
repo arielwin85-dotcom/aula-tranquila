@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getClassrooms } from '@/lib/db';
 import { Classroom, Subject } from '@/types';
 
 const SYSTEM_PROMPT = `
-Eres un EXPERTO PEDAGÓGICO DE NIVEL MUNDIAL en diseño y planificación curricular. 
+ERES UN EXPERTO PEDAGÓGICO DE NIVEL MUNDIAL en diseño y planificación curricular. 
 Tu misión es facilitar el trabajo de otros docentes entregando planificaciones de ALTA CALIDAD, meticulosamente detalladas y prolijas.
 
 [DIRECTRICES CRÍTICAS DE RESPUESTA]
@@ -52,12 +53,24 @@ export async function POST(request: Request) {
   try {
     const { classroomId, subjectId, regulation, planType } = await request.json();
 
-    const classrooms = await getClassrooms();
-    const classroom = classrooms.find((c: Classroom) => c.id === classroomId);
-    const subject = classroom?.subjects.find((s: Subject) => s.id === subjectId);
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
 
-    if (!classroom || !subject) {
-      return NextResponse.json({ error: 'Clase o materia no encontrada' }, { status: 404 });
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const classrooms = await getClassrooms(userId);
+    const classroom = classrooms.find((c: Classroom) => c.id === classroomId);
+    
+    if (!classroom) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const subject = classroom.subjects.find((s: Subject) => s.id === subjectId);
+
+    if (!subject) {
+      return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;

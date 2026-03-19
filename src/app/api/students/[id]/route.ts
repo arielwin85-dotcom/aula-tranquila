@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { upsertStudent, deleteStudentFromDB, upsertGrade, deleteGrade, getGrades, getFullStudent, deleteStudentFromLegacy } from '@/lib/db';
+import { cookies } from 'next/headers';
+import { upsertStudent, deleteStudentFromDB, upsertGrade, deleteGrade, getGrades, getFullStudent, deleteStudentFromLegacy, getClassrooms } from '@/lib/db';
 
 export async function DELETE(
   request: Request,
@@ -12,6 +13,19 @@ export async function DELETE(
 
     if (!classroomId) {
       return NextResponse.json({ error: 'Missing classroomId for hybrid delete' }, { status: 400 });
+    }
+
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify classroom ownership
+    const classrooms = await getClassrooms(userId);
+    if (!classrooms.find(c => c.id === classroomId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
     // Deleting from both possible locations
@@ -37,11 +51,29 @@ export async function PUT(
     const body = await request.json();
     const { classroomId, detailedGrades, ...studentData } = body;
 
+    if (!classroomId) {
+      return NextResponse.json({ error: 'Missing classroomId' }, { status: 400 });
+    }
+
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify classroom ownership
+    const classrooms = await getClassrooms(userId);
+    if (!classrooms.find(c => c.id === classroomId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // 1. Update Student
     const result = await upsertStudent({
       ...studentData,
       dni: dni,
-      classroomId: classroomId
+      classroomId: classroomId,
+      userId: userId // Ensure ownership
     });
 
     if (!result) throw new Error('Failed to update student');

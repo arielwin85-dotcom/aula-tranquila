@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const SYSTEM_PROMPT = `
-Eres un AGENTE DE EVALUACIÓN IA especializado en corrección de evidencias escolares de primaria.
+ERES UN AGENTE DE EVALUACIÓN IA especializado en corrección de evidencias escolares de primaria.
 Tu misión es analizar imágenes de pruebas, ejercicios o cuadernos escritos a mano (manuscritos) y simplificar el trabajo de corrección del docente.
 
 [DIRECTRICES DE ANÁLISIS]
@@ -31,6 +32,13 @@ Debes responder ESTRICTAMENTE con un objeto JSON (o un array de objetos si hay v
 
 export async function POST(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { images } = await request.json(); // Array de base64 strings
 
     const apiKey = process.env.GEMINI_API_KEY;
