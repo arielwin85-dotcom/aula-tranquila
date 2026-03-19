@@ -135,7 +135,8 @@ export default function AdminPage() {
   };
 
   const toggleUserStatus = async (user: User) => {
-    const newStatus = !user.active;
+    // Si active es undefined o true, lo pasamos a false. Si es false, lo pasamos a true.
+    const newStatus = user.active === false ? true : false;
     try {
       const res = await fetch(`/api/admin/users/${user.id}`, {
         method: 'PUT',
