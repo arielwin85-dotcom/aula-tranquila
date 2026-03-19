@@ -15,7 +15,9 @@ import {
   X,
   HelpCircle,
   AlertTriangle,
-  Paperclip
+  Paperclip,
+  Power,
+  ToggleLeft
 } from 'lucide-react';
 import { User } from '@/types';
 
@@ -132,6 +134,20 @@ export default function AdminPage() {
     }
   };
 
+  const toggleUserStatus = async (user: User) => {
+    const newStatus = !user.active;
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...user, active: newStatus })
+      });
+      if (res.ok) fetchUsers();
+    } catch (err) {
+      console.error('Error toggling status:', err);
+    }
+  };
+
   const handleDeleteUser = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este acceso?')) return;
 
@@ -236,6 +252,7 @@ export default function AdminPage() {
                   <tr className="bg-black/40 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                     <th className="px-10 py-5">Usuario</th>
                     <th className="px-10 py-5">Email</th>
+                    <th className="px-10 py-5">Estado</th>
                     <th className="px-10 py-5">Nivel / Plan</th>
                     <th className="px-10 py-5">Rol</th>
                     <th className="px-10 py-5 text-center">Acciones</th>
@@ -260,6 +277,11 @@ export default function AdminPage() {
                       </td>
                       <td className="px-10 py-6 font-bold text-slate-400">{user.email}</td>
                       <td className="px-10 py-6">
+                        <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${user.active !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                          {user.active !== false ? 'Activo' : 'Inhibido'}
+                        </span>
+                      </td>
+                      <td className="px-10 py-6">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-black text-white uppercase tracking-widest">{user.level}</span>
                           <span className="text-[10px] font-black uppercase text-brand-peach tracking-widest">{user.plan}</span>
@@ -272,6 +294,13 @@ export default function AdminPage() {
                       </td>
                       <td className="px-10 py-6">
                         <div className="flex justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <button 
+                            onClick={() => toggleUserStatus(user)}
+                            title={user.active !== false ? 'Desactivar acceso' : 'Activar acceso'}
+                            className={`w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl transition-all shadow-xl ${user.active !== false ? 'hover:bg-amber-500 hover:text-white hover:border-amber-500 text-slate-400' : 'hover:bg-emerald-500 hover:text-white hover:border-emerald-500 text-emerald-400'}`}
+                          >
+                            <Power size={18} />
+                          </button>
                           <button 
                             onClick={() => openModal(user)}
                             className="w-12 h-12 flex items-center justify-center bg-white/5 border border-white/10 text-slate-400 rounded-2xl hover:bg-brand-blue hover:text-white hover:border-brand-blue transition-all shadow-xl"

@@ -276,6 +276,7 @@ export async function saveProfile(profile: any) {
     credits: profile.credits,
     plan: profile.plan,
     role: profile.role,
+    active: profile.active ?? true,
     updated_at: new Date().toISOString(),
   });
   if (error) throw error;

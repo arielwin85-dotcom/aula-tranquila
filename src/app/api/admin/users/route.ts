@@ -41,7 +41,8 @@ export async function POST(request: Request) {
       role: data.role || 'docente',
       level: data.level || 'Primaria',
       credits: 100,
-      plan: 'Gratuito'
+      plan: 'Gratuito',
+      active: true
     };
 
     await saveProfile(newUser);

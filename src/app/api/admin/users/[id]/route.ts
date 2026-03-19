@@ -25,13 +25,13 @@ export async function PUT(
     }
 
     // 2. Actualizar el perfil en la tabla profiles
-    const profileUpdate = {
+    const profileUpdate: any = {
       id,
       name: data.name,
       email: data.email,
       role: data.role,
       level: data.level,
-      // Conservar otros campos si es necesario (el helper saveProfile usa upsert)
+      active: data.active !== undefined ? data.active : true
     };
 
     await saveProfile(profileUpdate);

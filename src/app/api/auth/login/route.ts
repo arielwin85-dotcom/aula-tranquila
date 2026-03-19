@@ -32,6 +32,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Perfil de usuario no encontrado' }, { status: 404 });
     }
 
+    if (profile.active === false) {
+      return NextResponse.json({ error: 'Tu cuenta ha sido deshabilitada por el administrador.' }, { status: 403 });
+    }
+
     // 3. Mantener el sistema de cookies del MVP por compatibilidad
     const cookieStore = await cookies();
     cookieStore.set('auth_session', profile.id, {

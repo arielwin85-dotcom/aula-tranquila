@@ -7,6 +7,7 @@ export interface User {
   level: string; // Primaria, Secundaria, etc.
   credits: number;
   plan: 'Gratuito' | 'Docente Pro' | 'Institución';
+  active?: boolean;
 }
 
 export interface GradeEntry {
