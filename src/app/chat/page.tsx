@@ -313,6 +313,17 @@ la continuación según lo que ya dimos?`
     }
   };
 
+  // Auto-cargar el último plan en el panel derecho al entrar o actualizar historial
+  useEffect(() => {
+    if (historial.length > 0 && clasesPanelDerecho.length === 0) {
+      const ultimo = historial[0];
+      setClasesPanelDerecho(ultimo.planificacion_clases || []);
+      // Solo si el usuario aún no eligió nada de forma manual
+      if (!aulaGrado) setAulaGrado(ultimo.aula_grado);
+      if (!areaMateria) setAreaMateria(ultimo.area_materia);
+    }
+  }, [historial, clasesPanelDerecho.length]);
+
   const procesarRespuesta = async (rawText: string) => {
     try {
       // 1. Intentar extraer el JSON de forma mucho más robusta
