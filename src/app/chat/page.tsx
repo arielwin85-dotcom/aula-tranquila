@@ -26,6 +26,7 @@ interface Clase {
   id?: string;
   numero_clase: number; fecha: string; dia_semana: string;
   titulo: string; objetivo: string; contenido: string;
+  ejemplos_orientativos?: string;
   actividades: string; recursos: string; evaluacion: string;
   estado?: string;
 }
@@ -35,7 +36,105 @@ interface Planificacion {
   planificacion_clases: Clase[];
 }
 
+const TarjetaClase = ({ clase }: { clase: Clase }) => {
+  const [expandida, setExpandida] = useState(false);
+  
+  return (
+    <div className={`mb-4 bg-brand-navy border border-white/5 rounded-2xl overflow-hidden transition-all ${expandida ? 'ring-1 ring-brand-orange/30' : ''}`}>
+      {/* Header siempre visible */}
+      <div 
+        onClick={() => setExpandida(!expandida)}
+        className="p-4 cursor-pointer flex justify-between items-center hover:bg-white/5 transition-colors"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">
+             📅 {clase.dia_semana} {clase.fecha.split('-').reverse().join('/')} — CLASE {clase.numero_clase}
+          </div>
+          <div className="font-bold text-white tracking-tight truncate">
+            {clase.titulo}
+          </div>
+        </div>
+        <span className={`text-brand-orange transition-transform duration-300 ${expandida ? 'rotate-180' : ''}`}>
+          <ChevronRight size={18} />
+        </span>
+      </div>
+
+      {/* Detalle expandible */}
+      {expandida && (
+        <div className="p-4 pt-0 border-t border-white/5 bg-black/20 animate-in fade-in slide-in-from-top-2 duration-300">
+          {clase.objetivo && (
+            <div className="mt-4">
+              <div className="text-[9px] font-black text-brand-orange uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Plus size={8} /> OBJETIVO
+              </div>
+              <p className="text-[12px] text-slate-300 font-medium leading-relaxed">
+                {clase.objetivo}
+              </p>
+            </div>
+          )}
+
+          {clase.contenido && (
+            <div className="mt-4">
+              <div className="text-[9px] font-black text-brand-orange uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Plus size={8} /> DESARROLLO DE LA CLASE
+              </div>
+              <p className="text-[12px] text-slate-400 font-medium leading-relaxed whitespace-pre-line">
+                {clase.contenido}
+              </p>
+            </div>
+          )}
+
+          {clase.ejemplos_orientativos && (
+            <div className="mt-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 shadow-inner">
+              <div className="text-[9px] font-black text-emerald-400 uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Sparkles size={10} /> EJEMPLOS ORIENTATIVOS
+              </div>
+              <p className="text-[12px] text-emerald-50/70 font-bold leading-relaxed whitespace-pre-line">
+                {clase.ejemplos_orientativos}
+              </p>
+            </div>
+          )}
+
+          {clase.actividades && (
+            <div className="mt-4">
+              <div className="text-[9px] font-black text-brand-orange uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Plus size={8} /> ACTIVIDAD
+              </div>
+              <p className="text-[12px] text-slate-400 font-medium leading-relaxed">
+                {clase.actividades}
+              </p>
+            </div>
+          )}
+
+          {clase.recursos && (
+            <div className="mt-4">
+              <div className="text-[9px] font-black text-brand-orange uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Plus size={8} /> RECURSOS
+              </div>
+              <p className="text-[12px] text-slate-400 font-medium leading-relaxed">
+                {clase.recursos}
+              </p>
+            </div>
+          )}
+
+          {clase.evaluacion && (
+            <div className="mt-4">
+              <div className="text-[9px] font-black text-brand-orange uppercase tracking-[.2em] mb-1.5 flex items-center gap-2">
+                <Plus size={8} /> EVALUACIÓN INFORMAL
+              </div>
+              <p className="text-[12px] text-slate-400 font-medium leading-relaxed">
+                {clase.evaluacion}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function ChatPage() {
+
   const supabase = createClient();
 
   // ── Estados ────────────────────────────────────────────────────────────
@@ -176,6 +275,7 @@ la continuación según lo que ya dimos?`
       actividades: c.actividades || '',
       recursos: c.recursos || '',
       evaluacion: c.evaluacion || '',
+      ejemplos_orientativos: c.ejemplos_orientativos || '',
       estado: 'PENDIENTE'
     })));
 
@@ -226,14 +326,26 @@ la continuación según lo que ya dimos?`
     setCargando(true);
 
     try {
+      const mesActual = new Date().toLocaleString('es-AR', { 
+        month: 'long', year: 'numeric' 
+      });
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [...mensajes, { role: 'user', content: mensajeUsuario }],
-          context: { aulaGrado, areaMateria, fechaInicio, cantClases: parseInt(cantClases), userId }
+          context: { 
+            aulaGrado, 
+            areaMateria, 
+            fechaInicio, 
+            cantClases: parseInt(cantClases), 
+            mesActual,
+            userId 
+          }
         })
       });
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       await procesarRespuesta(data.response);
@@ -295,6 +407,12 @@ la continuación según lo que ya dimos?`
                 <span class="section-title">Contenido</span>
                 <div class="section-content">${c.contenido}</div>
               </div>
+              ${c.ejemplos_orientativos ? `
+              <div class="section" style="background: #f0fdf4; padding: 10px; border-radius: 5px; border-left: 4px solid #10b981;">
+                <span class="section-title" style="color: #059669;">💡 Ejemplos Orientativos</span>
+                <div class="section-content">${c.ejemplos_orientativos}</div>
+              </div>
+              ` : ''}
               <div class="section">
                 <span class="section-title">Actividades</span>
                 <div class="section-content">${c.actividades}</div>
@@ -503,7 +621,6 @@ la continuación según lo que ya dimos?`
         )}
       </div>
 
-      {/* Panel Derecho: Planificación Activa */}
       <div className="w-full lg:w-[450px] flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar lg:h-full">
         {clasesPanelDerecho.length === 0 ? (
           <div className="flex-1 bg-brand-navy/30 border-2 border-dashed border-white/5 rounded-[3.5rem] flex flex-col items-center justify-center p-12 text-center">
@@ -514,56 +631,39 @@ la continuación según lo que ya dimos?`
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-loose max-w-[200px]">Iniciá una sesión de chat para estructurar tu planificación semanal.</p>
           </div>
         ) : (
-          <>
-            <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
-              <div className="absolute -right-10 -top-10 w-40 h-40 bg-brand-orange opacity-5 rounded-full blur-3xl group-hover:scale-150 transition-all duration-1000" />
-              <div className="flex justify-between items-center mb-8 relative z-10">
-                <div>
-                  <h2 className="text-2xl font-black text-white font-montserrat tracking-tight">Planificación</h2>
-                  <p className="text-[9px] font-black text-brand-orange uppercase tracking-[.3em]">IA OPTIMIZADA</p>
+          <div className="p-4 overflow-y-auto custom-scrollbar">
+            <div className="flex justify-between items-center mb-6 bg-brand-navy/40 p-5 rounded-[2rem] border border-white/5 shadow-xl">
+              <div className="min-w-0">
+                <div className="font-black text-white font-montserrat tracking-tight truncate text-lg">{areaMateria}</div>
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">
+                  {aulaGrado} — {clasesPanelDerecho.length} clases
                 </div>
-                 <button 
-                   onClick={() => handlePrintPlan(clasesPanelDerecho)}
-                   className="p-4 bg-white text-brand-navy rounded-2xl hover:bg-brand-peach transition-all shadow-xl hover:scale-105 active:scale-95"
-                 >
-                    <Printer size={20} />
-                 </button>
-
               </div>
-
-              <div className="space-y-6 relative z-10">
-                {clasesPanelDerecho.sort((a,b)=>a.numero_clase-b.numero_clase).map((clase, i) => (
-                  <div key={i} className="bg-white/5 border border-white/5 rounded-[2rem] p-6 hover:bg-white/10 transition-all group/item shadow-inner">
-                    <div className="flex justify-between items-start mb-4">
-                      <span className="text-[10px] font-black text-brand-orange bg-brand-orange/10 px-3 py-1 rounded-lg uppercase tracking-widest">CLASE {clase.numero_clase}</span>
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{clase.dia_semana} {clase.fecha.split('-').reverse().join('/')}</span>
-                    </div>
-                    <h4 className="text-white font-black text-md font-montserrat mb-4 tracking-tight group-hover/item:text-brand-orange transition-colors">{clase.titulo}</h4>
-                    <div className="grid gap-4">
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 animate-in fade-in"><Plus size={8} /> Objetivo</span>
-                        <p className="text-[11px] text-slate-400 font-bold leading-relaxed">{clase.objetivo}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><Plus size={8} /> Actividades</span>
-                        <p className="text-[11px] text-slate-400 font-bold leading-relaxed italic">{clase.actividades}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-               <button 
-                 onClick={() => handlePrintPlan(clasesPanelDerecho)}
-                 className="w-full mt-8 py-5 bg-white text-brand-navy rounded-[1.8rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all shadow-2xl hover:bg-brand-peach hover:scale-[1.02]"
-               >
-                  <Download size={18} /> Descargar Paquete Completo
-               </button>
-
+              <button 
+                onClick={() => handlePrintPlan(clasesPanelDerecho)}
+                className="flex items-center gap-2 bg-white text-brand-navy px-5 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-peach transition-all shadow-lg shrink-0"
+              >
+                <Printer size={16} /> PDF
+              </button>
             </div>
-          </>
+
+            {clasesPanelDerecho
+              .sort((a, b) => (a.numero_clase || 0) - (b.numero_clase || 0))
+              .map((clase, i) => (
+                <TarjetaClase key={i} clase={clase} />
+              ))
+            }
+
+            <button 
+              onClick={() => handlePrintPlan(clasesPanelDerecho)}
+              className="w-full mt-4 py-5 bg-white text-brand-navy rounded-[1.8rem] font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-4 transition-all shadow-2xl hover:bg-brand-peach hover:scale-[1.02]"
+            >
+              <Download size={18} /> Descargar Paquete Completo
+            </button>
+          </div>
         )}
       </div>
+
 
     </div>
   );

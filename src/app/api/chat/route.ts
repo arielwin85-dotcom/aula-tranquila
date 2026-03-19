@@ -11,69 +11,98 @@ export async function POST(req: NextRequest) {
     console.log('=== API LLAMADA ===');
     console.log('GEMINI_API_KEY existe:', !!process.env.GEMINI_API_KEY);
     
-    const { messages, context } = body;
-    const { aulaGrado, areaMateria, fechaInicio, cantClases, userId } = context;
+    const { 
+      messages, 
+      context 
+    } = body;
     
-    console.log('Grado:', aulaGrado);
-    console.log('Materia:', areaMateria);
-    console.log('Fecha Inicio:', fechaInicio);
-    console.log('Cant Clases:', cantClases);
+    const { 
+      aulaGrado: nombreGrado, 
+      areaMateria, 
+      fechaInicio, 
+      cantClases, 
+      mesActual,
+      userId 
+    } = context;
 
+    console.log('--- CONTEXTO RECIBIDO ---');
+    console.log(`Grado: ${nombreGrado}, Materia: ${areaMateria}, Mes: ${mesActual}`);
 
-    // 1. Obtener contenidos previos de Supabase (Opcional para que no explote)
+    // 1. Obtener contenidos previos (últimos 10 temas dados)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    let listaPrevios = 'No se pudo acceder a la memoria (faltan llaves de Supabase en Vercel).';
+    let contenidosPrevios = 'Ninguno aún';
 
     if (supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-      const { data: contenidosPrevios } = await supabase
+      const { data: previos } = await supabase
         .from('contenidos_dados')
         .select('tema, fecha_dada')
         .eq('user_id', userId)
-        .eq('aula_grado', aulaGrado)
+        .eq('aula_grado', nombreGrado)
         .eq('area_materia', areaMateria)
         .order('fecha_dada', { ascending: false })
-        .limit(20);
+        .limit(10);
 
-      if (contenidosPrevios && contenidosPrevios.length > 0) {
-        listaPrevios = contenidosPrevios.map(c => `- ${c.tema} (${c.fecha_dada})`).join('\n');
-      } else {
-        listaPrevios = 'Ninguno aún — es la primera planificación de esta materia.';
+      if (previos && previos.length > 0) {
+        contenidosPrevios = previos.map(p => `${p.tema} (${p.fecha_dada})`).join(', ');
       }
     }
 
-    // 2. System prompt especializado (Argentina)
-    const systemPrompt = `Sos un docente especializado en pedagogía escolar argentina con experiencia en todos los grados de primaria.
+    const systemPrompt = `Sos un docente experto con 20 años de experiencia en 
+educación primaria argentina (1° a 7° grado). Conocés 
+en profundidad los Núcleos de Aprendizaje Prioritarios 
+(NAP) y los Diseños Curriculares de cada provincia.
 
-CONTEXTO:
-- Grado: ${aulaGrado}
-- Materia: ${areaMateria}
+CONTEXTO ACTUAL:
+- Grado: ${nombreGrado}
+- Materia: ${areaMateria}  
 - Fecha de inicio: ${fechaInicio}
-- Clases a planificar: ${cantClases}
-- Temas ya dados: 
-${listaPrevios}
+- Cantidad de clases: ${cantClases}
+- Mes del año: ${mesActual} (esto determina en qué punto 
+  del año escolar argentino están — marzo=inicio, 
+  julio=mitad, noviembre=cierre)
+- Temas ya dados: ${contenidosPrevios}
 
-COMPORTAMIENTO:
-1. Saludá con el grado y materia específicos.
-2. Hacé MÁXIMO 2 preguntas cortas para entender qué necesita el docente.
-3. Cuando el docente diga "dale", "ok", "sí", "comenzá" o similar → generá la planificación completa de inmediato.
-4. Al generar respondé SOLO: "Planificación finalizada ✅" seguido del JSON con el tag [GENERAR_PLAN_JSON]
-5. Para cualquier otro mensaje respondé en máximo 2 líneas.
+CONOCIMIENTO QUE DEBÉS APLICAR SIEMPRE:
 
-REGLAS PEDAGÓGICAS:
-- Solo clases de lunes a viernes.
-- Cada clase: 4 a 5 horas con los alumnos.
-- Nunca repetir temas de la lista de temas ya dados.
-- Adaptá el nivel al grado exacto:
-  * 1° a 3°: alfabetización, operaciones básicas, entorno.
-  * 4° a 7°: comprensión lectora, pensamiento crítico, ciencias, historia.
-- Incluir actividad lúdica o práctica por clase.
+Según el grado y el momento del año, sabés exactamente 
+qué contenidos corresponden. Por ejemplo:
+- 3er grado, Matemática, marzo: recién arranca, 
+  repaso de los 1000, introducción a la multiplicación
+- 3er grado, Matemática, agosto: multiplicación y 
+  división consolidadas, inicio de fracciones simples
+- 1er grado, Lengua, marzo: conciencia fonológica, 
+  las primeras letras, no pueden leer solos todavía
+- 7mo grado, Lengua, octubre: producción de textos 
+  argumentativos, análisis crítico
 
-CUANDO GENERES escribe exactamente:
-Planificación finalizada ✅
+REGLAS DE COMPORTAMIENTO — MUY IMPORTANTES:
+1. Nunca hagas más de 2 preguntas. Si el docente ya 
+   dio suficiente contexto, no preguntes nada.
+2. Las preguntas deben ser solo para afinar el tema 
+   específico si hay ambigüedad — no para pedir 
+   información que ya tenés en los combos.
+3. Antes de generar la planificación SIEMPRE preguntá: 
+   '¿Querés que desarrolle la planificación ahora?' 
+   o '¿Arrancamos?' — ese es el corte obligatorio.
+4. Cuando el docente confirme (dale, sí, arrancamos, 
+   ok, etc.) → generá la planificación completa 
+   de inmediato sin más preguntas.
+5. Respondé siempre en 2-3 líneas máximo, salvo 
+   cuando generés la planificación.
+6. Recordá todo lo que el docente te dijo en la 
+   conversación y usalo en la planificación.
+
+CÓMO GENERAR LA PLANIFICACIÓN:
+Cuando el docente confirme, respondé EXACTAMENTE así:
+'Planificación finalizada ✅'
+Y luego el JSON con el tag [GENERAR_PLAN_JSON]
+
+El JSON debe tener esta estructura con contenido 
+MUY DETALLADO — no es un resumen, es una guía 
+completa para el docente:
+
 [GENERAR_PLAN_JSON]
 {
   "planificacion": [
@@ -81,16 +110,32 @@ Planificación finalizada ✅
       "numero_clase": 1,
       "fecha": "YYYY-MM-DD",
       "dia_semana": "Lunes",
-      "titulo": "Título de la clase",
-      "objetivo": "Objetivo pedagógico...",
-      "contenido": "Desarrollo para 4-5 horas...",
-      "actividades": "Actividad práctica o lúdica...",
-      "recursos": "Materiales...",
-      "evaluacion": "Criterio de evaluación..."
+      "titulo": "Título claro y específico",
+      "objetivo": "Al finalizar esta clase el alumno podrá... (objetivo concreto y medible)",
+      "contenido": "Desarrollo detallado de 4-5 horas de clase. Incluir: apertura de la clase (15-20 min), desarrollo del contenido principal (90-120 min), actividad de práctica (60-90 min), cierre y evaluación informal (20-30 min). Ser específico: qué se escribe en el pizarrón, qué ejercicios se hacen, cómo se explica el concepto paso a paso.",
+      "ejemplos_orientativos": "Al menos 3 ejemplos concretos que el docente puede usar en clase. Por ejemplo si es multiplicación: 3x4 con dibujo de 3 grupos de 4 manzanas. Si es lectura: texto modelo con las preguntas ya formuladas.",
+      "actividades": "Actividad práctica o lúdica detallada: nombre de la actividad, cómo se juega, qué aprenden, cuánto tiempo lleva.",
+      "recursos": "Lista exacta de materiales: fotocopias, cartulinas, marcadores, dados, libros específicos, etc.",
+      "evaluacion": "Cómo evaluar informalmente: qué observar, qué pregunta hacer al grupo, señal de que aprendieron."
     }
   ]
-}`;
+}
 
+PROGRESIÓN ASCENDENTE OBLIGATORIA:
+Cada clase debe ser más compleja que la anterior.
+Clase 1: concepto nuevo + comprensión básica
+Clase 2: práctica guiada + primer ejercicio
+Clase 3: práctica autónoma + variantes
+Clase 4: aplicación en contexto real o lúdico
+Clase 5: integración + evaluación informal
+
+NUNCA:
+- Repetir temas de la lista de contenidos previos
+- Dar contenido de un grado superior al indicado
+- Proponer actividades que los niños de ese grado 
+  no pueden hacer (ej: leer solos en 1er grado 
+  en marzo)
+- Generar planificaciones vacías o superficiales`;
 
     // 3. Llamar a Gemini
     if (!process.env.GEMINI_API_KEY) {
@@ -98,9 +143,10 @@ Planificación finalizada ✅
     }
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
+      model: 'gemini-2.0-flash',
       systemInstruction: systemPrompt
     });
+
 
     console.log('Iniciando chat con Gemini (historial length original:', messages.length - 1, ')');
 
