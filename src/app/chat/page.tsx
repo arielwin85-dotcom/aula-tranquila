@@ -157,6 +157,9 @@ export default function ChatPage() {
     new Date().toISOString().split('T')[0]
   );
   const [cantClases, setCantClases] = useState('5');
+  const [guardando, setGuardando] = useState(false);
+  const [guardadoOk, setGuardadoOk] = useState(false);
+
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -253,8 +256,14 @@ la continuación según lo que ya dimos?`
 
     // Actualizar UI de inmediato
     setClasesPanelDerecho(clasesConFechas);
+    setGuardando(true);
+    setGuardadoOk(false);
 
-    if (!userId) return;
+    if (!userId) {
+      setGuardando(false);
+      return;
+    }
+
 
     const { data: plan, error: errorPlan } = await supabase
       .from('planificaciones')
@@ -298,8 +307,12 @@ la continuación según lo que ya dimos?`
       tema: c.titulo, fecha_dada: c.fecha
     })));
 
+    setGuardando(false);
+    setGuardadoOk(true);
+    setTimeout(() => setGuardadoOk(false), 5000);
     await cargarHistorial(userId);
   };
+
 
 
   const cargarHistorial = async (uid: string) => {
@@ -616,13 +629,24 @@ la continuación según lo que ya dimos?`
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {historial.length === 0 ? (
-                <div className="col-span-full h-64 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-white/5 rounded-[3rem]">
-                   <History size={48} className="mb-4 opacity-20" />
-                   <p className="text-[10px] font-black uppercase tracking-widest">Sin historial acumulado</p>
-                </div>
-              ) : (
-                historial.map(plan => (
+              {(() => {
+                const filtrado = historial.filter(h => 
+                  h.aula_grado === aulaGrado && h.area_materia === areaMateria
+                );
+                
+                if (filtrado.length === 0) {
+                  return (
+                    <div className="col-span-full h-64 flex flex-col items-center justify-center text-slate-600 border-2 border-dashed border-white/5 rounded-[3rem]">
+                       <History size={48} className="mb-4 opacity-20" />
+                       <p className="text-[10px] font-black uppercase tracking-widest text-center">
+                         Sin historial para<br/>
+                         <span className="text-brand-orange">{aulaGrado} - {areaMateria}</span>
+                       </p>
+                    </div>
+                  );
+                }
+
+                return filtrado.map(plan => (
                   <div key={plan.id} className="bg-black/20 border border-white/5 rounded-[2.5rem] p-6 hover:border-brand-orange/30 transition-all group relative overflow-hidden">
                     <div className="flex justify-between items-start mb-4">
                       <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-brand-orange shadow-inner group-hover:scale-110 transition-all">
@@ -658,9 +682,8 @@ la continuación según lo que ya dimos?`
                         <BookOpen size={12} /> {plan.cant_clases} Clases
                     </div>
                   </div>
-                ))
-
-              )}
+                ));
+              })()}
             </div>
           )}
         </div>
@@ -700,11 +723,13 @@ la continuación según lo que ya dimos?`
           </div>
         ) : (
           <div className="p-4 overflow-y-auto custom-scrollbar">
-            <div className="flex justify-between items-center mb-6 bg-brand-navy/40 p-5 rounded-[2rem] border border-white/5 shadow-xl">
+            <div className="flex justify-between items-center mb-6 bg-brand-navy/40 p-5 rounded-[2rem] border border-white/5 shadow-xl relative">
               <div className="min-w-0">
                 <div className="font-black text-white font-montserrat tracking-tight truncate text-lg">{areaMateria}</div>
-                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">
+                <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 flex items-center gap-2">
                   {aulaGrado} — {clasesPanelDerecho.length} clases
+                  {guardando && <span className="flex items-center gap-1 text-sky-400 animate-pulse"><Loader2 size={10} className="animate-spin" /> Guardando...</span>}
+                  {guardadoOk && <span className="text-emerald-400 font-bold flex items-center gap-1"><Sparkles size={10} /> Registrada en Historial ✅</span>}
                 </div>
               </div>
               <button 
