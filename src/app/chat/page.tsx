@@ -37,8 +37,31 @@ interface Planificacion {
   planificacion_clases: Clase[];
 }
 
-const TarjetaClase = ({ clase }: { clase: Clase }) => {
+const TarjetaClase = ({ clase, aulaGrado }: { clase: Clase, aulaGrado: string }) => {
   const [expandida, setExpandida] = useState(false);
+  const [recursosDrive, setRecursosDrive] = useState<any[]>([]);
+  const [buscando, setBuscando] = useState(false);
+
+  useEffect(() => {
+    if (expandida && recursosDrive.length === 0 && !buscando) {
+      const buscar = async () => {
+        setBuscando(true);
+        try {
+          const q = encodeURIComponent(`${clase.titulo} ${aulaGrado}`);
+          const res = await fetch(`/api/biblioteca/search?q=${q}`);
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setRecursosDrive(data.slice(0, 3));
+          }
+        } catch (e) {
+          console.error("Error buscando recursos:", e);
+        } finally {
+          setBuscando(false);
+        }
+      };
+      buscar();
+    }
+  }, [expandida, clase.titulo, aulaGrado, recursosDrive.length, buscando]);
   
   return (
     <div className={`mb-4 bg-brand-navy border border-white/5 rounded-2xl overflow-hidden transition-all ${expandida ? 'ring-1 ring-brand-orange/30' : ''}`}>
@@ -129,6 +152,47 @@ const TarjetaClase = ({ clase }: { clase: Clase }) => {
               </p>
             </div>
           )}
+
+          {/* Recursos de Biblioteca */}
+          <div className="mt-6 pt-6 border-t border-white/5">
+            <div className="text-[9px] font-black text-sky-400 uppercase tracking-[.2em] mb-3 flex items-center gap-2">
+              <FileText size={10} /> RECURSOS RELACIONADOS EN BIBLIOTECA
+            </div>
+            
+            {buscando ? (
+              <div className="flex items-center gap-2 text-slate-500 animate-pulse py-2">
+                <Loader2 size={12} className="animate-spin" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Buscando archivos...</span>
+              </div>
+            ) : recursosDrive.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2">
+                {recursosDrive.map((rec: any) => (
+                  <a 
+                    key={rec.id}
+                    href={rec.webViewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                      <Download size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-bold text-slate-300 truncate group-hover:text-white transition-colors">
+                        {rec.name}
+                      </div>
+                      <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                        Google Drive • {rec.mimeType.split('.').pop()?.toUpperCase() || 'ARCHIVO'}
+                      </div>
+                    </div>
+                    <ChevronRight size={14} className="text-slate-700 group-hover:text-sky-400 transition-colors" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-600 font-bold italic">No se encontraron archivos específicos en la biblioteca para este tema.</p>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -776,7 +840,7 @@ la continuación según lo que ya dimos?`
             {clasesPanelDerecho
               .sort((a, b) => (a.numero_clase || 0) - (b.numero_clase || 0))
               .map((clase, i) => (
-                <TarjetaClase key={i} clase={clase} />
+                <TarjetaClase key={i} clase={clase} aulaGrado={aulaGrado} />
               ))
             }
 
