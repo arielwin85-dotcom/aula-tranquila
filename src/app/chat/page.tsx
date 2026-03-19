@@ -311,16 +311,21 @@ la continuación según lo que ya dimos?`
     }
   };
 
-  // Auto-cargar el último plan en el panel derecho al entrar o actualizar historial
+  // Auto-cargar el último plan específico para el Grado/Materia seleccionado
   useEffect(() => {
-    if (historial.length > 0 && clasesPanelDerecho.length === 0) {
-      const ultimo = historial[0];
-      setClasesPanelDerecho(ultimo.planificacion_clases || []);
-      // Solo si el usuario aún no eligió nada de forma manual
-      if (!aulaGrado) setAulaGrado(ultimo.aula_grado);
-      if (!areaMateria) setAreaMateria(ultimo.area_materia);
+    if (!aulaGrado || !areaMateria || historial.length === 0) return;
+
+    const ultimoRelacionado = historial.find(h => 
+      h.aula_grado?.trim() === aulaGrado?.trim() && 
+      h.area_materia?.trim() === areaMateria?.trim()
+    );
+
+    if (ultimoRelacionado) {
+      setClasesPanelDerecho(ultimoRelacionado.planificacion_clases || []);
+    } else {
+      setClasesPanelDerecho([]);
     }
-  }, [historial, clasesPanelDerecho.length]);
+  }, [aulaGrado, areaMateria, historial]);
 
   const procesarRespuesta = async (rawText: string) => {
     console.log('Procesando respuesta del agente:', rawText);
