@@ -34,14 +34,6 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
         <Menu size={20} strokeWidth={3} />
       </button>
 
-      {/* Overlay (Solo Móvil cuando está abierto) */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-xl animate-in fade-in duration-300"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
       <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
       
       <main className="flex-1 lg:ml-64 relative min-h-screen overflow-y-auto">

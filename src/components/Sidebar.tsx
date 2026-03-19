@@ -69,13 +69,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Overlay Backdrop (Móvil) */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[45] lg:hidden animate-in fade-in duration-300" 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] lg:hidden animate-in fade-in duration-300" 
           onClick={onClose}
         />
       )}
 
       <div className={`
-        w-64 bg-brand-navy h-full fixed left-0 top-0 flex flex-col shadow-2xl z-50 border-r border-white/5 transition-transform duration-500
+        w-64 bg-brand-navy h-full fixed left-0 top-0 flex flex-col shadow-2xl z-[1000] border-r border-white/5 transition-transform duration-500
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="p-8 flex items-center justify-between">
