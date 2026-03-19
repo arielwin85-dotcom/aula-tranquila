@@ -672,7 +672,12 @@ la continuación según lo que ya dimos?`
                     </div>
                     <h3 className="text-white font-black text-lg font-montserrat tracking-tight mb-1">{plan.area_materia}</h3>
                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{plan.aula_grado}</p>
-                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-4">Inicia: {plan.fecha_inicio.split('-').reverse().join('/')}</p>
+                    <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-4">
+                      Inicia: {plan.fecha_inicio.split('-').reverse().join('/')}
+                      {plan.planificacion_clases?.length > 0 && (
+                        <> — Fin: {plan.planificacion_clases[plan.planificacion_clases.length - 1].fecha.split('-').reverse().join('/')}</>
+                      )}
+                    </p>
                     <div className="flex items-center gap-3 text-[9px] font-black text-brand-orange uppercase tracking-widest bg-brand-orange/5 px-4 py-2 rounded-xl w-fit">
                         <BookOpen size={12} /> {plan.cant_clases} Clases
                     </div>
