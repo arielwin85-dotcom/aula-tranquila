@@ -197,7 +197,7 @@ const TarjetaClase = ({ clase, aulaGrado }: { clase: Clase, aulaGrado: string })
                 ))}
               </div>
             ) : (
-              <p className="text-[10px] text-slate-600 font-bold italic">No se encontraron archivos específicos en la biblioteca para este tema.</p>
+              <p className="text-[10px] text-slate-600 font-bold italic">No hay actividades disponibles</p>
             )}
           </div>
         </div>
