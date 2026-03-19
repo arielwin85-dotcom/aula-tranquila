@@ -535,47 +535,47 @@ export default function NormativaPage() {
                     </div>
 
                     {/* Contenido del Plan */}
-                    <div className="p-10 flex-1 overflow-y-auto max-h-[600px] custom-scrollbar">
+                    <div className="p-10 flex-1 overflow-y-auto max-h-[70vh] custom-scrollbar bg-black/10">
                        <div className="whitespace-pre-wrap font-bold text-slate-300 leading-relaxed text-sm">
                           {generatedPlan}
                        </div>
-
-                       {resultadoAnualGenerado && activePlanType === 'Anual' && (
-                          <div className="mt-12 pt-8 border-t border-white/5 animate-in slide-in-from-bottom-4 duration-700">
-                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">
-                                DESCARGAR PLANIFICACIÓN DETALLADA POR MES
-                             </p>
-                             <div className="flex flex-wrap gap-3">
-                                {MESES.map(mes => (
-                                   <button
-                                      key={mes.valor}
-                                      onClick={() => handleGenerarMes(mes)}
-                                      disabled={generandoMes === mes.nombre}
-                                      className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
-                                         generandoMes === mes.nombre
-                                           ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
-                                           : memoriaMensual[mes.valor]
-                                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-white'
-                                              : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
-                                      }`}
-                                   >
-                                      {generandoMes === mes.nombre ? (
-                                         <div className="flex items-center gap-2">
-                                            <Loader2 size={12} className="animate-spin" />
-                                            <span>Generando...</span>
-                                         </div>
-                                      ) : memoriaMensual[mes.valor] ? (
-                                         <div className="flex items-center gap-2">
-                                            <CheckCircle2 size={12} />
-                                            <span>{mes.nombre} (Listo)</span>
-                                         </div>
-                                      ) : mes.nombre}
-                                   </button>
-                                ))}
-                             </div>
-                          </div>
-                       )}
                     </div>
+
+                    {resultadoAnualGenerado && activePlanType === 'Anual' && (
+                       <div className="p-10 border-t border-white/5 bg-white/5 animate-in slide-in-from-bottom-4 duration-700">
+                          <p className="text-[10px] font-black text-brand-orange uppercase tracking-[0.2em] mb-6">
+                             DESCARGAR PLANIFICACIÓN DETALLADA POR MES
+                          </p>
+                          <div className="flex flex-wrap gap-3">
+                             {MESES.map(mes => (
+                                <button
+                                   key={mes.valor}
+                                   onClick={() => handleGenerarMes(mes)}
+                                   disabled={generandoMes === mes.nombre}
+                                   className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                      generandoMes === mes.nombre
+                                        ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
+                                        : memoriaMensual[mes.valor]
+                                           ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                                           : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
+                                   }`}
+                                >
+                                   {generandoMes === mes.nombre ? (
+                                      <div className="flex items-center gap-2">
+                                         <Loader2 size={12} className="animate-spin" />
+                                         <span>Generando...</span>
+                                      </div>
+                                   ) : memoriaMensual[mes.valor] ? (
+                                      <div className="flex items-center gap-2">
+                                         <CheckCircle2 size={12} />
+                                         <span>{mes.nombre} (Listo)</span>
+                                      </div>
+                                   ) : mes.nombre}
+                                </button>
+                             ))}
+                          </div>
+                       </div>
+                    )}
 
                     {/* Footer / Actions */}
                     <div className="p-8 bg-black/40 border-t border-white/5 flex justify-between items-center mt-auto">
