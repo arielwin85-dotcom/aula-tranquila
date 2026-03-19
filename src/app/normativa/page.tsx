@@ -22,6 +22,29 @@ import { Classroom, Subject } from '@/types';
 
 type PlanType = 'Anual' | 'Mensual' | 'Semanal';
 
+// Constantes globales
+const MESES = [
+  { nombre: 'Marzo', valor: '03' },
+  { nombre: 'Abril', valor: '04' },
+  { nombre: 'Mayo', valor: '05' },
+  { nombre: 'Junio', valor: '06' },
+  { nombre: 'Julio', valor: '07' },
+  { nombre: 'Agosto', valor: '08' },
+  { nombre: 'Septiembre', valor: '09' },
+  { nombre: 'Octubre', valor: '10' },
+  { nombre: 'Noviembre', valor: '11' },
+  { nombre: 'Diciembre', valor: '12' },
+];
+
+const FERIADOS_2026 = [
+  '2026-03-24', '2026-04-02', '2026-04-03',
+  '2026-05-01', '2026-05-25', '2026-06-15',
+  '2026-06-20', '2026-07-09', '2026-08-17',
+  '2026-10-12', '2026-11-20', '2026-11-23',
+  '2026-12-08', '2026-12-25'
+];
+// Receso invernal: 13 al 24 de julio 2026
+
 export default function NormativaPage() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -31,6 +54,11 @@ export default function NormativaPage() {
   const [regulationText, setRegulationText] = useState('');
   const [generatedPlan, setGeneratedPlan] = useState<any | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  
+  // Nuevos estados para Planificación Mensual
+  const [mesSeleccionado, setMesSeleccionado] = useState('03');
+  const [generandoMes, setGenerandoMes] = useState<string | null>(null);
+  const [resultadoAnualGenerado, setResultadoAnualGenerado] = useState(false);
 
   useEffect(() => {
     fetch('/api/classrooms').then(res => res.json()).then(data => {
@@ -52,12 +80,40 @@ export default function NormativaPage() {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      setRegulationText(`Contenido ficticio extraído de: ${file.name}. Incluye ejes curriculares de la Provincia de Buenos Aires para el ciclo lectivo 2026.`);
+      setRegulationText(`Contenido extraído del documento "${file.name}". Se utilizará como base para alinear los contenidos de la planificación.`);
     }
+  };
+
+  const generarDiasHabiles = (anio: number, mes: number) => {
+    const dias = [];
+    const DIAS_NOMBRES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const fecha = new Date(anio, mes - 1, 1, 12);
+    const fin = new Date(anio, mes, 0, 12);
+
+    while (fecha <= fin) {
+      const d = fecha.getDay();
+      const str = fecha.toISOString().split('T')[0];
+      
+      // Filtro Fines de semana, Feriados y Receso Invernal (13-24 Julio)
+      const esFinde = d === 0 || d === 6;
+      const esFeriado = FERIADOS_2026.includes(str);
+      const esRecesoInvernal = mes === 7 && fecha.getDate() >= 13 && fecha.getDate() <= 24;
+
+      if (!esFinde && !esFeriado && !esRecesoInvernal) {
+        dias.push({ fecha: str, dia: DIAS_NOMBRES[d] });
+      }
+      fecha.setDate(fecha.getDate() + 1);
+    }
+    return dias;
   };
 
   const handleGeneratePlan = async () => {
     if (!selectedClassId || !selectedSubjectId || !regulationText) return;
+
+    if (activePlanType === 'Mensual') {
+      await handleGenerarMensual();
+      return;
+    }
     
     setIsGenerating(true);
     try {
@@ -75,6 +131,9 @@ export default function NormativaPage() {
       if (res.ok) {
         const data = await res.json();
         setGeneratedPlan(data.plan);
+        if (activePlanType === 'Anual') {
+          setResultadoAnualGenerado(true);
+        }
       }
     } catch (err) {
       console.error("Failed to generate plan", err);
@@ -83,54 +142,213 @@ export default function NormativaPage() {
     }
   };
 
-  const handlePrint = () => {
+  const handleGenerarMes = async (mes: any) => {
+    setGenerandoMes(mes.nombre);
+    const dias = generarDiasHabiles(2026, parseInt(mes.valor));
+    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+
+    try {
+      const res = await fetch('/api/normativa/mensual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grado: selectedClass?.grade,
+          materia: subjName,
+          normativa: regulationText,
+          mes: mes.valor,
+          nombreMes: mes.nombre,
+          dias
+        })
+      });
+      const data = await res.json();
+      generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${mes.nombre}`);
+    } catch(error) {
+      console.error('Error generando mes:', error);
+      alert('Error al generar la planificación mensual');
+    } finally {
+      setGenerandoMes(null);
+    }
+  };
+
+  const handleGenerarMensual = async () => {
+    const dias = generarDiasHabiles(2026, parseInt(mesSeleccionado));
+    const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
+    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/normativa/mensual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grado: selectedClass?.grade,
+          materia: subjName,
+          normativa: regulationText,
+          mes: mesSeleccionado,
+          nombreMes,
+          dias
+        })
+      });
+      const data = await res.json();
+      setGeneratedPlan(data.contenido);
+      setResultadoAnualGenerado(false); // Es mensual directa
+      generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+    } catch(error) {
+      console.error('Error:', error);
+      alert('Error al generar la planificación mensual');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generarPDF = (contenido: string, tituloDoc: string) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    // Split por el separador de clases
+    const clases = contenido.split(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/).filter(c => c.trim().length > 10);
+    const titulosClases = clases.map(c => {
+       const match = c.match(/CLASE \d+ — .+/);
+       return match ? match[0] : 'Detalle de Clase';
+    });
+    
+    const materiaName = subjects.find(s => s.id === selectedSubjectId)?.name;
 
     const html = `
       <html>
         <head>
-          <title>Planificación - ${activePlanType} - ${selectedClass?.grade}</title>
+          <title>${tituloDoc.replace(/_/g, ' ')}</title>
           <style>
-            body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-            h1 { color: #1e293b; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-bottom: 20px; }
-            h2 { color: #475569; margin-top: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
-            th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
-            th { background-color: #f8fafc; font-weight: bold; }
-            pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
-            .header-info { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-start; }
-            .badge { background: #7c3aed; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-            @media print { .no-print { display: none; } }
+            @page { size: A4; margin: 20mm; }
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 0; color: #1e293b; line-height: 1.6; font-size: 11pt; }
+            .page { page-break-after: always; min-height: 250mm; }
+            .no-break { page-break-after: avoid; }
+            
+            h1 { font-size: 24pt; color: #1e293b; margin-top: 50px; text-align: center; border-bottom: 3px solid #7c3aed; padding-bottom: 20px; }
+            h2 { font-size: 18pt; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 40px; }
+            
+            .header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 30px; font-size: 9pt; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+            
+            .indice { margin: 60px 0; }
+            .indice-item { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px dotted #cbd5e1; padding-bottom: 4px; }
+            
+            .clase-box { margin-top: 20px; }
+            .clase-badge { background: #7c3aed; color: white; display: inline-block; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 10pt; margin-bottom: 15px; }
+            
+            .section-header { font-size: 10pt; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.1em; border-left: 4px solid #7c3aed; padding-left: 10px; margin: 25px 0 10px 0; background: #f8fafc; padding-top: 5px; padding-bottom: 5px; }
+            
+            pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 10.5pt; color: #334155; margin-left: 5px; }
+            
+            .footer { position: fixed; bottom: 10mm; width: 100%; text-align: center; font-size: 9pt; color: #94a3b8; border-top: 1px solid #eee; pt: 5px; }
           </style>
         </head>
         <body>
-          <div class="header-info">
-            <div>
-              <p style="margin:0; font-weight:bold; color:#7c3aed;">Aula Tranquila - Copiloto IA</p>
-              <h1 style="margin:10px 0 5px 0;">Planificación ${activePlanType}</h1>
-              <p style="margin:0; color:#64748b; font-weight:bold;">${selectedClass?.name} - ${selectedClass?.grade}</p>
-              <p style="margin:0; color:#64748b;">Materia: ${subjects.find(s => s.id === selectedSubjectId)?.name}</p>
-            </div>
-            <div style="text-align: right;">
-              <div class="badge">Oficial</div>
-              <p style="margin:5px 0 0 0; font-size: 12px; color:#94a3b8;">Ciclo Lectivo ${selectedClass?.year}</p>
-              <p style="margin:0; font-size: 12px; color:#94a3b8;">Generado el: ${new Date().toLocaleDateString('es-AR')}</p>
-            </div>
+          <div class="page">
+             <div class="header">
+                <span>${selectedClass?.grade} | ${materiaName} | ${tituloDoc.split('_').pop()}</span>
+                <span>AULA TRANQUILA - COPILOTO IA</span>
+             </div>
+             <h1>${tituloDoc.replace(/Planificacion_|_/g, ' ')}</h1>
+             <div style="text-align: center; color: #64748b; font-weight: bold; margin-top: -10px;">Materia: ${materiaName}</div>
+             
+             <div class="indice">
+                <h2 style="border: none;">Índice Cronológico</h2>
+                ${titulosClases.map((t, idx) => `
+                   <div class="indice-item">
+                      <span>${t}</span>
+                      <span>Pág. ${idx + 2}</span>
+                   </div>
+                `).join('')}
+             </div>
           </div>
-          <div class="content">
-            ${generatedPlan.replace(/\n/g, '<br/>')}
-          </div>
+          
+          ${clases.map((c, i) => `
+            <div class="page">
+               <div class="header">
+                  <span>${selectedClass?.grade} | ${materiaName}</span>
+                  <span>Clase ${i+1} de ${clases.length}</span>
+               </div>
+               
+               <div class="clase-box">
+                  <div class="clase-badge">${titulosClases[i]}</div>
+                  <pre>${c.replace(titulosClases[i], '').trim()}</pre>
+               </div>
+               
+               <div class="footer">Página ${i + 2}</div>
+            </div>
+          `).join('')}
+          
           <script>
-            setTimeout(() => {
-              window.print();
-            }, 500);
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
           </script>
         </body>
       </html>
     `;
+    
     printWindow.document.write(html);
     printWindow.document.close();
+  };
+
+  const handlePrint = () => {
+    if (activePlanType === 'Anual' || activePlanType === 'Semanal') {
+       const printWindow = window.open('', '_blank');
+       if (!printWindow) return;
+
+       const html = `
+         <html>
+           <head>
+             <title>Planificación - ${activePlanType} - ${selectedClass?.grade}</title>
+             <style>
+               body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+               h1 { color: #1e293b; border-bottom: 3px solid #7c3aed; padding-bottom: 10px; margin-bottom: 20px; }
+               h2 { color: #475569; margin-top: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+               table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 12px; }
+               th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+               th { background-color: #f8fafc; font-weight: bold; }
+               pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
+               .header-info { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+               .badge { background: #7c3aed; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+               @media print { .no-print { display: none; } }
+             </style>
+           </head>
+           <body>
+             <div class="header-info">
+               <div>
+                 <p style="margin:0; font-weight:bold; color:#7c3aed;">Aula Tranquila - Copiloto IA</p>
+                 <h1 style="margin:10px 0 5px 0;">Planificación ${activePlanType}</h1>
+                 <p style="margin:0; color:#64748b; font-weight:bold;">${selectedClass?.name} - ${selectedClass?.grade}</p>
+                 <p style="margin:0; color:#64748b;">Materia: ${subjects.find(s => s.id === selectedSubjectId)?.name}</p>
+               </div>
+               <div style="text-align: right;">
+                 <div class="badge">Oficial</div>
+                 <p style="margin:5px 0 0 0; font-size: 12px; color:#94a3b8;">Ciclo Lectivo ${selectedClass?.year}</p>
+                 <p style="margin:0; font-size: 12px; color:#94a3b8;">Generado el: ${new Date().toLocaleDateString('es-AR')}</p>
+               </div>
+             </div>
+             <div class="content">
+               ${generatedPlan.replace(/\n/g, '<br/>')}
+             </div>
+             <script>
+               setTimeout(() => {
+                 window.print();
+               }, 500);
+             </script>
+           </body>
+         </html>
+       `;
+       printWindow.document.write(html);
+       printWindow.document.close();
+    } else {
+       // Si es mensual se usa la lógica avanzada de generarPDF
+       const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+       const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
+       generarPDF(generatedPlan, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+    }
   };
 
   return (
@@ -199,6 +417,22 @@ export default function NormativaPage() {
                     </button>
                   ))}
                 </div>
+
+                {activePlanType === 'Mensual' && (
+                  <div className="mt-4 animate-in slide-in-from-top-1 duration-300">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Mes a Planificar</label>
+                    <div className="relative">
+                      <select 
+                        value={mesSeleccionado}
+                        onChange={(e) => setMesSeleccionado(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all appearance-none"
+                      >
+                        {MESES.map(m => <option key={m.valor} value={m.valor} className="bg-brand-navy">{m.nombre}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -221,7 +455,11 @@ export default function NormativaPage() {
               className="w-full mt-8 py-5 bg-brand-orange text-white rounded-[1.8rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
             >
               {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-              Generar {activePlanType}
+              {
+                activePlanType === 'Mensual' 
+                  ? `GENERAR ${MESES.find(m => m.valor === mesSeleccionado)?.nombre.toUpperCase()}`
+                  : `Generar ${activePlanType}`
+              }
             </button>
           </div>
         </div>
@@ -259,6 +497,35 @@ export default function NormativaPage() {
                        <div className="whitespace-pre-wrap font-bold text-slate-300 leading-relaxed text-sm">
                           {generatedPlan}
                        </div>
+
+                       {resultadoAnualGenerado && activePlanType === 'Anual' && (
+                          <div className="mt-12 pt-8 border-t border-white/5 animate-in slide-in-from-bottom-4 duration-700">
+                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">
+                                DESCARGAR PLANIFICACIÓN DETALLADA POR MES
+                             </p>
+                             <div className="flex flex-wrap gap-3">
+                                {MESES.map(mes => (
+                                   <button
+                                      key={mes.valor}
+                                      onClick={() => handleGenerarMes(mes)}
+                                      disabled={generandoMes === mes.nombre}
+                                      className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                                         generandoMes === mes.nombre
+                                           ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
+                                           : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
+                                      }`}
+                                   >
+                                      {generandoMes === mes.nombre ? (
+                                         <div className="flex items-center gap-2">
+                                            <Loader2 size={12} className="animate-spin" />
+                                            <span>Generando...</span>
+                                         </div>
+                                      ) : mes.nombre}
+                                   </button>
+                                ))}
+                             </div>
+                          </div>
+                       )}
                     </div>
 
                     {/* Footer / Actions */}
