@@ -93,30 +93,58 @@ Planificación finalizada ✅
 }`;
 
     // 3. Llamar a Gemini
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY no está configurada en el servidor');
+    }
+
     const model = genAI.getGenerativeModel({
       model: 'gemini-flash-latest',
       systemInstruction: systemPrompt
     });
 
-    const chat = model.startChat({
-      history: messages.slice(0, -1).map((m: any) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
+    console.log('Iniciando chat con Gemini (historial length original:', messages.length - 1, ')');
+
+    // El historial de Gemini DEBE empezar con un mensaje del usuario ('user').
+    // Filtramos cualquier mensaje inicial del asistente (como el saludo).
+    const historyToProcess = messages.slice(0, -1);
+    let firstUserIndex = historyToProcess.findIndex((m: any) => m.role === 'user');
+    
+    const cleanHistory = firstUserIndex === -1 
+      ? [] 
+      : historyToProcess.slice(firstUserIndex);
+
+    const formattedHistory = cleanHistory.map((m: any) => {
+      const role = m.role === 'assistant' ? 'model' : 'user';
+      return {
+        role,
         parts: [{ text: m.content }]
-      }))
+      };
+    });
+
+    console.log('Historial formateado para SDK (longitud):', formattedHistory.length);
+
+    const chat = model.startChat({
+      history: formattedHistory
     });
 
     const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || !lastMessage.content) {
+      throw new Error('El último mensaje está vacío o es inválido');
+    }
+
+    console.log('Enviando mensaje final:', lastMessage.content.substring(0, 50), '...');
     const result = await chat.sendMessage(lastMessage.content);
     const responseText = result.response.text();
 
-    console.log('Respuesta Gemini:', responseText); // debug temporal
+    console.log('Respuesta Gemini Exitosa (longitud):', responseText.length);
 
     return NextResponse.json({ response: responseText });
 
-  } catch (error) {
-    console.error('Error en API chat:', error);
+  } catch (error: any) {
+    console.error('CRITICAL ERROR EN API CHAT:', error);
+    // Devolver un mensaje más descriptivo para el log de Vercel (pero seguro)
     return NextResponse.json(
-      { error: 'Error procesando la solicitud' },
+      { error: error?.message || 'Error interno en el servidor de IA' },
       { status: 500 }
     );
   }
