@@ -244,13 +244,17 @@ la continuación según lo que ya dimos?`
   };
 
   const guardarPlanificacion = async (clases: Clase[]) => {
-    if (!userId) return;
     const fechasHabiles = generarFechasHabiles(fechaInicio, clases.length);
     const clasesConFechas = clases.map((c, i) => ({
       ...c,
       fecha: fechasHabiles[i] || c.fecha,
       dia_semana: nombreDia(fechasHabiles[i] || c.fecha)
     }));
+
+    // Actualizar UI de inmediato
+    setClasesPanelDerecho(clasesConFechas);
+
+    if (!userId) return;
 
     const { data: plan, error: errorPlan } = await supabase
       .from('planificaciones')
@@ -265,8 +269,6 @@ la continuación según lo que ya dimos?`
 
     if (errorPlan) {
       console.error('Error insertando planificacion:', errorPlan);
-      // Fallback: mostrar en panel aunque no guarde en DB por ahora (quizás falta la columna SQL)
-      setClasesPanelDerecho(clasesConFechas);
       return;
     }
 
@@ -296,9 +298,9 @@ la continuación según lo que ya dimos?`
       tema: c.titulo, fecha_dada: c.fecha
     })));
 
-    setClasesPanelDerecho(clasesConFechas);
     await cargarHistorial(userId);
   };
+
 
   const cargarHistorial = async (uid: string) => {
     try {
