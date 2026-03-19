@@ -1,110 +1,176 @@
 "use client";
 
-import { BookOpen, Clock, Zap, Sparkles } from 'lucide-react'
+import { 
+  BookOpen, 
+  Clock, 
+  Zap, 
+  Sparkles, 
+  Users, 
+  Library, 
+  ClipboardCheck, 
+  Settings, 
+  Headset,
+  FileText,
+  GraduationCap
+} from 'lucide-react'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { Classroom } from '@/types'
 import { currentUser } from '@/mocks/data'
 
 export default function Dashboard() {
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/classrooms')
+      .then(res => res.json())
+      .then(data => {
+        setClassrooms(data);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching classrooms:", err);
+        setIsLoading(false);
+      });
+  }, []);
+
+  const ACTIONS = [
+    { name: 'IA Pedagógica', icon: Zap, color: 'brand-orange', link: '/chat', desc: 'Sugerencia de clases y secuencias.' },
+    { name: 'Planificación Normativa', icon: FileText, color: 'brand-blue', link: '/normativa', desc: 'Basado en diseños curriculares.' },
+    { name: 'Mis Clases', icon: Users, color: 'emerald-500', link: '/clases', desc: 'Gestión de alumnos y aulas.' },
+    { name: 'Biblioteca', icon: Library, color: 'brand-peach', link: '/biblioteca', desc: 'Tus archivos de Google Drive.' },
+    { name: 'Evaluaciones', icon: BookOpen, color: 'purple-500', link: '/generador', desc: 'Exámenes y rúbricas con IA.' },
+    { name: 'Notas y Evidencias', icon: ClipboardCheck, color: 'pink-500', link: '/evidencias', desc: 'Seguimiento pedagógico.' },
+    { name: 'Soporte', icon: Headset, color: 'slate-400', link: '/soporte', desc: 'Ayuda y feedback directo.' },
+    { name: 'Configuración', icon: Settings, color: 'brand-navy', link: '/configuracion', desc: 'Ajustes de tu cuenta.' },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700">
       {/* Header */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">¡Hola, {currentUser.name.split(' ')[0]}! 👋</h1>
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Es un buen día para recuperar tus tardes. ¿Qué planificamos hoy?</p>
-      </div>
-
-      {/* Growing System Announcement */}
-      <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <div className="bg-brand-navy border-l-4 border-brand-orange p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-          <div className="absolute right-0 top-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Zap size={120} className="text-brand-orange rotate-12" />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-brand-orange/10 flex items-center justify-center text-brand-orange">
-                <Sparkles size={22} />
-              </div>
-              <h2 className="text-xl font-black text-white font-montserrat tracking-tight">Aula Tranquila está Creciendo</h2>
-            </div>
-            <p className="text-sm text-slate-400 font-bold leading-relaxed max-w-2xl">
-              Nuestro sistema se está ajustando cada vez más a tus necesidades para brindarte una solución placentera en el tiempo. 
-              Recordá que estamos en constante crecimiento: si algo no funciona como debería o si sentís que falta alguna función vital, 
-              por favor dejanos tu reporte en la solapa de <Link href="/soporte" className="text-brand-orange hover:underline">Soporte</Link>. 
-              ¡Tu feedback construye el futuro del aula!
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions (Prompts Rapidos) */}
-      <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-4 px-2">Acciones Rápidas</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <Link href="/chat" className="bg-brand-navy p-6 rounded-[2rem] border border-white/5 shadow-2xl hover:border-brand-orange/50 transition-all flex flex-col gap-4 group cursor-pointer hover:translate-y-[-4px]">
-          <div className="w-12 h-12 rounded-2xl bg-brand-orange/10 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition-all shadow-inner">
-            <Zap size={24} />
-          </div>
-          <div>
-            <h3 className="font-black text-white text-lg">Planificar Clase</h3>
-            <p className="text-sm text-slate-400 font-medium mt-1">Generá la secuencia didáctica en segundos.</p>
-          </div>
-        </Link>
-        <Link href="/generador" className="bg-brand-navy p-6 rounded-[2rem] border border-white/5 shadow-2xl hover:border-brand-blue transition-all flex flex-col gap-4 group cursor-pointer hover:translate-y-[-4px]">
-          <div className="w-12 h-12 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-all shadow-inner">
-            <BookOpen size={24} />
-          </div>
-          <div>
-            <h3 className="font-black text-white text-lg">Crear Evaluación</h3>
-            <p className="text-sm text-slate-400 font-medium mt-1">Multiple choice o desarrollo al instante.</p>
-          </div>
-        </Link>
-        <Link href="/clases" className="bg-brand-navy p-6 rounded-[2rem] border border-white/5 shadow-2xl hover:border-emerald-500/50 transition-all flex flex-col gap-4 group cursor-pointer hover:translate-y-[-4px]">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-inner">
-            <Clock size={24} />
-          </div>
-          <div>
-            <h3 className="font-black text-white text-lg">Revisión de Notas</h3>
-            <p className="text-sm text-slate-400 font-medium mt-1">Analizar fortalezas y debilidades con IA.</p>
-          </div>
-        </Link>
-      </div>
-
-      {/* Stats / Context */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6 px-2">
-               <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tus Clases Activas</h2>
-               <Link href="/clases" className="text-[10px] font-black text-brand-orange uppercase tracking-widest hover:underline">Ver todas</Link>
-            </div>
-            <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
-               <div className="p-6 border-b border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-white/5 transition-colors group cursor-pointer gap-4">
-                  <div>
-                    <h4 className="font-black text-white text-lg group-hover:text-brand-orange transition-colors">Matemática - 1er Año</h4>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">4 alumnos registrados</p>
-                  </div>
-                  <span className="px-4 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-inner">Al día</span>
-               </div>
-               <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-white/5 transition-colors group cursor-pointer gap-4">
-                  <div>
-                    <h4 className="font-black text-white text-lg group-hover:text-brand-orange transition-colors">Física - 3er Año</h4>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">2 alumnos registrados</p>
-                  </div>
-                  <span className="px-4 py-1.5 bg-brand-orange/10 text-brand-orange rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-orange/20 shadow-inner">Requiere notas</span>
-               </div>
-            </div>
-        </div>
-
+      <div className="mb-10 flex justify-between items-start">
         <div>
-            <div className="bg-gradient-to-br from-brand-orange to-red-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-                <div className="absolute -right-4 -top-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                <h3 className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Plan {currentUser.plan}</h3>
-                <div className="text-4xl font-black mb-6 font-montserrat">{currentUser.credits} <span className="text-sm font-black opacity-60 uppercase">créditos</span></div>
-                <div className="w-full bg-black/20 rounded-full h-3 mb-3 shadow-inner p-0.5">
+          <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">¡Hola, {currentUser.name.split(' ')[0]}! 👋</h1>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Es un buen día para recuperar tus tardes. ¿Qué planificamos hoy?</p>
+        </div>
+        <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
+           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+           <span className="text-[10px] font-black text-white uppercase tracking-widest">Sistema Activo</span>
+        </div>
+      </div>
+
+      {/* Grid de Solapas / Accesos Directos */}
+      <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-6 px-2">Nuestras Solapas</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {ACTIONS.map((action) => (
+          <Link 
+            key={action.name} 
+            href={action.link} 
+            className="group relative bg-brand-navy p-6 rounded-[2rem] border border-white/5 shadow-2xl hover:border-white/20 transition-all overflow-hidden"
+          >
+            <div className={`absolute -right-2 -top-2 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity`}>
+               <action.icon size={80} />
+            </div>
+            <div className={`w-12 h-12 rounded-2xl bg-${action.icon === Zap ? 'brand-orange' : action.icon === FileText ? 'brand-blue' : action.icon === Users ? 'emerald-500' : 'slate-400'}/10 flex items-center justify-center text-${action.icon === Zap ? 'brand-orange' : action.icon === FileText ? 'brand-blue' : action.icon === Users ? 'emerald-500' : 'slate-400'} mb-4 shadow-inner group-hover:scale-110 transition-transform`}>
+              <action.icon size={22} />
+            </div>
+            <h3 className="font-black text-white text-sm mb-1 group-hover:text-brand-orange transition-colors uppercase tracking-tight">{action.name}</h3>
+            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">{action.desc}</p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Tus Clases Activas */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+           <div className="flex items-center justify-between px-2">
+              <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                 <GraduationCap size={14} className="text-brand-orange" />
+                 Tus Clases Activas ({classrooms.length})
+              </h2>
+              <Link href="/clases" className="text-[10px] font-black text-brand-orange uppercase tracking-widest hover:underline flex items-center gap-1">
+                 Administrar clases <Sparkles size={12} />
+              </Link>
+           </div>
+           
+           <div className="bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden">
+              {isLoading ? (
+                 <div className="p-20 flex flex-col items-center justify-center text-slate-600 gap-4">
+                    <div className="w-10 h-10 border-4 border-brand-orange/20 border-t-brand-orange rounded-full animate-spin"></div>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Cargando tu aula...</span>
+                 </div>
+              ) : classrooms.length === 0 ? (
+                 <div className="p-20 text-center">
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                       <Users size={32} className="text-slate-700" />
+                    </div>
+                    <p className="text-sm font-black text-slate-500 uppercase tracking-widest mb-6">Aún no tenés clases cargadas</p>
+                    <Link href="/clases" className="inline-flex items-center px-8 py-4 bg-brand-orange text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-brand-orange/20 hover:scale-105 transition-all">
+                       Crear mi primera clase
+                    </Link>
+                 </div>
+              ) : (
+                 <div className="divide-y divide-white/5">
+                    {classrooms.map((c) => (
+                       <Link 
+                         key={c.id} 
+                         href={`/clases?id=${c.id}`}
+                         className="p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-white/5 transition-colors group cursor-pointer gap-6"
+                       >
+                          <div className="flex items-center gap-6">
+                             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-brand-orange transition-colors shadow-inner border border-white/5">
+                                <Users size={24} />
+                             </div>
+                             <div>
+                                <h4 className="font-black text-white text-xl group-hover:text-brand-orange transition-colors">{c.grade} - {c.name}</h4>
+                                <div className="flex items-center gap-3 mt-1.5">
+                                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{c.students?.length || 0} alumnos</span>
+                                   <span className="w-1 h-1 bg-slate-700 rounded-full"></span>
+                                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{c.subjects?.length || 0} materias</span>
+                                </div>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                             <div className="px-5 py-2.5 bg-brand-orange/10 text-brand-orange rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-orange/10 group-hover:bg-brand-orange group-hover:text-white transition-all">
+                                Gestionar
+                             </div>
+                          </div>
+                       </Link>
+                    ))}
+                 </div>
+              )}
+           </div>
+        </div>
+
+        {/* Sidebar Status */}
+        <div className="lg:col-span-4 flex flex-col gap-8">
+            {/* Créditos / Plan */}
+            <div className="bg-gradient-to-br from-brand-orange to-red-600 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
+                <h3 className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-2">Suscripción {currentUser.plan}</h3>
+                <div className="text-5xl font-black mb-8 font-montserrat tracking-tight tracking-tighter">
+                   {currentUser.credits} <span className="text-xs font-black opacity-60 uppercase tracking-widest block mt-1">Créditos IA Disponibles</span>
+                </div>
+                <div className="w-full bg-black/20 rounded-full h-3.5 mb-4 shadow-inner p-1 border border-white/10">
                    <div className="bg-white h-full rounded-full shadow-lg" style={{ width: '75%' }}></div>
                 </div>
-                <p className="text-[10px] text-white/80 font-bold uppercase tracking-widest mb-6">15 clases restantes</p>
-                <button className="w-full py-4 bg-white text-brand-orange hover:bg-brand-peach hover:text-brand-navy rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-black/20">
-                   Aumentar plan
+                <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mb-8">Nivel de uso: Optimizado</p>
+                <button className="w-full py-5 bg-white text-brand-orange hover:bg-brand-navy hover:text-white rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all shadow-2xl shadow-black/20 hover:translate-y-[-2px] active:translate-y-0">
+                   Aumentar potencia
                 </button>
+            </div>
+
+            {/* Growing Announcement Mini */}
+            <div className="bg-brand-navy border border-white/5 p-8 rounded-[2.5rem] shadow-2xl">
+               <div className="flex items-center gap-3 mb-4">
+                  <Sparkles size={18} className="text-brand-orange" />
+                  <h3 className="text-xs font-black text-white uppercase tracking-widest">Estado del Sistema</h3>
+               </div>
+               <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                  Estamos ajustando cada detalle para vos. Si algo puede mejorar, dejanos tu feedback en <Link href="/soporte" className="text-brand-orange hover:underline font-black">Soporte</Link>.
+               </p>
             </div>
         </div>
       </div>
