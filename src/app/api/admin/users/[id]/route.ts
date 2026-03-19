@@ -34,7 +34,6 @@ export async function PUT(
       active: data.active !== undefined ? data.active : true
     };
 
-    console.log('UPDATING USER:', id, profileUpdate);
     await saveProfile(profileUpdate);
 
     return NextResponse.json(profileUpdate);

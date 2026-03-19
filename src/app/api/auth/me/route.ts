@@ -13,7 +13,7 @@ export async function GET() {
 
     const user = await getProfileById(userId);
 
-    if (!user) {
+    if (!user || user.active === false) {
       cookieStore.delete('auth_session');
       return NextResponse.json({ user: null }, { status: 401 });
     }

@@ -32,10 +32,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    fetch('/api/auth/me').then(res => res.json()).then(data => {
-      setUser(data.user);
-    });
-  }, []);
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.user) {
+          router.push('/login');
+          return;
+        }
+        setUser(data.user);
+      });
+  }, [router]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
