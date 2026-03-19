@@ -36,12 +36,12 @@ export default function Dashboard() {
   }, []);
 
   const ACTIONS = [
+    { name: 'Mis Clases', icon: Users, color: 'emerald-500', link: '/clases', desc: 'Gestión de alumnos y aulas.' },
     { name: 'Asistente Pedagógico', icon: Zap, color: 'brand-orange', link: '/chat', desc: 'Sugerencia de clases y secuencias.' },
     { name: 'Planificación Normativa', icon: FileText, color: 'brand-blue', link: '/normativa', desc: 'Basado en diseños curriculares.' },
-    { name: 'Mis Clases', icon: Users, color: 'emerald-500', link: '/clases', desc: 'Gestión de alumnos y aulas.' },
-    { name: 'Biblioteca', icon: Library, color: 'brand-peach', link: '/biblioteca', desc: 'Tus archivos de Google Drive.' },
     { name: 'Evaluaciones', icon: BookOpen, color: 'purple-500', link: '/generador', desc: 'Exámenes y rúbricas con IA.' },
     { name: 'Notas y Evidencias', icon: ClipboardCheck, color: 'pink-500', link: '/evidencias', desc: 'Seguimiento pedagógico.' },
+    { name: 'Biblioteca', icon: Library, color: 'brand-peach', link: '/biblioteca', desc: 'Tus archivos de Google Drive.' },
     { name: 'Soporte', icon: Headset, color: 'slate-400', link: '/soporte', desc: 'Ayuda y feedback directo.' },
     { name: 'Configuración', icon: Settings, color: 'brand-navy', link: '/configuracion', desc: 'Ajustes de tu cuenta.' },
   ];
