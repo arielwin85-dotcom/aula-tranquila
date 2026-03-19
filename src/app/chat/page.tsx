@@ -118,8 +118,11 @@ la continuación según lo que ya dimos?`
 
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (mensajes.length > 1) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
   }, [mensajes]);
+
 
   // ── Helpers ───────────────────────────────────────────────────────────
   const generarFechasHabiles = (inicio: string, cantidad: number): string[] => {
@@ -398,7 +401,7 @@ la continuación según lo que ya dimos?`
         </div>
 
         {/* Zona de Contenido (Chat o Historial) */}
-        <div className="flex-1 overflow-y-auto p-6 scroll-smooth custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {tabActiva === 'chat' ? (
             <div className="space-y-6">
               {mensajes.map((m, i) => (
@@ -501,7 +504,7 @@ la continuación según lo que ya dimos?`
       </div>
 
       {/* Panel Derecho: Planificación Activa */}
-      <div className="w-full lg:w-[450px] flex flex-col gap-6 scroll-smooth overflow-y-auto pr-2 custom-scrollbar lg:h-full">
+      <div className="w-full lg:w-[450px] flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar lg:h-full">
         {clasesPanelDerecho.length === 0 ? (
           <div className="flex-1 bg-brand-navy/30 border-2 border-dashed border-white/5 rounded-[3.5rem] flex flex-col items-center justify-center p-12 text-center">
             <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center text-slate-700 mb-8 border border-white/5 shadow-inner">
