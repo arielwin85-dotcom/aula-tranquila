@@ -61,7 +61,7 @@ export default function BibliotecaPage() {
       <div className="max-w-3xl mx-auto mb-10 bg-brand-orange/5 border border-brand-orange/20 rounded-[1.5rem] p-6 flex gap-4 text-slate-300 text-sm">
          <Info className="flex-shrink-0 text-brand-orange" size={20} />
          <p className="font-medium leading-relaxed">
-            <strong className="text-white">Modo de Prueba:</strong> Si aún no has configurado las credenciales, verás resultados simulados para probar la interfaz.
+            Estamos trabajando para seguir mejorando la navegación de los recursos y la precisión en la búsqueda de tus archivos.
          </p>
       </div>
 
