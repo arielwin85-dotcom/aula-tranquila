@@ -39,11 +39,8 @@ export async function POST(req: NextRequest) {
     }
 
     // --- VALIDACIÓN DE DUPLICADOS ---
-    // Verificar si alguna de las fechas ya tiene clases para este docente/grado/materia
     const fechasNuevas = clases.map((c: any) => c.fecha);
-    
-    // Deberíamos buscar en planificacion_clases vinculando con planificaciones por id
-    const { data: existentes, error: errorCheck } = await supabase
+    const { data: existentes } = await supabase
       .from('planificacion_clases')
       .select('fecha, planificaciones!inner(user_id, aula_grado, area_materia)')
       .eq('planificaciones.user_id', userId)
@@ -51,13 +48,11 @@ export async function POST(req: NextRequest) {
       .eq('planificaciones.area_materia', areaMateria)
       .in('fecha', fechasNuevas);
 
-    if (errorCheck) {
-       console.error('Error verificando duplicados:', errorCheck);
-    } else if (existentes && existentes.length > 0) {
+    if (existentes && existentes.length > 0) {
       const fechasDups = existentes.map(e => e.fecha.split('-').reverse().join('/'));
       return NextResponse.json({ 
         error: `Ya existen clases planificadas para las siguientes fechas: ${fechasDups.join(', ')}. No se puede duplicar la planificación.` 
-      }, { status: 409 }); // 409 Conflict
+      }, { status: 409 });
     }
 
     // 1. Insertar Cabezal
@@ -105,6 +100,48 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Error en POST /api/planificaciones:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Id required' }, { status: 400 });
+    }
+
+    // Primero traer info para limpiar contenidos_dados si es necesario (opcional pero recomendado)
+    const { data: plan } = await supabase
+      .from('planificaciones')
+      .select('user_id, aula_grado, area_materia, planificacion_clases(titulo)')
+      .eq('id', id)
+      .single();
+
+    if (plan) {
+      const temas = plan.planificacion_clases.map((cl: any) => cl.titulo);
+      await supabase
+        .from('contenidos_dados')
+        .delete()
+        .eq('user_id', plan.user_id)
+        .eq('aula_grado', plan.aula_grado)
+        .eq('area_materia', plan.area_materia)
+        .in('tema', temas);
+    }
+
+    // Borrar clases (si no hay cascada)
+    await supabase.from('planificacion_clases').delete().eq('planificacion_id', id);
+
+    // Borrar plan
+    const { error } = await supabase.from('planificaciones').delete().eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error en DELETE /api/planificaciones:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

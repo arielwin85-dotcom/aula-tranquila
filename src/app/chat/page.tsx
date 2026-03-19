@@ -17,7 +17,8 @@ import {
   Download,
   MoreVertical,
   Plus,
-  Settings
+  Settings,
+  Trash2
 } from 'lucide-react';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
@@ -298,6 +299,21 @@ la continuación según lo que ya dimos?`
 
 
 
+
+  const eliminarPlanificacion = async (id: string) => {
+    if (!confirm('¿Estás seguro de que querés eliminar esta planificación?')) return;
+    try {
+      const res = await fetch(`/api/planificaciones?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      // Limpiar panel derecho si era la que estaba cargada
+      setClasesPanelDerecho([]);
+      await cargarHistorial(userId);
+    } catch (err: any) {
+      alert('Error al eliminar: ' + err.message);
+    }
+  };
 
   const cargarHistorial = async (uid: string) => {
     try {
@@ -678,7 +694,13 @@ la continuación según lo que ya dimos?`
                          >
                             <Printer size={16} />
                          </button>
-
+                          <button 
+                            onClick={() => eliminarPlanificacion(plan.id)} 
+                            className="p-3 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all border border-red-500/20 shadow-lg"
+                            title="Eliminar"
+                          >
+                             <Trash2 size={16} />
+                          </button>
                       </div>
                     </div>
                     <h3 className="text-white font-black text-lg font-montserrat tracking-tight mb-1">{plan.area_materia}</h3>
