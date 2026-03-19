@@ -586,7 +586,13 @@ la continuación según lo que ya dimos?`
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Inicio</label>
-                <input type="date" value={fechaInicio} onChange={e => setFechaInicio(e.target.value)} className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all" />
+                <input 
+                  type="date" 
+                  value={fechaInicio} 
+                  onChange={e => setFechaInicio(e.target.value)} 
+                  onClick={(e) => e.currentTarget.showPicker()}
+                  className="bg-white/5 border border-white/10 text-white text-[11px] font-bold p-3 rounded-xl focus:ring-2 ring-brand-orange/20 outline-none transition-all cursor-pointer [color-scheme:dark]" 
+                />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Clases</label>
