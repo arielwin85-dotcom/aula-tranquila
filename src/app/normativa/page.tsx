@@ -59,6 +59,26 @@ export default function NormativaPage() {
   const [mesSeleccionado, setMesSeleccionado] = useState('03');
   const [generandoMes, setGenerandoMes] = useState<string | null>(null);
   const [resultadoAnualGenerado, setResultadoAnualGenerado] = useState(false);
+  const [memoriaMensual, setMemoriaMensual] = useState<Record<string, string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('memoria_normativa_mensual');
+      return saved ? JSON.parse(saved) : {};
+    }
+    return {};
+  });
+
+  // Persistir en localStorage
+  useEffect(() => {
+    localStorage.setItem('memoria_normativa_mensual', JSON.stringify(memoriaMensual));
+  }, [memoriaMensual]);
+
+  // Limpiar memoria si cambian los parámetros base
+  useEffect(() => {
+    setMemoriaMensual({});
+    localStorage.removeItem('memoria_normativa_mensual');
+    setGeneratedPlan(null);
+    setResultadoAnualGenerado(false);
+  }, [selectedClassId, selectedSubjectId, regulationText]);
 
   useEffect(() => {
     fetch('/api/classrooms').then(res => res.json()).then(data => {
@@ -143,9 +163,16 @@ export default function NormativaPage() {
   };
 
   const handleGenerarMes = async (mes: any) => {
+    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+    
+    // Verificar memoria temporal
+    if (memoriaMensual[mes.valor]) {
+       generarPDF(memoriaMensual[mes.valor], `Planificacion_${selectedClass?.grade}_${subjName}_${mes.nombre}`);
+       return;
+    }
+
     setGenerandoMes(mes.nombre);
     const dias = generarDiasHabiles(2026, parseInt(mes.valor));
-    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
 
     try {
       const res = await fetch('/api/normativa/mensual', {
@@ -161,6 +188,10 @@ export default function NormativaPage() {
         })
       });
       const data = await res.json();
+      
+      // Guardar en memoria
+      setMemoriaMensual(prev => ({ ...prev, [mes.valor]: data.contenido }));
+      
       generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${mes.nombre}`);
     } catch(error) {
       console.error('Error generando mes:', error);
@@ -171,10 +202,17 @@ export default function NormativaPage() {
   };
 
   const handleGenerarMensual = async () => {
-    const dias = generarDiasHabiles(2026, parseInt(mesSeleccionado));
     const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
     const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
 
+    // Verificar memoria temporal
+    if (memoriaMensual[mesSeleccionado]) {
+       setGeneratedPlan(memoriaMensual[mesSeleccionado]);
+       generarPDF(memoriaMensual[mesSeleccionado], `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+       return;
+    }
+
+    const dias = generarDiasHabiles(2026, parseInt(mesSeleccionado));
     setIsGenerating(true);
     try {
       const res = await fetch('/api/normativa/mensual', {
@@ -190,8 +228,12 @@ export default function NormativaPage() {
         })
       });
       const data = await res.json();
+      
+      // Guardar en memoria
+      setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: data.contenido }));
+      
       setGeneratedPlan(data.contenido);
-      setResultadoAnualGenerado(false); // Es mensual directa
+      setResultadoAnualGenerado(false); 
       generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
     } catch(error) {
       console.error('Error:', error);
@@ -512,13 +554,20 @@ export default function NormativaPage() {
                                       className={`px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
                                          generandoMes === mes.nombre
                                            ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
-                                           : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
+                                           : memoriaMensual[mes.valor]
+                                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                                              : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
                                       }`}
                                    >
                                       {generandoMes === mes.nombre ? (
                                          <div className="flex items-center gap-2">
                                             <Loader2 size={12} className="animate-spin" />
                                             <span>Generando...</span>
+                                         </div>
+                                      ) : memoriaMensual[mes.valor] ? (
+                                         <div className="flex items-center gap-2">
+                                            <CheckCircle2 size={12} />
+                                            <span>{mes.nombre} (Listo)</span>
                                          </div>
                                       ) : mes.nombre}
                                    </button>
