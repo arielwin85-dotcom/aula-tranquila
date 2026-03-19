@@ -150,24 +150,24 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-20">
-      <div className="flex justify-between items-end mb-10">
-        <div>
-          <h1 className="text-4xl font-black text-white flex items-center gap-3 font-montserrat tracking-tight">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-8 mb-10 pt-14 md:pt-0">
+        <div className="px-4 md:px-0">
+          <h1 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3 font-montserrat tracking-tight">
             <Shield className="text-brand-orange" size={40} />
             Panel Maestro
           </h1>
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2">Control central de usuarios y soporte técnico.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-2 leading-relaxed">Control central de usuarios y soporte técnico.</p>
         </div>
-        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5">
+        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 mx-4 md:mx-0">
            <button 
              onClick={() => setActiveTab('usuarios')}
-             className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'usuarios' ? 'bg-brand-orange text-white shadow-xl shadow-brand-orange/20' : 'text-slate-400 hover:text-white'}`}
+             className={`px-6 md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'usuarios' ? 'bg-brand-orange text-white shadow-xl shadow-brand-orange/20' : 'text-slate-400 hover:text-white'}`}
            >
              Usuarios
            </button>
            <button 
              onClick={() => setActiveTab('soporte')}
-             className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'soporte' ? 'bg-brand-orange text-white shadow-xl shadow-brand-orange/20' : 'text-slate-400 hover:text-white'}`}
+             className={`px-6 md:px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'soporte' ? 'bg-brand-orange text-white shadow-xl shadow-brand-orange/20' : 'text-slate-400 hover:text-white'}`}
            >
              Soporte ({tickets.filter(t => t.status === 'Abierto').length})
            </button>
@@ -218,11 +218,11 @@ export default function AdminPage() {
 
           <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden">
             <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
-              <div className="relative w-96">
+              <div className="relative w-full max-w-md">
                 <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Buscar por nombre o email..." 
+                  placeholder="Buscar..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-black text-white focus:bg-white/10 focus:border-brand-orange/50 focus:ring-8 focus:ring-brand-orange/5 outline-none transition-all placeholder:text-slate-600"
