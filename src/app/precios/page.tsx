@@ -1,119 +1,239 @@
 "use client";
 
-import { Check, Star, Zap, Building2 } from 'lucide-react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+
+function PreciosContent() {
+  const [tokens, setTokens] = useState(0);
+  const [cargando, setCargando] = useState<string | null>(null);
+  const [userId, setUserId] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+
+  const searchParams = useSearchParams();
+  const estado = searchParams.get('estado');
+
+  useEffect(() => {
+    const cargar = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+      setUserEmail(user.email || '');
+
+      const { data: perfil } = await supabase
+        .from('profiles')
+        .select('tokens_disponibles')
+        .eq('id', user.id)
+        .single();
+
+      setTokens(perfil?.tokens_disponibles || 0);
+    };
+    cargar();
+  }, []);
+
+  const handleComprar = async (pack: string) => {
+    setCargando(pack);
+    try {
+      const res = await fetch('/api/pagos/crear-preferencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pack, userId, userEmail })
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      }
+    } catch(error) {
+      console.error('Error:', error);
+    } finally {
+      setCargando(null);
+    }
+  };
+
+  return (
+    <div style={{ padding: '24px' }} className="max-w-5xl mx-auto">
+      {/* Mensajes de Retorno Mercado Pago */}
+      {estado === 'exitoso' && (
+        <div style={{
+          padding: '20px',
+          borderRadius: '12px',
+          background: 'var(--color-background-success)',
+          border: '1px solid var(--color-border-success)',
+          textAlign: 'center',
+          marginBottom: '24px'
+        }}>
+          <p style={{ fontWeight: 500, color: 'var(--color-text-success)' }}>
+            ✓ Pago exitoso
+          </p>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+            Tus tokens fueron acreditados. En unos segundos se actualizan.
+          </p>
+        </div>
+      )}
+
+      {estado === 'pendiente' && (
+        <div style={{
+          padding: '20px',
+          borderRadius: '12px',
+          background: 'var(--color-background-warning)',
+          border: '1px solid var(--color-border-warning)',
+          textAlign: 'center',
+          marginBottom: '24px'
+        }}>
+          <p style={{ fontWeight: 500 }}>⏳ Pago pendiente</p>
+          <p style={{ fontSize: '13px' }}>
+            Cuando se confirme el pago tus tokens se acreditan automáticamente.
+          </p>
+        </div>
+      )}
+
+      {estado === 'fallido' && (
+        <div style={{
+          padding: '20px',
+          borderRadius: '12px',
+          background: 'var(--color-background-danger)',
+          border: '1px solid var(--color-border-danger)',
+          textAlign: 'center',
+          marginBottom: '24px'
+        }}>
+          <p style={{ fontWeight: 500 }}>✕ El pago no se completó</p>
+          <p style={{ fontSize: '13px' }}>Podés intentarlo de nuevo.</p>
+        </div>
+      )}
+
+      {/* Tokens actuales */}
+      <div style={{
+        padding: '16px 20px',
+        borderRadius: '12px',
+        background: 'var(--color-background-secondary)',
+        border: '1px solid var(--color-border-tertiary)',
+        marginBottom: '32px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <span style={{ fontSize: '24px' }}>🎯</span>
+        <div>
+          <div style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
+            Tokens disponibles: {tokens}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            🤖 Asistente = 1 token por uso &nbsp;|&nbsp; 📋 Planificación mensual = 3 tokens
+          </div>
+        </div>
+      </div>
+
+      {/* Packs */}
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px'
+      }}>
+        {/* Pack Básico */}
+        <div style={{
+          padding: '28px',
+          borderRadius: '16px',
+          background: 'var(--color-background-secondary)',
+          border: '1px solid var(--color-border-tertiary)'
+        }}>
+          <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Básico</h3>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
+            Ideal para 1 grado
+          </p>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
+            $7.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 10 tokens</span>
+          </div>
+          <ul style={{ 
+            listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '8px' 
+          }}>
+            {[
+              '10 usos del Asistente Pedagógico',
+              '3 Planificaciones mensuales',
+              'Acceso completo al resto de la app',
+              'Sin vencimiento'
+            ].map(item => (
+              <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#e85d2f' }}>✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => handleComprar('basico')}
+            disabled={cargando === 'basico'}
+            style={{
+              width: '100%', padding: '12px',
+              background: cargando === 'basico' ? '#888' : '#e85d2f',
+              color: 'white', border: 'none', borderRadius: '8px',
+              fontSize: '14px', fontWeight: 500,
+              cursor: cargando === 'basico' ? 'not-allowed' : 'pointer'
+            }}>
+            {cargando === 'basico' ? 'Redirigiendo...' : 'Comprar Pack Básico'}
+          </button>
+        </div>
+
+        {/* Pack Pro */}
+        <div style={{
+          padding: '28px', borderRadius: '16px',
+          background: 'var(--color-background-secondary)',
+          border: '2px solid #e85d2f', position: 'relative'
+        }}>
+          <div style={{
+            position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
+            background: '#e85d2f', color: 'white', padding: '4px 16px',
+            borderRadius: '20px', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap'
+          }}>
+            ★ MÁS ELEGIDO
+          </div>
+          <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Pro</h3>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
+            Ideal para 2 o más grados
+          </p>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
+            $15.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 30 tokens</span>
+          </div>
+          <ul style={{
+            listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '8px'
+          }}>
+            {[
+              '30 usos del Asistente Pedagógico',
+              '10 Planificaciones mensuales',
+              'Acceso completo al resto de la app',
+              'Sin vencimiento',
+              'Soporte prioritario'
+            ].map(item => (
+              <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <span style={{ color: '#e85d2f' }}>✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => handleComprar('pro')}
+            disabled={cargando === 'pro'}
+            style={{
+              width: '100%', padding: '12px',
+              background: cargando === 'pro' ? '#888' : '#e85d2f',
+              color: 'white', border: 'none', borderRadius: '8px',
+              fontSize: '14px', fontWeight: 500,
+              cursor: cargando === 'pro' ? 'not-allowed' : 'pointer'
+            }}>
+            {cargando === 'pro' ? 'Redirigiendo...' : 'Comprar Pack Pro'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PreciosPage() {
   return (
-    <div className="max-w-5xl mx-auto pb-12 pt-8">
-      <div className="text-center mb-16">
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-4 tracking-tight">Recuperá tus tardes libres</h1>
-        <p className="text-slate-500 text-lg max-w-2xl mx-auto">Elegí el plan que mejor se adapte a tus horas cátedra. Sin tarjetas para probar, cancelá cuando quieras.</p>
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <span className="text-brand-orange animate-pulse">Cargando planes...</span>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center max-w-6xl mx-auto px-4">
-         
-         {/* Plan Básico */}
-         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:border-purple-200 transition-colors">
-            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600 mb-6">
-               <Check size={24} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Gratuito</h3>
-            <p className="text-slate-500 text-sm mb-6 h-10">Para descubrir el poder del copiloto paso a paso.</p>
-            <div className="mb-6">
-               <span className="text-4xl font-extrabold text-slate-800">$0</span>
-               <span className="text-slate-500"> / mes</span>
-            </div>
-            
-            <button className="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl font-bold mb-8 transition-colors">
-               Tu plan actual
-            </button>
-
-            <ul className="space-y-4">
-               {[
-                  '20 créditos IA por mes', 
-                  'Validador de coherencia base',
-                  'Hasta 2 Aulas activas',
-                  'Exportación simple a PDF',
-                  'Soporte comunitario'
-               ].map((feat, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
-                     <Check size={18} className="text-purple-500 mt-0.5" />
-                     {feat}
-                  </li>
-               ))}
-            </ul>
-         </div>
-
-         {/* Plan Docente Pro */}
-         <div className="bg-gradient-to-b from-purple-600 to-purple-800 rounded-3xl p-8 border-2 border-purple-400 shadow-xl relative scale-100 md:scale-105 transform z-10 transition-transform hover:scale-110 duration-300">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-1 rounded-full text-xs font-bold tracking-wider shadow-sm flex items-center gap-1">
-               <Star size={12} className="fill-white" /> MÁS ELEGIDO
-            </div>
-
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-6 backdrop-blur-sm">
-               <Zap size={24} className="fill-white" />
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Docente Pro</h3>
-            <p className="text-purple-200 text-sm mb-6 h-10">Todo lo que necesitás para tener tus planificaciones al día.</p>
-            <div className="mb-6">
-               <span className="text-4xl font-extrabold text-white">$5.799</span>
-               <span className="text-purple-200"> / mes</span>
-            </div>
-            
-            <button className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-purple-700 rounded-xl font-bold mb-8 transition-colors shadow-sm">
-               Mejorar a Pro
-            </button>
-
-            <ul className="space-y-4">
-               {[
-                  '150 créditos IA por mes', 
-                  'Adaptación DUA automática',
-                  'Lectura de fotos y manuscritos',
-                  'Aulas y Alumnos ilimitados',
-                  'Buscador avanzado de situaciones de enseñanza',
-                  'Soporte prioritario'
-               ].map((feat, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-purple-50 font-medium">
-                     <Check size={18} className="text-purple-300 mt-0.5 flex-shrink-0" />
-                     {feat}
-                  </li>
-               ))}
-            </ul>
-         </div>
-
-         {/* Plan Institución */}
-         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm hover:border-purple-200 transition-colors">
-            <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600 mb-6">
-               <Building2 size={24} />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Institución</h3>
-            <p className="text-slate-500 text-sm mb-6 h-10">Múltiples docentes unificando criterios de evaluación.</p>
-            <div className="mb-6">
-               <span className="text-4xl font-extrabold text-slate-800">A Medida</span>
-               <span className="text-slate-500"></span>
-            </div>
-            
-            <button className="w-full py-3 px-4 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 rounded-xl font-bold mb-8 transition-colors">
-               Contactarnos
-            </button>
-
-            <ul className="space-y-4">
-               {[
-                  'Créditos IA ilimitados', 
-                  'Panel de administración escolar',
-                  'Plantillas unificadas por colegio',
-                  'Capacitación y Onboarding',
-                  'Factura A/B y reportes de uso'
-               ].map((feat, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-600 font-medium">
-                     <Check size={18} className="text-purple-500 mt-0.5" />
-                     {feat}
-                  </li>
-               ))}
-            </ul>
-         </div>
-
-      </div>
-    </div>
-  )
+    }>
+      <PreciosContent />
+    </Suspense>
+  );
 }
