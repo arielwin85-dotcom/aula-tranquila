@@ -28,6 +28,21 @@
   --radius-lg: 1.5rem;
   --radius-md: 1rem;
   --radius-sm: 0.5rem;
+
+  /* Additional Design Tokens for Configuration & Consistency */
+  --color-background-secondary: #0f172a;
+  --color-background-tertiary: #1e293b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-border-tertiary: #1e293b;
+  
+  --color-background-danger: rgba(239, 68, 68, 0.1);
+  --color-border-danger: rgba(239, 68, 68, 0.2);
+  --color-text-danger: #f87171;
+  
+  --color-background-success: rgba(16, 185, 129, 0.1);
+  --color-border-success: rgba(16, 185, 129, 0.2);
+  --color-text-success: #34d399;
 }
 
 @layer base {
