@@ -208,11 +208,11 @@ function PreciosContent() {
               {[
                 'Gestión de Mis Clases',
                 '5 Tokens de regalo iniciales',
-                '1 Planificación Pedagógica',
-                '1 Planificación por Normativa',
+                '5 Planificaciones Pedagógicas',
+                '5 Planificaciones por Normativa',
                 'Biblioteca y buscador de recursos (de por vida)',
-                '3 Evaluaciones y Contenido Rápido',
-                '3 Evidencias'
+                '5 Evaluaciones y Contenido Rápido',
+                '5 Evidencias'
               ].map(item => (
                 <li key={item} style={{
                   fontSize: '13px',
