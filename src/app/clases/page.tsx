@@ -254,7 +254,7 @@ export default function ClasesPage() {
           </head>
           <body>
             <div class="header-info">
-              <h1>Aula Tranquila</h1>
+              <h1>Aula Pro</h1>
               <div class="class-meta">Informe Pedagógico de Clase | ${selectedClass.name} | Ciclo ${selectedClass.year}</div>
             </div>
 
@@ -314,7 +314,7 @@ export default function ClasesPage() {
               `;
             }).join('')}
 
-            <div class="footer">Generado por Aula Tranquila v4.1.3 • ${new Date().toLocaleDateString()}</div>
+            <div class="footer">Generado por Aula Pro v4.1.3 • ${new Date().toLocaleDateString()}</div>
             <script>window.print();</script>
           </body>
         </html>
@@ -654,7 +654,7 @@ export default function ClasesPage() {
              </div>
            )}
             <div className="mt-8 pt-8 border-t border-white/5 opacity-10 flex justify-between items-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-500">
-               <span>Aula Tranquila v4.1.4 - Panel Stable</span>
+               <span>Aula Pro v4.1.4 - Panel Stable</span>
                <span>{new Date().toLocaleDateString()}</span>
             </div>
           </div>

@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
 
-  const email = 'admin@aulatranquila.com';
+  const email = 'admin@aulapro.com';
   const password = 'admin123'; // El usuario puede cambiarla luego
 
   if (!supabaseAdmin) {

@@ -44,7 +44,7 @@ export default function SidebarWrapper({ children }: { children: React.ReactNode
             </div>
             <footer className="py-12 mt-20 border-t border-white/5 text-center">
               <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] leading-loose">
-                AULATRANQUILA 2026 ® <br className="md:hidden" /> | Producto para uso personal | <br className="md:hidden" /> Copia o reproducción prohibida por ley.
+                AULA PRO 2026 ® <br className="md:hidden" /> | Producto para uso personal | <br className="md:hidden" /> Copia o reproducción prohibida por ley.
               </p>
             </footer>
           </div>

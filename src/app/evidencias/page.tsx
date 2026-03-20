@@ -110,7 +110,7 @@ export default function EvidenciasPage() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Reporte de Evaluación - Aula Tranquila</title>
+          <title>Reporte de Evaluación - Aula Pro</title>
           <style>body { font-family: sans-serif; }</style>
         </head>
         <body>${content}</body>

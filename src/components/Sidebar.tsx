@@ -89,7 +89,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <div className="w-10 h-10 rounded-2xl bg-brand-orange text-white flex items-center justify-center font-black text-2xl shadow-lg shadow-black/20">
                  A
               </div>
-              <span className="font-montserrat font-black text-xl text-white tracking-tight">Aula Tranquila</span>
+              <span className="font-montserrat font-black text-xl text-white tracking-tight">Aula Pro</span>
            </div>
            {onClose && (
              <button onClick={onClose} className="lg:hidden p-2 text-slate-500 hover:text-white transition-colors">

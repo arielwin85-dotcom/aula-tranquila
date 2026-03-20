@@ -288,7 +288,7 @@ export default function NormativaPage() {
           <div class="page">
              <div class="header">
                 <span>${selectedClass?.grade} | ${materiaName} | ${tituloDoc.split('_').pop()}</span>
-                <span>AULA TRANQUILA - COPILOTO IA</span>
+                <span>AULA PRO - COPILOTO IA</span>
              </div>
              <h1>${tituloDoc.replace(/Planificacion_|_/g, ' ')}</h1>
              <div style="text-align: center; color: #64748b; font-weight: bold; margin-top: -10px;">Materia: ${materiaName}</div>
@@ -361,7 +361,7 @@ export default function NormativaPage() {
            <body>
              <div class="header-info">
                <div>
-                 <p style="margin:0; font-weight:bold; color:#7c3aed;">Aula Tranquila - Copiloto IA</p>
+                 <p style="margin:0; font-weight:bold; color:#7c3aed;">Aula Pro - Copiloto IA</p>
                  <h1 style="margin:10px 0 5px 0;">Planificación ${activePlanType}</h1>
                  <p style="margin:0; color:#64748b; font-weight:bold;">${selectedClass?.name} - ${selectedClass?.grade}</p>
                  <p style="margin:0; color:#64748b;">Materia: ${subjects.find(s => s.id === selectedSubjectId)?.name}</p>

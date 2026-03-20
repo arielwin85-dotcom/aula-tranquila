@@ -54,5 +54,5 @@ export const mockResources: Resource[] = [
 ];
 
 export const mockChats: ChatMessage[] = [
-  { id: 'c-1', userId: 'profe-1', role: 'assistant', content: '¡Hola Laura! Soy tu copiloto de Aula Tranquila. ¿En qué te ayudo a ahorrar tiempo hoy? Podés pedirme que planifique una clase o cree una evaluación.', timestamp: '14:00' },
+  { id: 'c-1', userId: 'profe-1', role: 'assistant', content: '¡Hola Laura! Soy tu copiloto de Aula Pro.\n ¿En qué te ayudo a ahorrar tiempo hoy? Podés pedirme que planifique una clase o cree una evaluación.', timestamp: '14:00' },
 ];

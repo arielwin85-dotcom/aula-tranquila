@@ -83,7 +83,7 @@ export default function Dashboard() {
                 <Sparkles size={20} />
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-black text-white font-montserrat tracking-tight leading-none">Aula Tranquila está Creciendo</h2>
+                <h2 className="text-lg md:text-xl font-black text-white font-montserrat tracking-tight leading-none">Aula Pro está Creciendo</h2>
                 <div className="flex items-center gap-2 mt-1">
                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Evolución</span>

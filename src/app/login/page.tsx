@@ -52,7 +52,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-[2.5rem] bg-brand-orange text-white shadow-2xl shadow-brand-orange/30 mb-8 group transition-all hover:scale-110">
             <span className="text-5xl font-black font-montserrat tracking-tighter">A</span>
           </div>
-          <h1 className="text-5xl font-black text-white tracking-tight font-montserrat">Aula Tranquila</h1>
+          <h1 className="text-5xl font-black text-white tracking-tight font-montserrat">Aula Pro</h1>
           <p className="text-slate-500 font-bold mt-4 uppercase tracking-widest text-[10px]">Tu Copiloto Pedagógico Inteligente</p>
         </div>
 
@@ -118,7 +118,7 @@ export default function LoginPage() {
 
           <div className="mt-14 pt-10 border-t border-white/5 flex flex-col items-center text-center gap-4">
             <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed max-w-sm">
-              AULATRANQUILA 2026 ® - Todos los derechos reservados. <br/>
+              AULA PRO 2026 ® - Todos los derechos reservados. <br/>
               Este producto está protegido por leyes de propiedad intelectual. Prohibida su reproducción total o parcial. El uso de esta plataforma es estrictamente personal e intransferible.
             </div>
             <div className="flex gap-6 text-[9px] font-black text-slate-600 uppercase tracking-widest">

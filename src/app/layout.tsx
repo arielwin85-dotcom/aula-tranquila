@@ -8,7 +8,7 @@ const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-montserrat
 const poppins = Poppins({ weight: ['400', '500', '600', '700'], subsets: ['latin'], variable: '--font-poppins' })
 
 export const metadata: Metadata = {
-  title: 'Aula Tranquila - Tu Copiloto Docente',
+  title: 'Aula Pro - Tu Copiloto Docente',
   description: 'Una IA que conoce a tus alumnos tanto como vos. Centraliza planificación, evaluación y gestión del aula.',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }

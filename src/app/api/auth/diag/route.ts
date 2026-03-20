@@ -38,7 +38,7 @@ export async function GET(request: Request) {
           results.tests.listUsers = `ERROR: ${error.message}`;
         } else {
           results.tests.listUsers = `OK - Found ${users?.users?.length ?? 0} users`;
-          const adminUser = users?.users?.find((u: any) => u.email === 'admin@aulatranquila.com');
+          const adminUser = users?.users?.find((u: any) => u.email === 'admin@aulapro.com');
           results.tests.adminUserExists = adminUser 
             ? `FOUND - ID: ${adminUser.id}, confirmed: ${adminUser.email_confirmed_at ? 'YES' : 'NO'}`
             : 'NOT FOUND - user does not exist in auth.users';
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
         const { data: profiles, error } = await adminClient
           .from('profiles')
           .select('id, email, role')
-          .eq('email', 'admin@aulatranquila.com');
+          .eq('email', 'admin@aulapro.com');
         
         if (error) {
           results.tests.profileCheck = `ERROR: ${error.message}`;
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
         const anonClient = createClient(url, anonKey);
         const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
-          email: 'admin@aulatranquila.com',
+          email: 'admin@aulapro.com',
           password: 'admin123'
         });
         if (signInError) {

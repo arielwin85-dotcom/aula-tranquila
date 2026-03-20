@@ -199,7 +199,7 @@ export default function SoportePage() {
             <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl p-12">
                <div className="mb-10">
                   <h2 className="text-3xl font-black text-white mb-2 font-montserrat">Cargar Reporte</h2>
-                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Ayudanos a perfeccionar Aula Tranquila para todos los docentes.</p>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Ayudanos a perfeccionar Aula Pro para todos los docentes.</p>
                </div>
 
                <form onSubmit={handleSubmit} className="space-y-8">
