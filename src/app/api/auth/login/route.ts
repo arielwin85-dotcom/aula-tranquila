@@ -46,7 +46,14 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7 // 1 semana
     });
 
-    return NextResponse.json({ user: profile });
+    return NextResponse.json({ 
+      user: profile,
+      session: {
+        access_token: authData.session?.access_token,
+        refresh_token: authData.session?.refresh_token,
+        expires_at: authData.session?.expires_at,
+      }
+    });
 
   } catch (error: any) {
     console.error('Login error:', error);

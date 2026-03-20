@@ -20,16 +20,15 @@ export const TokenProvider = ({ children }: { children: ReactNode }) => {
   const [tokens, setTokens] = useState(0);
   const [tokensTotal, setTokensTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
   const supabase = createClient();
 
   const refrescarTokens = useCallback(async () => {
+    // Obtener el usuario de la sesión Supabase nativa (seteada en login via setSession)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setCargando(false);
       return;
     }
-    if (!userId) setUserId(user.id);
 
     const { data } = await supabase
       .from('profiles')
@@ -47,8 +46,9 @@ export const TokenProvider = ({ children }: { children: ReactNode }) => {
     refrescarTokens();
   }, [refrescarTokens]);
 
-  // Suscripción en tiempo real: cuando el admin cambia tokens desde otro panel,
-  // el usuario afectado los verá actualizados automáticamente sin recargar la página.
+  // Suscripción Realtime: escucha cambios en el perfil del usuario actual.
+  // Esto permite que cuando el admin cambia los tokens, el usuario los vea reflejados
+  // instantáneamente sin recargar la página.
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
