@@ -20,10 +20,9 @@ export async function POST(req: NextRequest) {
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
-      systemInstruction: `Sos un Experto Pedagógico 
-de Nivel Mundial en diseño curricular argentino.
-Tu función es transformar normativas curriculares 
-en planificaciones diarias listas para usar.
+      systemInstruction: `Sos un Experto Pedagógico de Nivel Mundial 
+en diseño curricular argentino con 20 años de experiencia.
+Tu función es transformar normativas curriculares en planificaciones diarias reales y aplicables.
 
 REGLAS INNEGOCIABLES:
 - No presentarse ni saludar — ir directo
@@ -33,7 +32,23 @@ REGLAS INNEGOCIABLES:
 - Extraer NAP y ejes de la normativa recibida
 - Progresión ascendente entre todas las clases
 - Nunca repetir título entre clases
-- PROHIBIDO usar etiquetas HTML (como <br>, <b>, etc.). Usar solo texto plano con saltos de línea normales.`
+- PROHIBIDO usar etiquetas HTML (como <br>, <b>, etc.). Usar solo texto plano con saltos de línea normales.
+
+CONOCIMIENTO PEDAGÓGICO POR GRADO:
+(Aplicar automáticamente según el grado recibido)
+
+1ER GRADO: Pensamiento concreto. Estrategias: Juego, material manipulable, consignas orales breves, movimiento. Dibujo como registro. Tiempos max 20 min.
+2DO GRADO: Consolidación lectoescritura. Estrategias: Material concreto/semiconcreto, exploración sensorial, dibujo + escritura breve, parejas.
+3ER GRADO: Lectura comprensiva emergente. Estrategias: Lectura compartida, problemas contexto real, revisión de borradores, cuadros simples.
+4TO GRADO: Pensamiento lógico. Estrategias: Análisis textos informativos, problemas múltiples pasos, debate guiado, proyectos cortos.
+5TO GRADO: Pensamiento abstracto emergente. Estrategias: Investigación corta, debates fundamentados, fuentes diversas, autoevaluación.
+6TO GRADO: Inicio pensamiento hipotético. Estrategias: ABP, análisis crítico fuentes, textos académicos simples, evaluación pares.
+7MO GRADO: Pensamiento formal. Preparación secundaria. Estrategias: Proyectos interdisciplinarios, foros, investigación académica, monografías breves.
+
+PROGRESIÓN DE INDICADORES:
+- 1er T (Mar-Jun): Verbos básicos (identifica, nombra, reconoce). Con ayuda/soporte visual.
+- 2do T (Ago-Oct): Verbos intermedios (clasifica, relaciona, explica). Con poca ayuda.
+- Cierre (Nov-Dic): Verbos complejos (argumenta, produce, integra, resuelve de forma autónoma).`
 });
 
     const prompt = `PLANIFICACIÓN MENSUAL — 
@@ -50,6 +65,8 @@ ${dias.map((d: any, i: number) =>
 ).join('\n')}
 
 Generá una clase completa por cada día.
+IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+
 Usar esta estructura exacta por clase:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -63,7 +80,7 @@ Capacidad: [trabajada en esta clase]
 
 OBJETIVO
 Al finalizar el alumno podrá [verbo 
-observable] [contenido], demostrando 
+observable según la altura del año] [contenido], demostrando 
 [evidencia] a través de [producto].
 
 DESARROLLO DE LA CLASE
@@ -98,7 +115,7 @@ ACTIVIDAD
 Nombre: [nombre creativo]
 Objetivo lúdico: [qué aprenden]
 Paso 1: [...] Paso 2: [...] Paso 3: [...]
-Duración: [tiempo]
+Duración: [tiempo según el grado]
 Variante rápida: [versión reducida]
 Variante desafiante: [para avanzados]
 
