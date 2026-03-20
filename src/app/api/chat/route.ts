@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 import { cookies } from 'next/headers';
+import { descontarTokensServer } from '@/lib/tokens-server';
 
 export async function POST(req: NextRequest) {
   console.log('=== API CHAT LLAMADA ===');
@@ -236,12 +237,35 @@ NUNCA:
     }
 
     console.log('Enviando mensaje final:', lastMessage.content.substring(0, 50), '...');
+
+    // --- DESCUENTO DE TOKENS ---
+    const tokenCheck = await descontarTokensServer(
+      userId, 
+      1, 
+      'ia_chat_semanal', 
+      `Chat Semanal: ${areaMateria} (${nombreGrado})`
+    );
+
+    if (!tokenCheck.ok) {
+      if (tokenCheck.error === 'sin_tokens') {
+        return NextResponse.json({ 
+          error: 'Tokens insuficientes', 
+          details: 'NECESITAS_TOKENS',
+          disponibles: tokenCheck.tokensRestantes 
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
+    }
+
     const result = await chat.sendMessage(lastMessage.content);
     const responseText = result.response.text();
 
     console.log('Respuesta Gemini Exitosa (longitud):', responseText.length);
 
-    return NextResponse.json({ response: responseText });
+    return NextResponse.json({ 
+      response: responseText,
+      tokensRestantes: tokenCheck.tokensRestantes
+    });
 
   } catch (error: any) {
     console.error('CRITICAL ERROR EN API CHAT:', error);

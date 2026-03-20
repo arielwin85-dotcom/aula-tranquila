@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getClassrooms } from '@/lib/db';
 import { Classroom, Subject } from '@/types';
+import { descontarTokensServer } from '@/lib/tokens-server';
 
 const SYSTEM_PROMPT = `Sos un Experto Pedagógico de Nivel Mundial 
 en diseño curricular argentino con 20 años 
@@ -515,10 +516,32 @@ export async function POST(request: Request) {
       .replace('[CICLO]', String(classroom.year))
       .replace('[NORMATIVA]', String(regulation));
 
+    // --- DESCUENTO DE TOKENS ---
+    const tokenCheck = await descontarTokensServer(
+      userId, 
+      5, 
+      'ia_plan_anual', 
+      `Planificación Anual: ${classroom.grade} - ${subject.name}`
+    );
+
+    if (!tokenCheck.ok) {
+      if (tokenCheck.error === 'sin_tokens') {
+        return NextResponse.json({ 
+          error: 'Tokens insuficientes', 
+          details: 'NECESITAS_TOKENS',
+          disponibles: tokenCheck.tokensRestantes 
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
+    }
+
     const result = await model.generateContent(prompt);
     const textReply = result.response.text();
 
-    return NextResponse.json({ plan: textReply });
+    return NextResponse.json({ 
+      plan: textReply,
+      tokensRestantes: tokenCheck.tokensRestantes 
+    });
 
   } catch (error) {
     console.error('Normativa API Error:', error);

@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { descontarTokensServer } from '@/lib/tokens-server';
 
 const genAI = new GoogleGenerativeAI(
   process.env.GEMINI_API_KEY!
@@ -130,10 +131,32 @@ Señal de logro: [qué hace al entender]
 Señal de alerta: [cómo detectar +
 qué hacer en ese momento]`;
 
+    // --- DESCUENTO DE TOKENS ---
+    const tokenCheck = await descontarTokensServer(
+      userId, 
+      2, 
+      'ia_plan_mensual', 
+      `Planificación Mensual: ${grado} - ${materia} (${nombreMes})`
+    );
+
+    if (!tokenCheck.ok) {
+      if (tokenCheck.error === 'sin_tokens') {
+        return NextResponse.json({ 
+          error: 'Tokens insuficientes', 
+          details: 'NECESITAS_TOKENS',
+          disponibles: tokenCheck.tokensRestantes 
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
+    }
+
     const result = await model.generateContent(prompt);
     const contenido = result.response.text();
 
-    return NextResponse.json({ contenido });
+    return NextResponse.json({ 
+      contenido,
+      tokensRestantes: tokenCheck.tokensRestantes
+    });
 
   } catch(error) {
     console.error('Error API mensual:', error);

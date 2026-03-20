@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { descontarTokensServer } from '@/lib/tokens-server';
 
 const SYSTEM_PROMPT = `
 ERES UN SUPER AGENTE DE INTELIGENCIA ARTIFICIAL especializado en diseño pedagógico para educación primaria en Argentina. 
@@ -64,10 +65,32 @@ export async function POST(request: Request) {
       Genera el recurso pedagógico completo ahora. Recuerda el mínimo de 5 ejercicios y la adaptación DUA.
     `;
 
+    // --- DESCUENTO DE TOKENS ---
+    const tokenCheck = await descontarTokensServer(
+      userId, 
+      1, 
+      'ia_recurso', 
+      `Recurso: ${resourceType} - ${topic} (${classroom.grade})`
+    );
+
+    if (!tokenCheck.ok) {
+      if (tokenCheck.error === 'sin_tokens') {
+        return NextResponse.json({ 
+          error: 'Tokens insuficientes', 
+          details: 'NECESITAS_TOKENS',
+          disponibles: tokenCheck.tokensRestantes 
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
+    }
+
     const result = await model.generateContent(prompt);
     const textReply = result.response.text();
 
-    return NextResponse.json({ reply: textReply });
+    return NextResponse.json({ 
+      reply: textReply,
+      tokensRestantes: tokenCheck.tokensRestantes
+    });
 
   } catch (error: any) {
     console.error('Generator API Error:', error);

@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getEvidencias } from '@/lib/db';
+import { descontarTokensServer } from '@/lib/tokens-server';
 
 export async function GET(request: Request) {
   try {
@@ -59,6 +60,26 @@ export async function POST(request: Request) {
 
     const { images } = await request.json(); // Array de base64 strings
 
+    // --- DESCUENTO DE TOKENS ---
+    const cantidadTokens = images.length || 1;
+    const tokenCheck = await descontarTokensServer(
+      userId, 
+      cantidadTokens, 
+      'ia_vision_evidencia', 
+      `Análisis de ${cantidadTokens} evidencias`
+    );
+
+    if (!tokenCheck.ok) {
+      if (tokenCheck.error === 'sin_tokens') {
+        return NextResponse.json({ 
+          error: 'Tokens insuficientes', 
+          details: 'NECESITAS_TOKENS',
+          disponibles: tokenCheck.tokensRestantes 
+        }, { status: 403 });
+      }
+      return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'Falta la API Key de Gemini' }, { status: 500 });
@@ -93,7 +114,10 @@ export async function POST(request: Request) {
       return JSON.parse(jsonStr);
     }));
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ 
+      results,
+      tokensRestantes: tokenCheck.tokensRestantes
+    });
 
   } catch (error) {
     console.error('Evidence Analysis Error:', error);
