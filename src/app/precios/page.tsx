@@ -156,6 +156,24 @@ function PreciosContent() {
               ✓ Tu plan actual
             </div>
 
+            {/* Badge de regalo */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(34, 197, 94, 0.15)',
+              border: '1px solid #22c55e',
+              borderRadius: '20px',
+              padding: '3px 10px',
+              fontSize: '11px',
+              color: '#16a34a',
+              fontWeight: 500,
+              marginBottom: '12px',
+              width: 'fit-content'
+            }}>
+              🎁 5 tokens de regalo
+            </div>
+
             <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>
               Acceso Gratuito
             </h3>
@@ -189,6 +207,7 @@ function PreciosContent() {
             }}>
               {[
                 'Gestión de Mis Clases',
+                '5 Tokens de regalo iniciales',
                 '1 Planificación Pedagógica',
                 '1 Planificación por Normativa',
                 'Biblioteca y buscador de recursos (de por vida)',
@@ -300,6 +319,7 @@ function PreciosContent() {
               listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px' 
             }}>
               {[
+                'Gestión de Mis Clases',
                 '20 tokens + 5 de regalo',
                 'Total: 25 usos de los agentes IA',
                 'Biblioteca y buscador ilimitados',
@@ -412,6 +432,7 @@ function PreciosContent() {
               listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px'
             }}>
               {[
+                'Gestión de Mis Clases',
                 '50 tokens + 20 de regalo',
                 'Total: 70 usos de los agentes IA',
                 'Biblioteca y buscador ilimitados',
