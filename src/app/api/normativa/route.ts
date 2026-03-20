@@ -510,10 +510,10 @@ export async function POST(request: Request) {
 
     // Inyectamos los valores del contexto en el SYSTEM_PROMPT
     const prompt = SYSTEM_PROMPT
-      .replace('[GRADO]', classroom.grade)
-      .replace('[MATERIA]', subject.name)
-      .replace('[CICLO]', classroom.year)
-      .replace('[NORMATIVA]', regulation);
+      .replace('[GRADO]', String(classroom.grade))
+      .replace('[MATERIA]', String(subject.name))
+      .replace('[CICLO]', String(classroom.year))
+      .replace('[NORMATIVA]', String(regulation));
 
     const result = await model.generateContent(prompt);
     const textReply = result.response.text();
