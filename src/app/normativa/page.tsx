@@ -165,7 +165,9 @@ export default function NormativaPage() {
         if (user) {
           const result = await descontarTokens(user.id, 1, 'creacion_planificacion', 'Planificación Anual Normativa');
           if (result.ok) {
-             setGeneratedPlan(data.plan);
+             // Limpiar etiquetas HTML indeseadas que pueda traer la IA
+             const cleanedPlan = data.plan.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+             setGeneratedPlan(cleanedPlan);
              setResultadoAnualGenerado(true);
              await refrescarTokens();
           }
@@ -205,10 +207,13 @@ export default function NormativaPage() {
       });
       const data = await res.json();
       
+      // Limpiar etiquetas HTML indeseadas
+      const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+
       // Guardar en memoria
-      setMemoriaMensual(prev => ({ ...prev, [mes.valor]: data.contenido }));
+      setMemoriaMensual(prev => ({ ...prev, [mes.valor]: cleanedContent }));
       
-      generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${mes.nombre}`);
+      generarPDF(cleanedContent, `Planificacion_${selectedClass?.grade}_${subjName}_${mes.nombre}`);
     } catch(error) {
       console.error('Error generando mes:', error);
       alert('Error al generar la planificación mensual');
@@ -251,13 +256,16 @@ export default function NormativaPage() {
       if (user) {
         const result = await descontarTokens(user.id, 1, 'creacion_plan_mensual', `Planificación Mensual - ${nombreMes}`);
         if (result.ok) {
-           // Guardar en memoria
-           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: data.contenido }));
+           // Limpiar etiquetas HTML indeseadas
+           const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
            
-           setGeneratedPlan(data.contenido);
+           // Guardar en memoria
+           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
+           
+           setGeneratedPlan(cleanedContent);
            setResultadoAnualGenerado(false); 
            await refrescarTokens();
-           generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+           generarPDF(cleanedContent, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
         }
       }
     } catch(error) {
@@ -551,8 +559,8 @@ export default function NormativaPage() {
                     <div className="w-24 h-24 bg-white/5 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
                        <FileSearch size={48} className="text-slate-700" />
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-3 font-montserrat tracking-tight">Esperando Normativa</h3>
-                    <p className="max-w-xs text-xs font-black text-slate-500 uppercase tracking-widest leading-loose">Subí la resolución y seleccioná el tipo de plan para comenzar el análisis.</p>
+                    <h3 className="text-2xl font-black text-white mb-3 font-montserrat tracking-tight">Listo para Diseñar</h3>
+                    <p className="max-w-xs text-xs font-black text-slate-500 uppercase tracking-widest leading-loose">Subí la normativa vigente para que el Copiloto IA genere una planificación prolija, pedagógica y lista para el aula.</p>
                  </div>
               ) : (
                  <div className="animate-in fade-in duration-1000 flex flex-col h-full bg-black/20">

@@ -32,8 +32,9 @@ REGLAS INNEGOCIABLES:
 - Resultado imprimible y prolijo
 - Extraer NAP y ejes de la normativa recibida
 - Progresión ascendente entre todas las clases
-- Nunca repetir título entre clases`
-    });
+- Nunca repetir título entre clases
+- PROHIBIDO usar etiquetas HTML (como <br>, <b>, etc.). Usar solo texto plano con saltos de línea normales.`
+});
 
     const prompt = `PLANIFICACIÓN MENSUAL — 
 ${nombreMes} 2026
