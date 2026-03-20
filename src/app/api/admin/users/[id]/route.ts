@@ -34,8 +34,16 @@ export async function PUT(
       active: data.active !== undefined ? data.active : true
     };
 
-    if (data.tokens_disponibles !== undefined) {
-      profileUpdate.tokens_disponibles = Number(data.tokens_disponibles);
+    if (data.tokens_disponibles !== undefined && Number(data.tokens_disponibles) > 0) {
+      // Leer saldo actual y SUMAR los nuevos tokens (no reemplazar)
+      const { data: perfilActual } = await supabaseAdmin
+        .from('profiles')
+        .select('tokens_disponibles')
+        .eq('id', id)
+        .single();
+      const saldoActual = perfilActual?.tokens_disponibles ?? 0;
+      profileUpdate.tokens_disponibles = saldoActual + Number(data.tokens_disponibles);
+      profileUpdate.tokens_totales = saldoActual + Number(data.tokens_disponibles);
     }
 
     await saveProfile(profileUpdate);

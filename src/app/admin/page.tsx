@@ -105,7 +105,7 @@ export default function AdminPage() {
       setFormPassword('');
       setFormRole('docente');
       setFormLevel('Primaria');
-      setFormTokens(5);
+      setFormTokens(0); // Se acumulan, no se sobreescriben
     }
     setIsModalOpen(true);
   };
@@ -490,15 +490,17 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tokens Asignados</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tokens a Agregar</label>
                   <input 
                     type="number" 
                     min="0"
-                    required
                     value={formTokens}
                     onChange={(e) => setFormTokens(Number(e.target.value))}
                     className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all"
                   />
+                  <p className="text-[10px] text-slate-500 mt-2 px-2">
+                    Saldo actual: <span className="text-brand-orange font-black">{editingUser?.tokens_disponibles ?? 0}</span> tokens. Al guardar se sumarán los tokens ingresados.
+                  </p>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Contraseña</label>
