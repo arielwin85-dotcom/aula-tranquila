@@ -96,3 +96,16 @@ export interface WeeklyPlan {
   messages?: ChatMessage[];
   createdAt: string;
 }
+
+export interface Evidencia {
+  id?: string;
+  userId?: string;
+  studentName: string | null;
+  identified: boolean;
+  score: number;
+  strengths: string[];
+  weaknesses: string[];
+  feedback: string;
+  exercisesAnalyzed: string;
+  createdAt?: string;
+}

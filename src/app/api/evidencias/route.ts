@@ -1,6 +1,24 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getEvidencias } from '@/lib/db';
+
+export async function GET(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('auth_session')?.value;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const evidencias = await getEvidencias(userId);
+    return NextResponse.json(evidencias);
+  } catch (error) {
+    console.error('Error fetching evidencias:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
 
 const SYSTEM_PROMPT = `
 ERES UN AGENTE DE EVALUACIÓN IA especializado en corrección de evidencias escolares de primaria.

@@ -1,4 +1,4 @@
-import { Classroom, User, Subject, Student, GradeEntry } from '@/types';
+import { Classroom, User, Subject, Student, GradeEntry, Evidencia } from '@/types';
 import { supabase, supabaseAdmin } from './supabase';
 
 export interface SupportTicket {
@@ -587,3 +587,69 @@ export async function getAveragesByStudent(dni: string, classroomId: string) {
     bySubject
   };
 }
+
+// --- EVIDENCIAS IA ---
+
+export async function getEvidencias(userId: string): Promise<Evidencia[]> {
+  const { data, error } = await db()
+    .from('evidencias')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching evidencias:', error);
+    return [];
+  }
+  
+  return (data || []).map((e: any) => ({
+    id: e.id,
+    userId: e.user_id,
+    studentName: e.student_name,
+    identified: e.identified,
+    score: e.score,
+    strengths: e.strengths || [],
+    weaknesses: e.weaknesses || [],
+    feedback: e.feedback,
+    exercisesAnalyzed: e.exercises_analyzed,
+    createdAt: e.created_at
+  }));
+}
+
+export async function saveEvidencia(evidencia: Evidencia) {
+  const { data, error } = await db()
+    .from('evidencias')
+    .insert([{
+      user_id: evidencia.userId,
+      student_name: evidencia.studentName,
+      identified: evidencia.identified,
+      score: evidencia.score,
+      strengths: evidencia.strengths,
+      weaknesses: evidencia.weaknesses,
+      feedback: evidencia.feedback,
+      exercises_analyzed: evidencia.exercisesAnalyzed,
+      created_at: evidencia.createdAt || new Date().toISOString()
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving evidencia:', error);
+    throw error;
+  }
+  return data;
+}
+
+export async function deleteEvidencia(id: string) {
+  const { error } = await db()
+    .from('evidencias')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting evidencia:', error);
+    return false;
+  }
+  return true;
+}
+
