@@ -38,6 +38,7 @@ export default function AdminPage() {
   const [formPassword, setFormPassword] = useState('');
   const [formRole, setFormRole] = useState<'admin' | 'docente'>('docente');
   const [formLevel, setFormLevel] = useState('Primaria');
+  const [formTokens, setFormTokens] = useState<number>(5);
 
   useEffect(() => {
     fetchUsers();
@@ -94,6 +95,7 @@ export default function AdminPage() {
       setFormPassword(''); 
       setFormRole(user.role);
       setFormLevel(user.level);
+      setFormTokens(user.tokens_disponibles ?? 0);
     } else {
       setEditingUser(null);
       setFormName('');
@@ -101,6 +103,7 @@ export default function AdminPage() {
       setFormPassword('');
       setFormRole('docente');
       setFormLevel('Primaria');
+      setFormTokens(5);
     }
     setIsModalOpen(true);
   };
@@ -112,7 +115,8 @@ export default function AdminPage() {
       email: formEmail,
       password: formPassword || undefined,
       role: formRole,
-      level: formLevel
+      level: formLevel,
+      tokens_disponibles: formTokens
     };
 
     try {
@@ -253,6 +257,7 @@ export default function AdminPage() {
                   <tr className="bg-black/40 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                     <th className="px-10 py-5">Usuario</th>
                     <th className="px-10 py-5">Email</th>
+                    <th className="px-10 py-5">Tokens</th>
                     <th className="px-10 py-5">Estado</th>
                     <th className="px-10 py-5">Nivel / Plan</th>
                     <th className="px-10 py-5">Rol</th>
@@ -277,6 +282,9 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td className="px-10 py-6 font-bold text-slate-400">{user.email}</td>
+                      <td className="px-10 py-6">
+                        <span className="text-xl font-black text-brand-orange">{user.tokens_disponibles ?? 0}</span>
+                      </td>
                       <td className="px-10 py-6">
                         <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${user.active !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
                           {user.active !== false ? 'Activo' : 'Inhibido'}
@@ -477,6 +485,17 @@ export default function AdminPage() {
                     <option value="docente">Docente</option>
                     <option value="admin">Administrador</option>
                   </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tokens Asignados</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    required
+                    value={formTokens}
+                    onChange={(e) => setFormTokens(Number(e.target.value))}
+                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all"
+                  />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Contraseña</label>

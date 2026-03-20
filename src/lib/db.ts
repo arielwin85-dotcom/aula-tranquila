@@ -268,7 +268,7 @@ export async function deleteWeeklyPlan(id: string) {
 }
 
 export async function saveProfile(profile: any) {
-  const { error } = await db().from('profiles').upsert({
+  const payload: any = {
     id: profile.id,
     name: profile.name,
     email: profile.email,
@@ -278,7 +278,14 @@ export async function saveProfile(profile: any) {
     role: profile.role,
     active: profile.active ?? true,
     updated_at: new Date().toISOString(),
-  });
+  };
+
+  if (profile.tokens_disponibles !== undefined) {
+    payload.tokens_disponibles = profile.tokens_disponibles;
+    payload.tokens_totales = profile.tokens_disponibles; // Igualamos por simplicidad para panel admin
+  }
+
+  const { error } = await db().from('profiles').upsert(payload);
   if (error) throw error;
 }
 

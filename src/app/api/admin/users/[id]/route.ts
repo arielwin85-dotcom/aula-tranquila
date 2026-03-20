@@ -34,6 +34,10 @@ export async function PUT(
       active: data.active !== undefined ? data.active : true
     };
 
+    if (data.tokens_disponibles !== undefined) {
+      profileUpdate.tokens_disponibles = Number(data.tokens_disponibles);
+    }
+
     await saveProfile(profileUpdate);
 
     return NextResponse.json(profileUpdate);

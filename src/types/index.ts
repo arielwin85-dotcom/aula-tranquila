@@ -6,6 +6,7 @@ export interface User {
   role: 'admin' | 'docente'; // admin = maestro administrador
   level: string; // Primaria, Secundaria, etc.
   credits: number;
+  tokens_disponibles?: number;
   plan: 'Gratuito' | 'Docente Pro' | 'Institución';
   active?: boolean;
 }

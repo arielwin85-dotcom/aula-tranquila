@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       level: data.level || 'Primaria',
       credits: 100,
       plan: 'Gratuito',
+      tokens_disponibles: data.tokens_disponibles !== undefined ? Number(data.tokens_disponibles) : 5,
       active: true
     };
 

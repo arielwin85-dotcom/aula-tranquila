@@ -1,8 +1,8 @@
 -- Tokens en profiles
 ALTER TABLE profiles
-ADD COLUMN IF NOT EXISTS tokens_disponibles INTEGER DEFAULT 3;
+ADD COLUMN IF NOT EXISTS tokens_disponibles INTEGER DEFAULT 5;
 ALTER TABLE profiles
-ADD COLUMN IF NOT EXISTS tokens_totales INTEGER DEFAULT 3;
+ADD COLUMN IF NOT EXISTS tokens_totales INTEGER DEFAULT 5;
 
 -- Tabla historial de tokens
 CREATE TABLE IF NOT EXISTS token_transactions (
@@ -29,7 +29,7 @@ BEGIN
   END IF;
 END $$;
 
--- Trigger: nuevos usuarios reciben 3 tokens
+-- Trigger: nuevos usuarios reciben 5 tokens
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -41,8 +41,8 @@ BEGIN
   )
   VALUES (
     new.id,
-    3,
-    3,
+    5,
+    5,
     'docente'
   )
   ON CONFLICT (id) DO NOTHING;
