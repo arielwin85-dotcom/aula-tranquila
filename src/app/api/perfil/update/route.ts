@@ -22,9 +22,8 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
-        full_name: nombre.trim(),
-        nivel_educativo: nivelEducativo,
-        zona_horaria: zonaHoraria,
+        name: nombre.trim(),
+        level: nivelEducativo,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId);
