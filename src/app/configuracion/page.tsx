@@ -57,14 +57,17 @@ export default function ConfiguracionPage() {
           .eq('id', user.id)
           .single();
 
-        if (profileError) throw profileError;
+        if (profileError && profileError.code !== 'PGRST116') throw profileError;
 
         if (perfil) {
-          setNombre(perfil.full_name || '');
+          setNombre(perfil.full_name || user.user_metadata?.full_name || '');
           setNivelEducativo(perfil.nivel_educativo || '');
           setZonaHoraria(perfil.zona_horaria || 'America/Argentina/Buenos_Aires');
           setCreditos(perfil.credits || 0);
           setPlan(perfil.plan || 'gratuito');
+        } else {
+          // Fallback if no profile exists yet
+          setNombre(user.user_metadata?.full_name || '');
         }
       } catch (err) {
         console.error('Error cargando perfil:', err);
@@ -224,7 +227,7 @@ export default function ConfiguracionPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-2">Email Institucional</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-2">Email</label>
                     <input 
                       type="email" 
                       value={email}
