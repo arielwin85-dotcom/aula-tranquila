@@ -13,6 +13,8 @@ export const metadata: Metadata = {
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
+import { TokenProvider } from '@/lib/TokenContext'
+
 export default function RootLayout({
   children,
 }: {
@@ -21,9 +23,11 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${montserrat.variable} ${poppins.variable} ${inter.variable}`}>
       <body className="font-poppins bg-brand-bg text-foreground min-h-screen">
-        <SidebarWrapper>
-          {children}
-        </SidebarWrapper>
+        <TokenProvider>
+          <SidebarWrapper>
+            {children}
+          </SidebarWrapper>
+        </TokenProvider>
       </body>
     </html>
   )

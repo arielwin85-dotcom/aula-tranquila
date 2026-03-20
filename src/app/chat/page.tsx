@@ -20,6 +20,10 @@ import {
   Settings,
   Trash2
 } from 'lucide-react';
+import { descontarTokens } from '@/lib/tokens';
+import { SinTokens } from '@/components/SinTokens';
+import { TokenBadge } from '@/components/TokenBadge';
+import { useTokens } from '@/lib/TokenContext';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 interface Mensaje { role: 'user' | 'assistant'; content: string; }
@@ -211,6 +215,9 @@ export default function ChatPage() {
   const supabase = createClient();
 
   // ── Estados ────────────────────────────────────────────────────────────
+  const { tokens, refrescarTokens, cargando: cargandoTokens } = useTokens();
+  const [mostrarSinTokens, setMostrarSinTokens] = useState(false);
+  
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [input, setInput] = useState('');
   const [cargando, setCargando] = useState(false);
@@ -486,7 +493,13 @@ la continuación según lo que ya dimos?`
   };
 
   const enviarMensaje = async () => {
-    if (!input.trim() || cargando) return;
+    if (!input.trim() || cargando || cargandoTokens) return;
+    
+    if (tokens < 1) {
+      setMostrarSinTokens(true);
+      return;
+    }
+
     const mensajeUsuario = input.trim();
     setInput('');
     agregarMensaje('user', mensajeUsuario);
@@ -515,6 +528,21 @@ la continuación según lo que ya dimos?`
 
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      
+      const resultado = await descontarTokens(
+        userId,
+        1,
+        'uso_chat',
+        'Mensaje IA Pedagógica'
+      );
+
+      if (!resultado.ok) {
+        setMostrarSinTokens(true);
+        setCargando(false);
+        return;
+      }
+      
+      await refrescarTokens();
       await procesarRespuesta(data.response);
     } catch (error) {
       agregarMensaje('assistant', 'Error de conexión.');
@@ -628,10 +656,13 @@ la continuación según lo que ya dimos?`
               </button>
             </div>
 
-            {/* Status Agente */}
-            <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Agente en Línea</span>
+            {/* Status Agente y Tokens */}
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Agente en Línea</span>
+              </div>
+              <TokenBadge />
             </div>
           </div>
 
@@ -798,6 +829,11 @@ la continuación según lo que ya dimos?`
 
         {/* Input Flotante */}
         {tabActiva === 'chat' && (
+          mostrarSinTokens ? (
+             <div className="p-6 bg-black/40 border-t border-white/5 backdrop-blur-md">
+                <SinTokens accion="enviar mensajes a la IA" />
+             </div>
+          ) : (
           <div className="p-6 bg-black/40 border-t border-white/5 backdrop-blur-md">
             <div className="relative flex items-center gap-4 bg-white/5 border border-white/10 p-2 pl-6 rounded-[2rem] focus-within:border-brand-orange/50 focus-within:ring-4 ring-brand-orange/5 transition-all shadow-2xl">
               <input 
@@ -810,13 +846,14 @@ la continuación según lo que ya dimos?`
               />
               <button 
                 onClick={enviarMensaje}
-                disabled={cargando || !input.trim()}
+                disabled={cargando || !input.trim() || tokens === 0}
                 className="bg-brand-orange hover:bg-brand-orange/80 text-white p-4 rounded-[1.5rem] shadow-xl shadow-brand-orange/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-30 flex items-center justify-center"
               >
                 <Send size={20} />
               </button>
             </div>
           </div>
+          )
         )}
       </div>
 

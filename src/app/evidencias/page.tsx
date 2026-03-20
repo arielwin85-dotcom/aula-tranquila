@@ -5,6 +5,11 @@ export const dynamic = 'force-dynamic';
 import { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, Sparkles, Check, FileCheck, Loader2, AlertCircle, Printer, X, User, Download } from 'lucide-react';
 import { Classroom } from '@/types';
+import { descontarTokens } from '@/lib/tokens';
+import { SinTokens } from '@/components/SinTokens';
+import { TokenBadge } from '@/components/TokenBadge';
+import { useTokens } from '@/lib/TokenContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface AnalysisResult {
   studentName: string | null;
@@ -17,6 +22,9 @@ interface AnalysisResult {
 }
 
 export default function EvidenciasPage() {
+  const supabase = createClient();
+  const { tokens, refrescarTokens } = useTokens();
+
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -31,6 +39,7 @@ export default function EvidenciasPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+    if (tokens < 1) return;
 
     setIsAnalyzing(true);
     setResults([]);
@@ -53,8 +62,16 @@ export default function EvidenciasPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setResults(data.results);
-        setSelectedResultIndex(0);
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+           const result = await descontarTokens(user.id, 1, 'uso_evidencias', `Corrección de Evidencias (x${fileList.length})`);
+           if (result.ok) {
+             setResults(data.results);
+             setSelectedResultIndex(0);
+             await refrescarTokens();
+           }
+        }
       }
     } catch (err) {
       console.error("Analysis failed", err);
@@ -124,26 +141,33 @@ export default function EvidenciasPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
-      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 px-4">
         <div>
           <h1 className="text-2xl md:text-4xl font-black text-white mb-2 font-montserrat tracking-tight pt-14 md:pt-0">Evidencias IA</h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Corrección inteligente de pruebas y seguimiento pedagógico.</p>
         </div>
-        {results.length > 0 && (
-          <button 
-            onClick={handlePrint}
-            className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-brand-peach transition-all shadow-2xl"
-          >
-            <Printer size={18} />
-            Imprimir Informe (${results.length})
-          </button>
-        )}
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <TokenBadge />
+          {results.length > 0 && (
+            <button 
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-3 px-8 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-[10px] hover:bg-brand-peach transition-all shadow-2xl"
+            >
+              <Printer size={18} />
+              Imprimir Informe ({results.length})
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
          {/* Subida de Imagen */}
-         <div className="lg:col-span-5 flex flex-col gap-6">
+         <div className="lg:col-span-5 flex flex-col gap-6 px-4 sm:px-0">
             <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest ml-4">1. Cargar Documentación</h2>
+            
+            {tokens === 0 ? (
+               <SinTokens accion="analizar evidencias con IA" />
+            ) : (
             <div 
               onClick={() => !isAnalyzing && fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-[3rem] p-12 flex flex-col items-center justify-center text-center transition-all min-h-[350px] relative overflow-hidden group ${isAnalyzing ? 'border-brand-orange/30 bg-brand-orange/5 cursor-wait' : 'border-white/10 bg-brand-navy hover:bg-white/5 hover:border-brand-orange/50 cursor-pointer shadow-2xl'}`}
@@ -177,6 +201,7 @@ export default function EvidenciasPage() {
                   </div>
                )}
             </div>
+            )}
 
             {results.length > 0 && (
               <div className="mt-4 flex flex-col gap-4">

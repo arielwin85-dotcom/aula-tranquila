@@ -5,6 +5,11 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { Sparkles, FileText, CheckCircle2, ChevronDown, Download, Printer, ArrowLeft, Loader2 } from 'lucide-react';
 import { Classroom, Subject, Student } from '@/types';
+import { descontarTokens } from '@/lib/tokens';
+import { SinTokens } from '@/components/SinTokens';
+import { TokenBadge } from '@/components/TokenBadge';
+import { useTokens } from '@/lib/TokenContext';
+import { createClient } from '@/lib/supabase/client';
 
 const RESOURCE_TYPES = [
   "Evaluación Multiple Choice",
@@ -16,6 +21,9 @@ const RESOURCE_TYPES = [
 ];
 
 export default function GeneradorPage() {
+  const supabase = createClient();
+  const { tokens, refrescarTokens } = useTokens();
+
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
@@ -85,9 +93,19 @@ export default function GeneradorPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setGeneratedContent(data.reply);
-        setResultReady(true);
-        setErrorMessage("");
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const result = await descontarTokens(user.id, 1, 'creacion_recurso', `Tutor IA: ${resourceType}`);
+          if (result.ok) {
+            setGeneratedContent(data.reply);
+            setResultReady(true);
+            setErrorMessage("");
+            await refrescarTokens();
+          } else {
+             setErrorMessage("Sin tokens suficientes.");
+          }
+        }
       } else {
         const errorData = await res.json();
         setErrorMessage(errorData.error || "Ocurrió un error inesperado.");
@@ -140,9 +158,12 @@ export default function GeneradorPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20 animate-in fade-in duration-500">
-      <div className="mb-10 text-center px-4 pt-14 md:pt-0">
-        <h1 className="text-3xl md:text-4xl font-black text-white mb-3 font-montserrat tracking-tight">Valuaciones y Contenidos</h1>
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] max-w-xl mx-auto leading-relaxed">Dejá que el Super Agente IA redacte el material perfecto.</p>
+      <div className="mb-10 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-6 text-center sm:text-left px-4 pt-14 md:pt-0">
+        <div>
+           <h1 className="text-3xl md:text-4xl font-black text-white mb-3 font-montserrat tracking-tight">Evaluaciones y Contenidos</h1>
+           <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] max-w-xl leading-relaxed">Dejá que el Super Agente IA redacte el material perfecto.</p>
+        </div>
+        <TokenBadge />
       </div>
 
       {!resultReady ? (
@@ -253,24 +274,27 @@ export default function GeneradorPage() {
                   </div>
                )}
 
-               <button 
-                  type="submit" 
-                  disabled={isGenerating || !topic}
-                  className="mt-6 w-full py-6 bg-brand-orange text-white rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-2xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
-               >
-
-                  {isGenerating ? (
-                     <>
-                        <Loader2 size={24} className="animate-spin" />
-                        IA GENERANDO MATERIAL...
-                     </>
-                  ) : (
-                     <>
-                        <Sparkles size={24} />
-                        REDACTAR MATERIAL
-                     </>
-                  )}
-               </button>
+               {tokens === 0 ? (
+                  <SinTokens accion={`generar este ${resourceType.toLowerCase()}`} />
+               ) : (
+                 <button 
+                    type="submit" 
+                    disabled={isGenerating || !topic || tokens === 0}
+                    className="mt-6 w-full py-6 bg-brand-orange text-white rounded-[2rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-2xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
+                 >
+                    {isGenerating ? (
+                       <>
+                          <Loader2 size={24} className="animate-spin" />
+                          IA GENERANDO MATERIAL...
+                       </>
+                    ) : (
+                       <>
+                          <Sparkles size={24} />
+                          REDACTAR MATERIAL
+                       </>
+                    )}
+                 </button>
+               )}
             </form>
          </div>
       ) : (

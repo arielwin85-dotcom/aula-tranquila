@@ -19,6 +19,11 @@ import {
   Download
 } from 'lucide-react';
 import { Classroom, Subject } from '@/types';
+import { descontarTokens } from '@/lib/tokens';
+import { SinTokens } from '@/components/SinTokens';
+import { TokenBadge } from '@/components/TokenBadge';
+import { useTokens } from '@/lib/TokenContext';
+import { createClient } from '@/lib/supabase/client';
 
 type PlanType = 'Anual' | 'Mensual';
 
@@ -46,6 +51,9 @@ const FERIADOS_2026 = [
 // Receso invernal: 13 al 24 de julio 2026
 
 export default function NormativaPage() {
+  const supabase = createClient();
+  const { tokens, refrescarTokens } = useTokens();
+
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
@@ -129,6 +137,7 @@ export default function NormativaPage() {
 
   const handleGeneratePlan = async () => {
     if (!selectedClassId || !selectedSubjectId || !regulationText) return;
+    if (tokens < 1) return;
 
     if (activePlanType === 'Mensual') {
       await handleGenerarMensual();
@@ -150,9 +159,16 @@ export default function NormativaPage() {
 
       if (res.ok) {
         const data = await res.json();
-        setGeneratedPlan(data.plan);
-        if (activePlanType === 'Anual') {
-          setResultadoAnualGenerado(true);
+        
+        // Descontar tokens solo si la IA generó bien
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const result = await descontarTokens(user.id, 1, 'creacion_planificacion', 'Planificación Anual Normativa');
+          if (result.ok) {
+             setGeneratedPlan(data.plan);
+             setResultadoAnualGenerado(true);
+             await refrescarTokens();
+          }
         }
       }
     } catch (err) {
@@ -205,12 +221,14 @@ export default function NormativaPage() {
     const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
     const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
 
-    // Verificar memoria temporal
+    // Verificar memoria temporal (ahorra tokens)
     if (memoriaMensual[mesSeleccionado]) {
        setGeneratedPlan(memoriaMensual[mesSeleccionado]);
        generarPDF(memoriaMensual[mesSeleccionado], `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
        return;
     }
+    
+    if (tokens < 1) return;
 
     const dias = generarDiasHabiles(2026, parseInt(mesSeleccionado));
     setIsGenerating(true);
@@ -229,12 +247,19 @@ export default function NormativaPage() {
       });
       const data = await res.json();
       
-      // Guardar en memoria
-      setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: data.contenido }));
-      
-      setGeneratedPlan(data.contenido);
-      setResultadoAnualGenerado(false); 
-      generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const result = await descontarTokens(user.id, 1, 'creacion_plan_mensual', `Planificación Mensual - ${nombreMes}`);
+        if (result.ok) {
+           // Guardar en memoria
+           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: data.contenido }));
+           
+           setGeneratedPlan(data.contenido);
+           setResultadoAnualGenerado(false); 
+           await refrescarTokens();
+           generarPDF(data.contenido, `Planificacion_${selectedClass?.grade}_${subjName}_${nombreMes}`);
+        }
+      }
     } catch(error) {
       console.error('Error:', error);
       alert('Error al generar la planificación mensual');
@@ -400,15 +425,18 @@ export default function NormativaPage() {
           <h1 className="text-2xl md:text-4xl font-black text-white mb-2 font-montserrat tracking-tight pt-14 md:pt-0">Planificación Normativa</h1>
           <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Generá planificaciones alineadas 100% con las resoluciones provinciales.</p>
         </div>
-        {generatedPlan && (
-           <button 
-             onClick={handlePrint}
-             className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-brand-peach transition-all shadow-2xl w-full sm:w-auto"
-           >
-             <Printer size={18} />
-             Imprimir Plan
-           </button>
-        )}
+        <div className="flex items-center gap-4 w-full sm:w-auto mt-4 sm:mt-0">
+          <TokenBadge />
+          {generatedPlan && (
+             <button 
+               onClick={handlePrint}
+               className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-brand-peach transition-all shadow-2xl"
+             >
+               <Printer size={18} />
+               Imprimir
+             </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
@@ -496,18 +524,22 @@ export default function NormativaPage() {
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">PDF, Word o TXT</p>
             </label>
 
-            <button 
-              disabled={!regulationText || isGenerating}
-              onClick={handleGeneratePlan}
-              className="w-full mt-8 py-5 bg-brand-orange text-white rounded-[1.8rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50"
-            >
-              {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-              {
-                activePlanType === 'Mensual' 
-                  ? `GENERAR ${MESES.find(m => m.valor === mesSeleccionado)?.nombre.toUpperCase()}`
-                  : `Generar ${activePlanType}`
-              }
-            </button>
+            {tokens === 0 ? (
+               <SinTokens accion={`generar planificación ${activePlanType.toLowerCase()}`} />
+            ) : (
+              <button 
+                disabled={!regulationText || isGenerating || tokens === 0}
+                onClick={handleGeneratePlan}
+                className="w-full mt-8 py-5 bg-brand-orange text-white rounded-[1.8rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50 disabled:hover:bg-brand-orange disabled:hover:scale-100"
+              >
+                {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                {
+                  activePlanType === 'Mensual' 
+                    ? `GENERAR ${MESES.find(m => m.valor === mesSeleccionado)?.nombre.toUpperCase()}`
+                    : `Generar ${activePlanType}`
+                }
+              </button>
+            )}
           </div>
         </div>
 

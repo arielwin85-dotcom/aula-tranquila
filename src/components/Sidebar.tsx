@@ -26,10 +26,17 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+import { useTokens } from '@/lib/TokenContext';
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  
+  const { tokens, tokensTotal } = useTokens();
+  const porcentaje = tokensTotal > 0 ? tokens / tokensTotal : 0;
+  const color = tokens === 0 ? '#ef4444' : porcentaje < 0.2 ? '#f59e0b' : '#22c55e';
+
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -148,6 +155,85 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
       </div>
       
+      {/* Widget de Tokens */}
+      <div style={{
+        padding: '12px 16px',
+        margin: '8px',
+        borderRadius: '10px',
+        background: 'var(--color-background-secondary)',
+        border: `1px solid ${
+          tokens === 0 
+            ? '#ef4444' 
+            : 'var(--color-border-tertiary)'
+        }`
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '8px'
+        }}>
+          <span style={{
+            fontSize: '11px',
+            color: 'var(--color-text-secondary)',
+            letterSpacing: '0.05em'
+          }}>
+            TOKENS
+          </span>
+          <span style={{
+            fontSize: '14px',
+            fontWeight: 600,
+            color
+          }}>
+            {tokens}/{tokensTotal}
+          </span>
+        </div>
+
+        {/* Barra */}
+        <div style={{
+          height: '5px',
+          borderRadius: '3px',
+          background: 'var(--color-border-tertiary)',
+          overflow: 'hidden',
+          marginBottom: '6px'
+        }}>
+          <div style={{
+            height: '100%',
+            background: color,
+            borderRadius: '3px',
+            width: tokensTotal > 0
+              ? `${Math.min(
+                  (tokens/tokensTotal)*100,
+                  100
+                )}%`
+              : '0%',
+            transition: 'width 0.4s ease'
+          }}/>
+        </div>
+
+        {tokens === 0 ? (
+          <div
+            onClick={() => router.push('/precios')}
+            style={{
+               fontSize: '11px',
+               color: '#ef4444',
+               textAlign: 'center',
+               cursor: 'pointer',
+               textDecoration: 'underline'
+            }}>
+            Sin tokens · Recargar
+          </div>
+        ) : tokens <= 3 ? (
+          <div style={{
+             fontSize: '11px',
+             color: '#f59e0b',
+             textAlign: 'center'
+          }}>
+            ¡Pocos tokens! Recargá pronto
+          </div>
+        ) : null}
+      </div>
+
       {/* User Profile Mini */}
       <div className="p-6 border-t border-white/10">
          <div className="flex flex-col gap-3">
