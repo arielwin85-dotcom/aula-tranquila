@@ -66,8 +66,8 @@ export const TokenProvider = ({ children }: { children: ReactNode }) => {
             table: 'profiles',
             filter: `id=eq.${user.id}`,
           },
-          (payload) => {
-            const newData = payload.new as any;
+          (payload: { new: Record<string, any> }) => {
+            const newData = payload.new;
             if (newData?.tokens_disponibles !== undefined) {
               setTokens(newData.tokens_disponibles ?? 0);
             }
