@@ -657,7 +657,7 @@ la continuación según lo que ya dimos?`
                   {clasesDocente.length === 0 && <option value="" className="bg-brand-navy">Sin clases</option>}
                 </select>
                 {aulaGradoSeleccionado?.description && (
-                  <p className="text-xs text-brand-orange font-black ml-2 mt-2 italic truncate drop-shadow-sm">
+                  <p className="text-lg text-brand-orange font-black ml-2 mt-4 italic drop-shadow-md leading-tight">
                     {aulaGradoSeleccionado.description}
                   </p>
                 )}
