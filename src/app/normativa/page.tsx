@@ -431,7 +431,7 @@ export default function NormativaPage() {
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
                 </div>
                 {selectedClass?.description && (
-                  <p className="text-[10px] text-slate-500 font-bold ml-1 mt-2 italic truncate">
+                  <p className="text-xs text-brand-orange font-black ml-1 mt-3 italic truncate drop-shadow-sm">
                     {selectedClass.description}
                   </p>
                 )}
