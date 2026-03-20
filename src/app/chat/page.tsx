@@ -656,6 +656,11 @@ la continuación según lo que ya dimos?`
                   ))}
                   {clasesDocente.length === 0 && <option value="" className="bg-brand-navy">Sin clases</option>}
                 </select>
+                {aulaGradoSeleccionado?.description && (
+                  <p className="text-[9px] text-slate-500 font-bold ml-2 mt-1 truncate italic">
+                    {aulaGradoSeleccionado.description}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Materia</label>
