@@ -7,8 +7,8 @@ const mp = new MercadoPagoConfig({
 });
 
 const PACKS: Record<string, { tokens: number }> = {
-  basico: { tokens: 10 },
-  pro: { tokens: 30 }
+  basico: { tokens: 25 }, // 20 + 5 regalo
+  pro: { tokens: 70 }    // 50 + 20 regalo
 };
 
 export async function POST(req: NextRequest) {

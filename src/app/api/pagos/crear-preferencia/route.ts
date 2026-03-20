@@ -7,14 +7,14 @@ const mp = new MercadoPagoConfig({
 
 const PACKS: Record<string, { titulo: string; precio: number; tokens: number }> = {
   basico: {
-    titulo: 'Pack Básico — 10 Tokens',
+    titulo: 'Pack Básico',
     precio: 7000,
-    tokens: 10
+    tokens: 25        // 20 comprados + 5 de regalo
   },
   pro: {
-    titulo: 'Pack Pro — 30 Tokens',
+    titulo: 'Pack Pro',
     precio: 15000,
-    tokens: 30
+    tokens: 70        // 50 comprados + 20 de regalo
   }
 };
 

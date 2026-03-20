@@ -235,22 +235,73 @@ function PreciosContent() {
           height: '100%'
         }}>
           <div>
+            {/* Badge de oferta */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(232,93,47,0.15)',
+              border: '1px solid #e85d2f',
+              borderRadius: '20px',
+              padding: '3px 10px',
+              fontSize: '11px',
+              color: '#e85d2f',
+              fontWeight: 500,
+              marginBottom: '8px'
+            }}>
+              🎁 ¡Oferta! 5 tokens de regalo
+            </div>
+
             <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Básico</h3>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
               Ideal para 1 grado
             </p>
-            <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
-              $7.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 10 tokens</span>
+            
+            <div style={{ marginBottom: '4px' }}>
+              <span style={{
+                fontSize: '32px',
+                fontWeight: 700,
+                color: '#e85d2f'
+              }}>
+                $7.000
+              </span>
             </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '20px'
+            }}>
+              {/* Tokens originales tachados */}
+              <span style={{
+                fontSize: '14px',
+                color: 'var(--color-text-secondary)',
+                textDecoration: 'line-through'
+              }}>
+                20 tokens
+              </span>
+              {/* Flecha */}
+              <span style={{ 
+                color: '#e85d2f',
+                fontSize: '14px'
+              }}>→</span>
+              {/* Tokens con regalo */}
+              <span style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#22c55e'
+              }}>
+                25 tokens ✓
+              </span>
+            </div>
+
             <ul style={{ 
               listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px' 
             }}>
               {[
-                '15 usos del Asistente Pedagógico',
-                '15 Planificaciones Pedagógicas',
-                '15 Planificaciones por Normativa',
-                '15 Evaluaciones y Contenido Rápido',
-                '15 Evidencias',
+                '20 tokens + 5 de regalo',
+                'Total: 25 usos de los agentes IA',
                 'Biblioteca y buscador ilimitados',
                 'Sin vencimiento'
               ].map(item => (
@@ -297,22 +348,72 @@ function PreciosContent() {
             }}>
               ★ MÁS ELEGIDO
             </div>
+
+            {/* Badge de oferta */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(232,93,47,0.15)',
+              border: '1px solid #e85d2f',
+              borderRadius: '20px',
+              padding: '3px 10px',
+              fontSize: '11px',
+              color: '#e85d2f',
+              fontWeight: 500,
+              marginBottom: '8px',
+              marginTop: '4px'
+            }}>
+              🎁 ¡Oferta! 20 tokens de regalo
+            </div>
+
             <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Pro</h3>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
               Ideal para 2 o más grados
             </p>
-            <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
-              $15.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 30 tokens</span>
+
+            <div style={{ marginBottom: '4px' }}>
+              <span style={{
+                fontSize: '32px',
+                fontWeight: 700,
+                color: '#e85d2f'
+              }}>
+                $15.000
+              </span>
             </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '20px'
+            }}>
+              <span style={{
+                fontSize: '14px',
+                color: 'var(--color-text-secondary)',
+                textDecoration: 'line-through'
+              }}>
+                50 tokens
+              </span>
+              <span style={{ 
+                color: '#e85d2f',
+                fontSize: '14px'
+              }}>→</span>
+              <span style={{
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#22c55e'
+              }}>
+                70 tokens ✓
+              </span>
+            </div>
+
             <ul style={{
               listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px'
             }}>
               {[
-                '30 usos del Asistente Pedagógico',
-                '30 Planificaciones Pedagógicas',
-                '30 Planificaciones por Normativa',
-                '30 Evaluaciones y Contenido Rápido',
-                '30 Evidencias',
+                '50 tokens + 20 de regalo',
+                'Total: 70 usos de los agentes IA',
                 'Biblioteca y buscador ilimitados',
                 'Sin vencimiento',
                 'Soporte prioritario'
