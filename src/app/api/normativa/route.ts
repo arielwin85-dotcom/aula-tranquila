@@ -18,13 +18,12 @@ REGLAS INNEGOCIABLES:
 2. Sin teoría vacía — solo qué dar y cómo darlo
 3. Cada contenido conectado con el anterior
    y el siguiente (progresión real)
-4. Mínimo 3 actividades concretas por eje
-5. Indicadores de avance observables
-   y medibles — no frases genéricas
+4. Mínimo 3 actividades concretas por eje (DEBES generar 3 actividades para CADA eje de la tabla, si hay 9 períodos => 27 actividades mínimo).
+5. Indicadores de avance observables y medibles según la progresión del año (ver sección Reglas de la Tabla).
 6. Adaptar TODO al grado específico:
-   - 1° y 2°: concreto, lúdico, sensorial
-   - 3° y 4°: semisimbólico, grupal
-   - 5°, 6° y 7°: abstracto, autónomo, crítico
+   - 1° y 2° GRADO (ESTRICTO): Componente sensorial (tocar, oler, ver), componente lúdico (juego, dramatización), duración máxima 20-30 min por actividad, consigna oral antes que escrita, producción concreta final (dibujo, maqueta, canción).
+   - 3° y 4°: semisimbólico, grupal.
+   - 5°, 6° y 7°: abstracto, autónomo, crítico.
 7. Respetar el calendario escolar argentino:
    - Marzo: inicio, diagnóstico, acuerdos
    - Abril-Junio: primer trimestre
@@ -66,114 +65,60 @@ Formato: 'Promover...', 'Favorecer...',
 
 ## 3. CUADRO DE PLANIFICACIÓN PROGRESIVA
 
-Usar esta tabla con el siguiente nivel 
-de detalle por cada período:
-
 | Período | Eje Temático | Contenidos Detallados | Estrategias Didácticas | Indicadores de Avance |
 |---------|-------------|----------------------|----------------------|----------------------|
 
 REGLAS DE LA TABLA:
 
-PERÍODO:
-- Marzo (2 semanas útiles — diagnóstico)
-- Abril
-- Mayo
-- Junio (cierre 1er trimestre)
-- Agosto (retomada — reactivación)
-- Septiembre
-- Octubre
-- Noviembre (cierre 2do trimestre)
-- Diciembre (integración anual)
-NO incluir julio (receso)
-
-EJE TEMÁTICO:
-- Nombre claro y específico
-- NO genérico como 'Números' sino
-  'Sistema de numeración hasta 10.000'
+PERÍODO: Marzo (diagnóstico), Abril, Mayo, Junio (cierre 1er T), Agosto (retomada), Septiembre, Octubre, Noviembre (cierre 2do T), Diciembre (integración). NO incluir julio.
 
 CONTENIDOS DETALLADOS:
-- Mínimo 4-5 contenidos por período
-- Específicos y graduados en complejidad
-- Con nivel de profundidad esperado
+- Mínimo 4-5 contenidos por período.
+- HILO CONDUCTOR: Usar formato "[Retomando X del mes anterior] Contenido... [Anticipa Y del próximo mes]".
 
 ESTRATEGIAS DIDÁCTICAS:
-- Técnicas concretas y aplicables
-- Al menos una lúdica o colaborativa
-- Nombrar el tipo de agrupamiento
-  (individual, parejas, pequeño grupo)
-- Materiales específicos a usar
+- PROHIBIDAS frases genéricas: "Observación de imágenes", "Elaboración de carteles", "Trabajo en grupo".
+- REEMPLAZAR POR: Nombre de dinámica específica, materiales exactos, rol del docente, cómo se forma el agrupamiento y qué hace cada integrante.
 
-INDICADORES DE AVANCE:
-- Verbos observables: identifica, produce,
-  compara, resuelve, explica, crea, argumenta
-- Con nivel de autonomía esperado
-- NUNCA usar: 'comprende', 'sabe', 'conoce'
+INDICADORES DE AVANCE (PROGRESIÓN ANUAL OBLIGATORIA):
+- 1er Trimestre (Marzo-Junio): Verbos básicos (identifica, nombra, describe con ayuda, reconoce).
+- 2do Trimestre (Agosto-Octubre): Verbos intermedios (clasifica, compara, relaciona, explica con sus palabras).
+- Cierre (Noviembre-Diciembre): Verbos complejos (argumenta, produce, integra, resuelve de forma autónoma, evalúa, propone).
 
 ---
 
-## 4. PROPUESTA DE EJERCITACIÓN POR EJE
+## 4. PROPUESTA DE EJERCITACIÓN (3 ACTIVIDADES POR EJE)
 
-Por cada eje temático del año incluir
-EXACTAMENTE este formato:
+Por cada eje temático del año (mínimo 27 actividades en total) incluir EXACTAMENTE este formato:
 
 ### [Nombre del Eje]
 
 **ACTIVIDAD 1 — INICIO/EXPLORACIÓN**
-Nombre: [nombre creativo y memorable]
-Descripción: [paso a paso de cómo se hace]
-Agrupamiento: [individual/parejas/grupo]
-Materiales: [lista específica]
-Tiempo: [estimado]
-Conexión curricular: [NAP o eje que trabaja]
+Nombre: [nombre creativo] | Descripción: [paso a paso] | Agrupamiento: [detalle] | Materiales: [lista] | Tiempo: [estimado] | Conexión: [NAP]
 
 **ACTIVIDAD 2 — DESARROLLO/PRÁCTICA**
-Nombre: [nombre creativo]
-Descripción: [paso a paso]
-Agrupamiento: [...]
-Materiales: [...]
-Tiempo: [...]
-Variante para dificultades: [cómo adaptar]
+Nombre: [nombre creativo] | Descripción: [paso a paso] | Variante para dificultades: [adaptación]
 
 **ACTIVIDAD 3 — CIERRE/INTEGRACIÓN**
-Nombre: [nombre creativo]
-Descripción: [paso a paso]
-Producto esperado: [qué produce el alumno]
-Criterio de evaluación: [qué observar]
+Nombre: [nombre creativo] | Descripción: [paso a paso] | Producto esperado: [dibujo/maqueta/etc] | Criterio: [qué observar]
 
 ---
 
 ## 5. CRITERIOS DE EVALUACIÓN
-
-Tabla con criterios formativos y sumativos:
-
-| Capacidad | Indicador Observable | Instrumento | Momento |
-|-----------|---------------------|-------------|---------|
-
-MOMENTOS: Diagnóstico / Proceso / Cierre
-INSTRUMENTOS concretos (rúbricas, portfolio, etc.)
+Tabla con Capacidad, Indicador Observable, Instrumento y Momento.
 
 ---
 
 ## 6. BIBLIOGRAFÍA Y RECURSOS
-
-[Lista de materiales, libros, plataformas
-y recursos digitales específicos para
-este grado y materia. Incluir recursos
-gratuitos disponibles en Argentina:
-Educ.ar, Conectar Igualdad, etc.]
+Lista de materiales y recursos específicos (Educ.ar, Conectar Igualdad, etc.)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ESTÁNDAR DE CALIDAD MÍNIMO:
-- Fundamentación: mínimo 300 palabras
-- Cuadro: mínimo 9 períodos con 
-  4-5 contenidos cada uno
-- Actividades: mínimo 3 por eje temático
-- Indicadores: siempre con verbo observable
-- El documento completo debe tener entre
-  2000 y 3000 palabras mínimo
-- Un docente debe poder USAR este documento
-  directamente sin buscar nada más`;
+- El documento completo debe tener entre 2000 y 3000 palabras mínimo.
+- 3 actividades completas por CADA eje de la tabla (27 actividades si hay 9 meses).
+- Verbos de indicadores graduados por trimestre.
+- Hilo conductor explícito en la columna de contenidos.`;
 
 export async function POST(request: Request) {
   try {
