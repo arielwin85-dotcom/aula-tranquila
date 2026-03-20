@@ -17,15 +17,14 @@ import {
   GraduationCap,
   Clock,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 type TabType = 'perfil' | 'seguridad' | 'notificaciones' | 'facturacion';
 
 export default function ConfiguracionPage() {
-  const supabase = createClient();
-
   // ── Estados ────────────────────────────────────────────────────────────
   const [tabActiva, setTabActiva] = useState<TabType>('perfil');
+  const [userId, setUserId] = useState<string | null>(null);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [nivelEducativo, setNivelEducativo] = useState('');
@@ -51,10 +50,11 @@ export default function ConfiguracionPage() {
 
         if (!user) {
           setIsLoading(false);
-          // Redirigir si no hay sesión (opcional, pero recomendado)
           return;
         }
 
+        setUserId(user.id);
+        
         // 2. Establecer datos iniciales desde la API
         setEmail(user.email || '');
         setNombre(user.full_name || user.name || '');
@@ -64,7 +64,6 @@ export default function ConfiguracionPage() {
         setPlan(user.plan || 'gratuito');
 
         // 3. Intentar cargar datos frescos directamente desde Supabase si es posible
-        // (Esto satisface el requerimiento de "lógica directa de Supabase")
         try {
           const { data: perfil, error: profileError } = await supabase
             .from('profiles')
@@ -101,34 +100,35 @@ export default function ConfiguracionPage() {
       return;
     }
 
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('No hay sesión activa');
-        return;
-      }
+    if (!userId) {
+      setError('No hay sesión activa para guardar');
+      return;
+    }
 
+    try {
       setIsSaving(true);
       setError('');
       setExito('');
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          full_name: nombre.trim(),
-          nivel_educativo: nivelEducativo,
-          zona_horaria: zonaHoraria,
-          updated_at: new Date().toISOString()
+      // Usar nuestra API segura para guardar
+      const res = await fetch('/api/perfil/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          nivelEducativo,
+          zonaHoraria
         })
-        .eq('id', user.id);
+      });
 
-      if (updateError) throw updateError;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al guardar');
 
       setExito('Cambios guardados correctamente ✓');
       setTimeout(() => setExito(''), 3000);
     } catch (err: any) {
       console.error('Error guardando:', err);
-      setError('Error al guardar. Intentá de nuevo.');
+      setError(err.message || 'Error al guardar. Intentá de nuevo.');
     } finally {
       setIsSaving(false);
     }
@@ -153,11 +153,15 @@ export default function ConfiguracionPage() {
       setError('');
       setExito('');
 
-      const { error: authError } = await supabase.auth.updateUser({
-        password: nuevaPassword
+      // Usar nuestra API segura para cambiar password
+      const res = await fetch('/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevaPassword })
       });
 
-      if (authError) throw authError;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar contraseña');
 
       setExito('Contraseña actualizada correctamente ✓');
       setNuevaPassword('');
@@ -165,7 +169,7 @@ export default function ConfiguracionPage() {
       setTimeout(() => setExito(''), 3000);
     } catch (err: any) {
       console.error('Error actualizando contraseña:', err);
-      setError('Error al actualizar contraseña. Intentá de nuevo.');
+      setError(err.message || 'Error al actualizar contraseña. Intentá de nuevo.');
     } finally {
       setIsSaving(false);
     }
@@ -192,7 +196,12 @@ export default function ConfiguracionPage() {
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-700">
       <div className="mb-10 pt-10 md:pt-0">
-        <h1 className="text-4xl font-black text-white mb-2 font-montserrat tracking-tight">Configuración</h1>
+        <div className="flex items-center gap-4 mb-2">
+            <h1 className="text-4xl font-black text-white font-montserrat tracking-tight">Configuración</h1>
+            <div className="px-3 py-1 bg-brand-orange/10 border border-brand-orange/20 rounded-full text-[9px] font-black text-brand-orange uppercase tracking-widest">
+                v2.1
+            </div>
+        </div>
         <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Gestioná tu perfil, preferencias y suscripción en Aula Pro.</p>
       </div>
 
