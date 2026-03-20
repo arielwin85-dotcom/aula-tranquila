@@ -26,16 +26,6 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Establecer la sesión de Supabase en el cliente browser.
-        // Esto permite que el Realtime funcione con la sesión JWT nativa.
-        if (data.session?.access_token) {
-          const { createClient } = await import('@/lib/supabase/client');
-          const supabase = createClient();
-          await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          });
-        }
         router.push('/');
         router.refresh();
       } else {
