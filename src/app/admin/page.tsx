@@ -20,10 +20,12 @@ import {
   ToggleLeft
 } from 'lucide-react';
 import { User } from '@/types';
+import { useTokens } from '@/lib/TokenContext';
 
 type AdminTab = 'usuarios' | 'soporte';
 
 export default function AdminPage() {
+  const { refrescarTokens } = useTokens();
   const [activeTab, setActiveTab] = useState<AdminTab>('usuarios');
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
@@ -132,6 +134,7 @@ export default function AdminPage() {
       if (res.ok) {
         setIsModalOpen(false);
         fetchUsers();
+        await refrescarTokens(); // Actualiza el contexto global por si el Admin modificó sus propios tokens
       }
     } catch (err) {
       console.error('Error saving user:', err);

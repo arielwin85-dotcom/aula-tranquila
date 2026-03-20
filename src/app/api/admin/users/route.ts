@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getUsersAdmin, saveProfile } from '@/lib/db';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // GET all users
 export async function GET() {
   try {
