@@ -17,31 +17,24 @@ import {
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Classroom, User } from '@/types'
-import { currentUser } from '@/mocks/data'
+import { useTokens } from '@/lib/TokenContext'
 
 export default function Dashboard() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // 1. Cargar Usuario
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => setUser(data.user))
-      .catch(err => console.error("Error fetching user:", err));
+  const { tokens, tokensTotal } = useTokens();
 
-    // 2. Cargar Clases
-    fetch('/api/classrooms')
-      .then(res => res.json())
-      .then(data => {
-        setClassrooms(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching classrooms:", err);
-        setIsLoading(false);
-      });
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/auth/me').then(res => res.json()),
+      fetch('/api/classrooms').then(res => res.json())
+    ]).then(([authData, classroomsData]) => {
+      setUser(authData.user);
+      setClassrooms(classroomsData);
+    }).catch(err => console.error("Error loading dashboard", err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const ACTIONS = [
@@ -192,15 +185,14 @@ export default function Dashboard() {
 
         {/* Sidebar Status */}
         <div className="lg:col-span-4 flex flex-col gap-8">
-            {/* Créditos / Plan */}
             <div className="bg-gradient-to-br from-brand-orange to-red-600 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
                 <div className="absolute -right-4 -top-4 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-                <h3 className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-2">Suscripción {currentUser.plan}</h3>
+                <h3 className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-2">Suscripción {user?.plan || 'Gratuito'}</h3>
                 <div className="text-5xl font-black mb-8 font-montserrat tracking-tight tracking-tighter">
-                   {currentUser.credits} <span className="text-xs font-black opacity-60 uppercase tracking-widest block mt-1">Créditos IA Disponibles</span>
+                   {tokens} <span className="text-xs font-black opacity-60 uppercase tracking-widest block mt-1">Tokens IA Disponibles</span>
                 </div>
                 <div className="w-full bg-black/20 rounded-full h-3.5 mb-4 shadow-inner p-1 border border-white/10">
-                   <div className="bg-white h-full rounded-full shadow-lg" style={{ width: '75%' }}></div>
+                   <div className="bg-white h-full rounded-full shadow-lg" style={{ width: tokensTotal > 0 ? `${Math.round((tokens/tokensTotal)*100)}%` : '0%' }}></div>
                 </div>
                 <p className="text-[10px] text-white/80 font-black uppercase tracking-widest mb-8">Nivel de uso: Optimizado</p>
                 <button className="w-full py-5 bg-white text-brand-orange hover:bg-brand-navy hover:text-white rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all shadow-2xl shadow-black/20 hover:translate-y-[-2px] active:translate-y-0">

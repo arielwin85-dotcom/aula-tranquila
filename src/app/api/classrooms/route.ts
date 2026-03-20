@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getClassrooms, saveClassroom } from '@/lib/db';
+export const dynamic = 'force-dynamic';
 import { Classroom } from '@/types';
 
 import { cookies } from 'next/headers';

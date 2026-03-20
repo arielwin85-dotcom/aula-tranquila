@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+export const dynamic = 'force-dynamic';
 import { getStudents, getClassrooms, getFullStudent, upsertStudent, upsertGrade, deleteStudentFromLegacy } from '@/lib/db';
 import { Student } from '@/types';
 
