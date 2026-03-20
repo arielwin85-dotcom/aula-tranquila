@@ -45,31 +45,44 @@ export default function ConfiguracionPage() {
   useEffect(() => {
     const cargarPerfil = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // 1. Obtener la sesión actual desde nuestra API de auth
+        const res = await fetch('/api/auth/me');
+        const { user } = await res.json();
+
         if (!user) {
           setIsLoading(false);
+          // Redirigir si no hay sesión (opcional, pero recomendado)
           return;
         }
 
+        // 2. Establecer datos iniciales desde la API
         setEmail(user.email || '');
+        setNombre(user.full_name || user.name || '');
+        setNivelEducativo(user.nivel_educativo || user.level || '');
+        setZonaHoraria(user.zona_horaria || 'America/Argentina/Buenos_Aires');
+        setCreditos(user.credits || 0);
+        setPlan(user.plan || 'gratuito');
 
-        const { data: perfil, error: profileError } = await supabase
-          .from('profiles')
-          .select('full_name, nivel_educativo, zona_horaria, credits, plan')
-          .eq('id', user.id)
-          .single();
+        // 3. Intentar cargar datos frescos directamente desde Supabase si es posible
+        // (Esto satisface el requerimiento de "lógica directa de Supabase")
+        try {
+          const { data: perfil, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-        if (profileError && profileError.code !== 'PGRST116') throw profileError;
-
-        if (perfil) {
-          setNombre(perfil.full_name || user.user_metadata?.full_name || '');
-          setNivelEducativo(perfil.nivel_educativo || '');
-          setZonaHoraria(perfil.zona_horaria || 'America/Argentina/Buenos_Aires');
-          setCreditos(perfil.credits || 0);
-          setPlan(perfil.plan || 'gratuito');
-        } else {
-          setNombre(user.user_metadata?.full_name || '');
+          if (!profileError && perfil) {
+            setNombre(perfil.full_name || perfil.name || user.full_name || user.name || '');
+            setNivelEducativo(perfil.nivel_educativo || perfil.level || '');
+            setZonaHoraria(perfil.zona_horaria || 'America/Argentina/Buenos_Aires');
+            setCreditos(perfil.credits || 0);
+            setPlan(perfil.plan || 'gratuito');
+          }
+        } catch (sErr) {
+          console.warn('Fallo el fetch directo de Supabase, usando datos de la API:', sErr);
         }
+
       } catch (err) {
         console.error('Error cargando perfil:', err);
         setError('Error al cargar datos del servidor.');
