@@ -51,7 +51,7 @@ function PreciosContent() {
   };
 
   return (
-    <div style={{ padding: '24px' }} className="max-w-5xl mx-auto">
+    <div style={{ padding: '24px' }} className="max-w-6xl mx-auto">
       {/* Mensajes de Retorno Mercado Pago */}
       {estado === 'exitoso' && (
         <div style={{
@@ -123,103 +123,222 @@ function PreciosContent() {
         </div>
       </div>
 
-      {/* Packs */}
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '20px'
-      }}>
+      {/* Grid de Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+        
+        {/* Card Gratuito */}
+        <div style={{
+          padding: '28px',
+          borderRadius: '16px',
+          background: 'var(--color-background-secondary)',
+          border: '1px solid var(--color-border-tertiary)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          height: '100%'
+        }}>
+          <div>
+            {/* Badge plan actual */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(232,93,47,0.15)',
+              border: '1px solid #e85d2f',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              fontSize: '11px',
+              color: '#e85d2f',
+              fontWeight: 500,
+              marginBottom: '16px',
+              alignSelf: 'flex-start'
+            }}>
+              ✓ Tu plan actual
+            </div>
+
+            <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>
+              Acceso Gratuito
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
+              Incluido al registrarte
+            </p>
+
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 700,
+              color: 'var(--color-text-primary)',
+              marginBottom: '20px'
+            }}>
+              $0
+              <span style={{
+                fontSize: '14px',
+                fontWeight: 400,
+                color: 'var(--color-text-secondary)'
+              }}>
+                {' '}/ de por vida
+              </span>
+            </div>
+
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: '0 0 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              {[
+                'Gestión de Mis Clases',
+                '1 Planificación Pedagógica',
+                '1 Planificación por Normativa',
+                'Biblioteca y buscador de recursos (de por vida)',
+                '3 Evaluaciones y Contenido Rápido',
+                '3 Evidencias'
+              ].map(item => (
+                <li key={item} style={{
+                  fontSize: '13px',
+                  color: 'var(--color-text-secondary)',
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'flex-start'
+                }}>
+                  <span style={{ color: '#e85d2f', flexShrink: 0 }}>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Sin botón — solo indicador */}
+          <div style={{
+            padding: '10px',
+            borderRadius: '8px',
+            background: 'var(--color-background-tertiary)',
+            textAlign: 'center',
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+            marginTop: 'auto'
+          }}>
+            Plan incluido en tu cuenta
+          </div>
+        </div>
+
         {/* Pack Básico */}
         <div style={{
           padding: '28px',
           borderRadius: '16px',
           background: 'var(--color-background-secondary)',
-          border: '1px solid var(--color-border-tertiary)'
+          border: '1px solid var(--color-border-tertiary)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          height: '100%'
         }}>
-          <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Básico</h3>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
-            Ideal para 1 grado
-          </p>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
-            $7.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 10 tokens</span>
-          </div>
-          <ul style={{ 
-            listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '8px' 
-          }}>
-            {[
-              '10 usos del Asistente Pedagógico',
-              '3 Planificaciones mensuales',
-              'Acceso completo al resto de la app',
-              'Sin vencimiento'
-            ].map(item => (
-              <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                <span style={{ color: '#e85d2f' }}>✓</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => handleComprar('basico')}
-            disabled={cargando === 'basico'}
-            style={{
-              width: '100%', padding: '12px',
-              background: cargando === 'basico' ? '#888' : '#e85d2f',
-              color: 'white', border: 'none', borderRadius: '8px',
-              fontSize: '14px', fontWeight: 500,
-              cursor: cargando === 'basico' ? 'not-allowed' : 'pointer'
+          <div>
+            <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Básico</h3>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
+              Ideal para 1 grado
+            </p>
+            <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
+              $7.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 10 tokens</span>
+            </div>
+            <ul style={{ 
+              listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px' 
             }}>
-            {cargando === 'basico' ? 'Redirigiendo...' : 'Comprar Pack Básico'}
-          </button>
+              {[
+                '15 usos del Asistente Pedagógico',
+                '15 Planificaciones Pedagógicas',
+                '15 Planificaciones por Normativa',
+                '15 Evaluaciones y Contenido Rápido',
+                '15 Evidencias',
+                'Biblioteca y buscador ilimitados',
+                'Sin vencimiento'
+              ].map(item => (
+                <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#e85d2f', flexShrink: 0 }}>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          
+          <div style={{ marginTop: 'auto' }}>
+            <button
+              onClick={() => handleComprar('basico')}
+              disabled={cargando === 'basico'}
+              style={{
+                width: '100%', padding: '12px',
+                background: cargando === 'basico' ? '#888' : '#e85d2f',
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: 500,
+                cursor: cargando === 'basico' ? 'not-allowed' : 'pointer'
+              }}>
+              {cargando === 'basico' ? 'Redirigiendo...' : 'Comprar Pack Básico'}
+            </button>
+          </div>
         </div>
 
         {/* Pack Pro */}
         <div style={{
           padding: '28px', borderRadius: '16px',
           background: 'var(--color-background-secondary)',
-          border: '2px solid #e85d2f', position: 'relative'
+          border: '2px solid #e85d2f', 
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          height: '100%'
         }}>
-          <div style={{
-            position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
-            background: '#e85d2f', color: 'white', padding: '4px 16px',
-            borderRadius: '20px', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap'
-          }}>
-            ★ MÁS ELEGIDO
-          </div>
-          <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Pro</h3>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
-            Ideal para 2 o más grados
-          </p>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
-            $15.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 30 tokens</span>
-          </div>
-          <ul style={{
-            listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '8px'
-          }}>
-            {[
-              '30 usos del Asistente Pedagógico',
-              '10 Planificaciones mensuales',
-              'Acceso completo al resto de la app',
-              'Sin vencimiento',
-              'Soporte prioritario'
-            ].map(item => (
-              <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                <span style={{ color: '#e85d2f' }}>✓</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => handleComprar('pro')}
-            disabled={cargando === 'pro'}
-            style={{
-              width: '100%', padding: '12px',
-              background: cargando === 'pro' ? '#888' : '#e85d2f',
-              color: 'white', border: 'none', borderRadius: '8px',
-              fontSize: '14px', fontWeight: 500,
-              cursor: cargando === 'pro' ? 'not-allowed' : 'pointer'
+          <div>
+            <div style={{
+              position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
+              background: '#e85d2f', color: 'white', padding: '4px 16px',
+              borderRadius: '20px', fontSize: '12px', fontWeight: 500, whiteSpace: 'nowrap'
             }}>
-            {cargando === 'pro' ? 'Redirigiendo...' : 'Comprar Pack Pro'}
-          </button>
+              ★ MÁS ELEGIDO
+            </div>
+            <h3 style={{ margin: '0 0 4px', color: 'var(--color-text-primary)' }}>Pack Pro</h3>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', margin: '0 0 20px' }}>
+              Ideal para 2 o más grados
+            </p>
+            <div style={{ fontSize: '32px', fontWeight: 700, color: '#e85d2f', marginBottom: '20px' }}>
+              $15.000<span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-secondary)' }}> / 30 tokens</span>
+            </div>
+            <ul style={{
+              listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: '10px'
+            }}>
+              {[
+                '30 usos del Asistente Pedagógico',
+                '30 Planificaciones Pedagógicas',
+                '30 Planificaciones por Normativa',
+                '30 Evaluaciones y Contenido Rápido',
+                '30 Evidencias',
+                'Biblioteca y buscador ilimitados',
+                'Sin vencimiento',
+                'Soporte prioritario'
+              ].map(item => (
+                <li key={item} style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <span style={{ color: '#e85d2f', flexShrink: 0 }}>✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 'auto' }}>
+            <button
+              onClick={() => handleComprar('pro')}
+              disabled={cargando === 'pro'}
+              style={{
+                width: '100%', padding: '12px',
+                background: cargando === 'pro' ? '#888' : '#e85d2f',
+                color: 'white', border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: 500,
+                cursor: cargando === 'pro' ? 'not-allowed' : 'pointer'
+              }}>
+              {cargando === 'pro' ? 'Redirigiendo...' : 'Comprar Pack Pro'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
