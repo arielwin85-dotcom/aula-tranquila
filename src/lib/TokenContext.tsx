@@ -65,7 +65,7 @@ export const TokenProvider = ({ children }: { children: ReactNode }) => {
   // Polling cada 30s: garantiza sincronización cuando el admin cambia tokens
   // desde el panel administrativo (no depende de Realtime ni de JWT en localStorage)
   useEffect(() => {
-    const interval = setInterval(refrescarTokens, 30_000);
+    const interval = setInterval(refrescarTokens, 10_000);
     return () => clearInterval(interval);
   }, [refrescarTokens]);
 
