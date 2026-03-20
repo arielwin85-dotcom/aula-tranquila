@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 interface TokenContextType {
@@ -32,17 +32,19 @@ export const TokenProvider = ({ children }: { children: ReactNode }) => {
   const [tokens, setTokens] = useState(0);
   const [tokensTotal, setTokensTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
-  const userIdRef = useRef<string | null>(null);
   const supabase = createClient();
 
   const refrescarTokens = useCallback(async () => {
-    // Siempre leer el userId desde la cookie de sesión (seguro y aislado por usuario)
-    const userId = userIdRef.current ?? await getUserIdFromSession();
+    // Siempre leer el userId desde la cookie activa (nunca en caché)
+    // Esto garantiza que al cambiar de cuenta, los tokens del nuevo usuario se carguen correctamente.
+    const userId = await getUserIdFromSession();
     if (!userId) {
+      // Sin sesión: limpiar los tokens para no mostrar datos de la sesión anterior
+      setTokens(0);
+      setTokensTotal(0);
       setCargando(false);
       return;
     }
-    userIdRef.current = userId;
 
     const { data } = await supabase
       .from('profiles')
