@@ -121,7 +121,7 @@ qué hacer en ese momento]`;
       userId, 
       2, 
       'ia_plan_mensual', 
-      `Planificación Mensual: \${grado} - \${materia} (\${nombreMes})`
+      `Planificación Mensual: ${grado} - ${materia} (${nombreMes})`
     );
 
     if (!tokenCheck.ok) {
@@ -144,73 +144,62 @@ qué hacer en ese momento]`;
       const dias2 = dias.slice(mitad);
 
       // Tanda 1
-      const prompt1 = `PLANIFICACIÓN MENSUAL (PARTE 1 de 2) — 
-\${nombreMes} 2026
-\${grado} | \${materia}
-Total: \${dias1.length} clases
+      const prompt1 = `PLANIFICACIÓN MENSUAL — PARTE 1
+${nombreMes} 2026
+${grado} | ${materia}
+Total clases en esta parte: ${dias1.length}
 
 NORMATIVA DE REFERENCIA:
-\${normativa}
+${normativa}
 
 Días a planificar:
-\${dias1.map((d: any, i: number) =>
-  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
-).join('\\n')}
+${dias1.map((d: any, i: number) => `Clase ${i+1} — ${d.dia} ${d.fecha}`).join('\n')}
 
-Generá una clase completa por cada día listado.
-ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
-IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+IMPORTANTE: DEBES ESCRIBIR EL CONTENIDO REAL Y COMPLETO PARA CADA CLASE. NO USES CORCHETES [], NO USES VARIABLES, NO HAGAS UNA PLANTILLA. ESCRIBE EL TEXTO TAL CUAL DEBE APARECER EN EL DOCUMENTO FINAL.
 
-\${baseEstructura}`;
+${baseEstructura}`;
 
       const result1 = await model.generateContent(prompt1);
       contenido += result1.response.text();
 
-      contenido += '\\n\\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+      contenido += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
 
       // Tanda 2
-      const prompt2 = `PLANIFICACIÓN MENSUAL (PARTE 2 de 2) — 
-\${nombreMes} 2026
-\${grado} | \${materia}
-Total: \${dias2.length} clases
+      const prompt2 = `PLANIFICACIÓN MENSUAL — PARTE 2 (CONTINUACIÓN)
+${nombreMes} 2026
+${grado} | ${materia}
+Total clases en esta parte: ${dias2.length}
 
 NORMATIVA DE REFERENCIA:
-\${normativa}
+${normativa}
 
-Días a planificar:
-\${dias2.map((d: any, i: number) =>
-  \`Clase \${mitad + i + 1} — \${d.dia} \${d.fecha}\`
-).join('\\n')}
+Días a planificar (CONTINUACIÓN):
+${dias2.map((d: any, i: number) => `Clase ${mitad + i + 1} — ${d.dia} ${d.fecha}`).join('\n')}
 
-Generá una clase completa por cada día listado. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.
-ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
-IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+IMPORTANTE: DEBES ESCRIBIR EL CONTENIDO REAL Y COMPLETO PARA CADA CLASE. NO USES CORCHETES [], NO USES VARIABLES, NO HAGAS UNA PLANTILLA. ESCRIBE EL TEXTO TAL CUAL DEBE APARECER EN EL DOCUMENTO FINAL.
+CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.
 
-\${baseEstructura}`;
+${baseEstructura}`;
 
       const result2 = await model.generateContent(prompt2);
       contenido += result2.response.text();
     } else {
-      const promptBase = `PLANIFICACIÓN MENSUAL — 
-\${nombreMes} 2026
-\${grado} | \${materia}
-Total: \${dias.length} clases
+      const promptFinal = `PLANIFICACIÓN MENSUAL — 
+${nombreMes} 2026
+${grado} | ${materia}
+Total: ${dias.length} clases
 
 NORMATIVA DE REFERENCIA:
-\${normativa}
+${normativa}
 
 Días a planificar:
-\${dias.map((d: any, i: number) =>
-  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
-).join('\\n')}
+${dias.map((d: any, i: number) => `Clase ${i+1} — ${d.dia} ${d.fecha}`).join('\n')}
 
-Generá una clase completa por cada día listado.
-ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
-IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+Generá una clase completa por cada día listado. Escribe el contenido TEXTUAL y REAL, no una plantilla.
 
-\${baseEstructura}`;
+${baseEstructura}`;
 
-      const result = await model.generateContent(promptBase);
+      const result = await model.generateContent(promptFinal);
       contenido = result.response.text();
     }
 
