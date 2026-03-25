@@ -101,25 +101,65 @@ function PreciosContent() {
         </div>
       )}
 
-      {/* Tokens actuales */}
+      {/* Mensaje Empático / Colaborativo */}
       <div style={{
-        padding: '16px 20px',
-        borderRadius: '12px',
-        background: 'var(--color-background-secondary)',
-        border: '1px solid var(--color-border-tertiary)',
-        marginBottom: '32px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px'
+        padding: '32px',
+        borderRadius: '24px',
+        background: 'linear-gradient(135deg, rgba(232,93,47,0.1) 0%, rgba(232,93,47,0.05) 100%)',
+        border: '1px solid rgba(232,93,47,0.2)',
+        marginBottom: '40px',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <span style={{ fontSize: '24px' }}>🎯</span>
-        <div>
-          <div style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
-            Tokens disponibles: {tokens}
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
-            🤖 Asistente = 1 token por uso &nbsp;|&nbsp; 📋 Planificación mensual = 3 tokens
-          </div>
+        <div style={{
+          position: 'absolute',
+          right: '-20px',
+          top: '-20px',
+          opacity: 0.1,
+          transform: 'rotate(15deg)'
+        }}>
+          <span style={{ fontSize: '100px' }}>💝</span>
+        </div>
+        
+        <h2 style={{ 
+          fontSize: '20px', 
+          fontWeight: 800, 
+          color: '#e85d2f', 
+          marginBottom: '16px',
+          fontFamily: 'var(--font-montserrat)'
+        }}>
+          Nuestra misión y compromiso con vos
+        </h2>
+        
+        <p style={{ 
+          fontSize: '15px', 
+          lineHeight: '1.6', 
+          color: 'var(--color-text-primary)', 
+          fontWeight: 500,
+          maxWidth: '800px',
+          margin: 0
+        }}>
+          ¡Hola! Nos encantaría que Aula Pro fuera 100% gratuito para todos los docentes, pero para poder brindarte la potencia de 
+          un **Agente de IA de primer nivel** —preparado con meses de desarrollo pedagógico y técnico— debemos afrontar altos costos 
+          de procesamiento y mantenimiento del sistema. 
+          <br /><br />
+          Cada token representa el motor que nos permite sostener esta herramienta y seguir evolucionándola para que vos puedas 
+          recuperar tu tiempo libre sin perder calidad educativa. ¡Gracias por apoyar este desarrollo y ser parte de nuestra comunidad! 🚀
+        </p>
+
+        <div style={{
+          marginTop: '24px',
+          padding: '12px 20px',
+          background: 'rgba(232,93,47,0.1)',
+          borderRadius: '12px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span style={{ fontSize: '18px' }}>🎯</span>
+          <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            Tus Tokens Actuales: {tokens}
+          </span>
         </div>
       </div>
 
