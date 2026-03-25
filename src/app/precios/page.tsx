@@ -3,12 +3,13 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useTokens } from '@/lib/TokenContext';
 
 function PreciosContent() {
-  const [tokens, setTokens] = useState(0);
   const [cargando, setCargando] = useState<string | null>(null);
   const [userId, setUserId] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const { tokens } = useTokens();
 
   const searchParams = useSearchParams();
   const estado = searchParams.get('estado');
@@ -19,14 +20,6 @@ function PreciosContent() {
       if (!user) return;
       setUserId(user.id);
       setUserEmail(user.email || '');
-
-      const { data: perfil } = await supabase
-        .from('profiles')
-        .select('tokens_disponibles')
-        .eq('id', user.id)
-        .single();
-
-      setTokens(perfil?.tokens_disponibles || 0);
     };
     cargar();
   }, []);
