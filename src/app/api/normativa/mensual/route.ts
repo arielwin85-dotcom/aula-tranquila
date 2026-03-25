@@ -152,8 +152,29 @@ qué hacer en ese momento]`;
       return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
     }
 
-    const result = await model.generateContent(prompt);
-    const contenido = result.response.text();
+    let contenido = '';
+
+    // Si hay más de 10 clases, dividimos en dos tandas para evitar recortes por límite de tokens (8192)
+    if (dias.length > 10) {
+      const mitad = Math.ceil(dias.length / 2);
+      const dias1 = dias.slice(0, mitad);
+      const dias2 = dias.slice(mitad);
+
+      // Tanda 1
+      const prompt1 = `PLANIFICACIÓN MENSUAL (PARTE 1 de 2) — ${nombreMes} 2026\n${grado} | ${materia}\nClases a generar: ${dias1.length}\n\nNORMATIVA:\n${normativa}\n\nDías:\n${dias1.map((d: any, i: number) => `Clase ${i+1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas respetando la estructura.`;
+      const result1 = await model.generateContent(prompt1);
+      contenido += result1.response.text();
+
+      contenido += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+
+      // Tanda 2
+      const prompt2 = `PLANIFICACIÓN MENSUAL (PARTE 2 de 2) — ${nombreMes} 2026\n${grado} | ${materia}\nClases a generar: ${dias2.length}\n\nNORMATIVA:\n${normativa}\n\nDías:\n${dias2.map((d: any, i: number) => `Clase ${mitad + i + 1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas respetando la estructura. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.`;
+      const result2 = await model.generateContent(prompt2);
+      contenido += result2.response.text();
+    } else {
+      const result = await model.generateContent(prompt);
+      contenido = result.response.text();
+    }
 
     return NextResponse.json({ 
       contenido,
