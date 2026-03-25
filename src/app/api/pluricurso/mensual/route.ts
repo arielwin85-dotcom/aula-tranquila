@@ -41,26 +41,7 @@ PROGRESIÓN DE INDICADORES:
 - Cierre (Nov-Dic): Verbos complejos (argumenta, produce, integra).`
 });
 
-    const prompt = `PLANIFICACIÓN MENSUAL PLURICURSO — 
-${nombreMes} 2026
-Grado A: ${gradoA} | Grado B: ${gradoB} | Materia: ${materia}
-Total: ${dias.length} clases
-
-NORMATIVA GRADO A:
-${normativaA}
-
-NORMATIVA GRADO B:
-${normativaB}
-
-Días a planificar:
-${dias.map((d: any, i: number) =>
-  `Clase ${i+1} — ${d.dia} ${d.fecha}`
-).join('\n')}
-
-Generá una clase completa por cada día integrando a ambos grupos en una misma temática pero con actividades a nivel de cada grado.
-ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES, TIENES QUE GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE DÍAS.
-
-Usar esta estructura exacta por clase:
+    const baseEstructura = `Usar esta estructura exacta por clase:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CLASE [N] — [DÍA] [FECHA]
@@ -70,8 +51,8 @@ ENCUADRE NORMATIVO CONJUNTO
 NAP / Eje Común: [tema paraguas]
 
 OBJETIVO PLURICURSO
-- Para ${gradoA}: Al finalizar el alumno podrá...
-- Para ${gradoB}: Al finalizar el alumno podrá...
+- Para \${gradoA}: Al finalizar el alumno podrá...
+- Para \${gradoB}: Al finalizar el alumno podrá...
 
 DESARROLLO DE LA CLASE
 Apertura Conjunta (15 min):
@@ -79,27 +60,27 @@ Apertura Conjunta (15 min):
 [Qué escribir en el pizarrón]
 
 Desarrollo Diferenciado (60 min):
-- Tareas para ${gradoA}: [Paso a paso]
-- Tareas para ${gradoB}: [Paso a paso]
+- Tareas para \${gradoA}: [Paso a paso]
+- Tareas para \${gradoB}: [Paso a paso]
 [Cómo el docente alterna la atención]
 
 Cierre Común (15 min):
 [Puesta en común conjunta]
 
 RECURSOS
-- Para ${gradoA}: [Material necesario]
-- Para ${gradoB}: [Material necesario]
+- Para \${gradoA}: [Material necesario]
+- Para \${gradoB}: [Material necesario]
 
 EVALUACIÓN INFORMAL
-Qué observar en ${gradoA}: [comportamientos concretos]
-Qué observar en ${gradoB}: [comportamientos concretos]`;
+Qué observar en \${gradoA}: [comportamientos concretos]
+Qué observar en \${gradoB}: [comportamientos concretos]`;
 
     // Descuento de 3 tokens para plural mensual
     const tokenCheck = await descontarTokensServer(
       userId, 
       3, 
       'ia_plan_mensual_pluricurso', 
-      `Pluricurso Mensual: ${gradoA} y ${gradoB} - ${materia} (${nombreMes})`
+      `Pluricurso Mensual: \${gradoA} y \${gradoB} - \${materia} (\${nombreMes})`
     );
 
     if (!tokenCheck.ok) {
@@ -122,21 +103,81 @@ Qué observar en ${gradoB}: [comportamientos concretos]`;
       const dias2 = dias.slice(mitad);
 
       // Tanda 1
-      const prompt1 = `PLANIFICACIÓN MENSUAL PLURICURSO (PARTE 1 de 2) — ${nombreMes} 2026\nGrado A: ${gradoA} | Grado B: ${gradoB} | Materia: ${materia}\nClases a generar: ${dias1.length}\n\nNORMATIVA A: ${normativaA}\nNORMATIVA B: ${normativaB}\n\nDías:\n${dias1.map((d: any, i: number) => `Clase ${i+1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas integrando a ambos grupos respetando la estructura.`;
+      const prompt1 = `PLANIFICACIÓN MENSUAL PLURICURSO (PARTE 1 de 2) — 
+\${nombreMes} 2026
+Grado A: \${gradoA} | Grado B: \${gradoB} | Materia: \${materia}
+Total: \${dias1.length} clases
+
+NORMATIVA GRADO A:
+\${normativaA}
+
+NORMATIVA GRADO B:
+\${normativaB}
+
+Días a planificar:
+\${dias1.map((d: any, i: number) =>
+  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día integrando a ambos grupos en una misma temática pero con actividades a nivel de cada grado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES, TIENES QUE GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE DÍAS.
+
+\${baseEstructura}`;
+
       const result1 = await model.generateContent(prompt1);
       contenido += result1.response.text();
 
-      contenido += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+      contenido += '\\n\\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
 
       // Tanda 2
-      const prompt2 = `PLANIFICACIÓN MENSUAL PLURICURSO (PARTE 2 de 2) — ${nombreMes} 2026\nGrado A: ${gradoA} | Grado B: ${gradoB} | Materia: ${materia}\nClases a generar: ${dias2.length}\n\nNORMATIVA A: ${normativaA}\nNORMATIVA B: ${normativaB}\n\nDías:\n${dias2.map((d: any, i: number) => `Clase ${mitad + i + 1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas integrando a ambos grupos respetando la estructura. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.`;
+      const prompt2 = `PLANIFICACIÓN MENSUAL PLURICURSO (PARTE 2 de 2) — 
+\${nombreMes} 2026
+Grado A: \${gradoA} | Grado B: \${gradoB} | Materia: \${materia}
+Total: \${dias2.length} clases
+
+NORMATIVA GRADO A:
+\${normativaA}
+
+NORMATIVA GRADO B:
+\${normativaB}
+
+Días a planificar:
+\${dias2.map((d: any, i: number) =>
+  \`Clase \${mitad + i + 1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día integrando a ambos grupos en una misma temática pero con actividades a nivel de cada grado. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES, TIENES QUE GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE DÍAS.
+
+\${baseEstructura}`;
+
       const result2 = await model.generateContent(prompt2);
       contenido += result2.response.text();
     } else {
-      const result = await model.generateContent(prompt);
+      const promptBase = `PLANIFICACIÓN MENSUAL PLURICURSO — 
+\${nombreMes} 2026
+Grado A: \${gradoA} | Grado B: \${gradoB} | Materia: \${materia}
+Total: \${dias.length} clases
+
+NORMATIVA GRADO A:
+\${normativaA}
+
+NORMATIVA GRADO B:
+\${normativaB}
+
+Días a planificar:
+\${dias.map((d: any, i: number) =>
+  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día integrando a ambos grupos en una misma temática pero con actividades a nivel de cada grado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES, TIENES QUE GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE DÍAS.
+
+\${baseEstructura}`;
+
+      const result = await model.generateContent(promptBase);
       contenido = result.response.text();
     }
-
     return NextResponse.json({ 
       contenido,
       tokensRestantes: tokenCheck.tokensRestantes

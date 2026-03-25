@@ -53,24 +53,7 @@ PROGRESIÓN DE INDICADORES:
 - Cierre (Nov-Dic): Verbos complejos (argumenta, produce, integra, resuelve de forma autónoma).`
 });
 
-    const prompt = `PLANIFICACIÓN MENSUAL — 
-${nombreMes} 2026
-${grado} | ${materia}
-Total: ${dias.length} clases
-
-NORMATIVA DE REFERENCIA:
-${normativa}
-
-Días a planificar:
-${dias.map((d: any, i: number) =>
-  `Clase ${i+1} — ${d.dia} ${d.fecha}`
-).join('\n')}
-
-Generá una clase completa por cada día listado.
-ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
-IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
-
-Usar esta estructura exacta por clase:
+    const baseEstructura = `Usar esta estructura exacta por clase:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CLASE [N] — [DÍA] [FECHA]
@@ -138,7 +121,7 @@ qué hacer en ese momento]`;
       userId, 
       2, 
       'ia_plan_mensual', 
-      `Planificación Mensual: ${grado} - ${materia} (${nombreMes})`
+      `Planificación Mensual: \${grado} - \${materia} (\${nombreMes})`
     );
 
     if (!tokenCheck.ok) {
@@ -161,18 +144,73 @@ qué hacer en ese momento]`;
       const dias2 = dias.slice(mitad);
 
       // Tanda 1
-      const prompt1 = `PLANIFICACIÓN MENSUAL (PARTE 1 de 2) — ${nombreMes} 2026\n${grado} | ${materia}\nClases a generar: ${dias1.length}\n\nNORMATIVA:\n${normativa}\n\nDías:\n${dias1.map((d: any, i: number) => `Clase ${i+1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas respetando la estructura.`;
+      const prompt1 = `PLANIFICACIÓN MENSUAL (PARTE 1 de 2) — 
+\${nombreMes} 2026
+\${grado} | \${materia}
+Total: \${dias1.length} clases
+
+NORMATIVA DE REFERENCIA:
+\${normativa}
+
+Días a planificar:
+\${dias1.map((d: any, i: number) =>
+  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día listado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
+IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+
+\${baseEstructura}`;
+
       const result1 = await model.generateContent(prompt1);
       contenido += result1.response.text();
 
-      contenido += '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+      contenido += '\\n\\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
 
       // Tanda 2
-      const prompt2 = `PLANIFICACIÓN MENSUAL (PARTE 2 de 2) — ${nombreMes} 2026\n${grado} | ${materia}\nClases a generar: ${dias2.length}\n\nNORMATIVA:\n${normativa}\n\nDías:\n${dias2.map((d: any, i: number) => `Clase ${mitad + i + 1} — ${d.dia} ${d.fecha}`).join('\n')}\n\nGenerá las clases solicitadas respetando la estructura. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.`;
+      const prompt2 = `PLANIFICACIÓN MENSUAL (PARTE 2 de 2) — 
+\${nombreMes} 2026
+\${grado} | \${materia}
+Total: \${dias2.length} clases
+
+NORMATIVA DE REFERENCIA:
+\${normativa}
+
+Días a planificar:
+\${dias2.map((d: any, i: number) =>
+  \`Clase \${mitad + i + 1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día listado. CONTINÚA LA PROGRESIÓN PEDAGÓGICA de la primera parte.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
+IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+
+\${baseEstructura}`;
+
       const result2 = await model.generateContent(prompt2);
       contenido += result2.response.text();
     } else {
-      const result = await model.generateContent(prompt);
+      const promptBase = `PLANIFICACIÓN MENSUAL — 
+\${nombreMes} 2026
+\${grado} | \${materia}
+Total: \${dias.length} clases
+
+NORMATIVA DE REFERENCIA:
+\${normativa}
+
+Días a planificar:
+\${dias.map((d: any, i: number) =>
+  \`Clase \${i+1} — \${d.dia} \${d.fecha}\`
+).join('\\n')}
+
+Generá una clase completa por cada día listado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
+IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
+
+\${baseEstructura}`;
+
+      const result = await model.generateContent(promptBase);
       contenido = result.response.text();
     }
 
