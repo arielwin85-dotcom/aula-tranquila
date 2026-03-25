@@ -186,7 +186,6 @@ export default function PluricursoPage() {
     const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
     
     if (memoriaMensual[mes.valor]) {
-       generarPDF(memoriaMensual[mes.valor], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`);
        return;
     }
 
@@ -213,7 +212,6 @@ export default function PluricursoPage() {
       const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
 
       setMemoriaMensual(prev => ({ ...prev, [mes.valor]: cleanedContent }));
-      generarPDF(cleanedContent, `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`);
     } catch(error) {
       console.error('Error generando mes:', error);
       alert('Error al generar la planificación mensual');
@@ -228,7 +226,6 @@ export default function PluricursoPage() {
 
     if (memoriaMensual[mesSeleccionado]) {
        setGeneratedPlan(memoriaMensual[mesSeleccionado]);
-       generarPDF(memoriaMensual[mesSeleccionado], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}`);
        return;
     }
     
@@ -262,7 +259,6 @@ export default function PluricursoPage() {
            setGeneratedPlan(cleanedContent);
            setResultadoAnualGenerado(false); 
            await refrescarTokens();
-           generarPDF(cleanedContent, `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}`);
         }
       }
     } catch(error) {
@@ -271,6 +267,47 @@ export default function PluricursoPage() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const descargarWord = (contenido: string, tituloDoc: string) => {
+    const clases = contenido.split(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/).filter(c => c.trim().length > 10);
+    const titulosClases = clases.map(c => {
+       const match = c.match(/CLASE \d+ — .+/);
+       return match ? match[0] : 'Detalle de Clase';
+    });
+    
+    let docContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${tituloDoc}</title>
+    <style>
+      body { font-family: 'Arial', sans-serif; font-size: 11pt; }
+      h1 { font-size: 20pt; color: #1e293b; text-align: center; }
+      .clase-badge { font-weight: bold; font-size: 14pt; margin-top: 20px; color: #f97316; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+      pre { white-space: pre-wrap; font-family: 'Arial', sans-serif; font-size: 11pt; }
+    </style>
+    </head><body>
+    <h1>${tituloDoc.replace(/_/g, ' ')}</h1>
+    <br/>
+    `;
+    
+    if (clases.length > 0 && titulosClases.length > 0) {
+      clases.forEach((c, i) => {
+        docContent += `<div class="clase-badge">${titulosClases[i] || ''}</div>`;
+        docContent += `<pre>${c.replace(titulosClases[i] || '', '').trim()}</pre><br/><br/>`;
+      });
+    } else {
+      docContent += `<pre>${contenido}</pre>`;
+    }
+    
+    docContent += "</body></html>";
+    
+    const blob = new Blob(['\ufeff', docContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${tituloDoc}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const generarPDF = (contenido: string, tituloDoc: string) => {
@@ -292,7 +329,8 @@ export default function PluricursoPage() {
           <style>
             @page { size: A4; margin: 20mm; }
             body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 0; color: #1e293b; line-height: 1.6; font-size: 11pt; }
-            .page { page-break-after: always; min-height: 250mm; }
+            .page { margin-bottom: 40px; }
+            .no-break { page-break-inside: avoid; }
             
             h1 { font-size: 24pt; color: #1e293b; margin-top: 50px; text-align: center; border-bottom: 3px solid #f97316; padding-bottom: 20px; }
             h2 { font-size: 18pt; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 40px; }
@@ -591,22 +629,38 @@ export default function PluricursoPage() {
                              DESGLOSAR POR MES (3 TOKENS C/U)
                           </p>
                           <div className="flex flex-wrap gap-2">
-                             {MESES.map(mes => (
-                                <button
-                                   key={mes.valor}
-                                   onClick={() => handleGenerarMes(mes)}
-                                   disabled={generandoMes === mes.nombre}
-                                   className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
-                                      generandoMes === mes.nombre
-                                        ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
-                                        : memoriaMensual[mes.valor]
-                                           ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-white'
-                                           : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
-                                   }`}
-                                >
-                                   {generandoMes === mes.nombre ? '...' : (memoriaMensual[mes.valor] ? '✓ ' : '') + mes.nombre}
-                                </button>
-                             ))}
+                             {MESES.map(mes => {
+                                const isReady = !!memoriaMensual[mes.valor];
+                                const isGenerating = generandoMes === mes.nombre;
+                                const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+                                
+                                if (isReady) {
+                                  return (
+                                    <div key={mes.valor} className="flex items-center bg-emerald-500/10 border border-emerald-500/50 rounded-xl overflow-hidden shadow-lg">
+                                       <div className="px-3 py-2.5 text-[9px] font-black uppercase tracking-widest text-emerald-400 border-r border-emerald-500/20 flex items-center gap-2">
+                                          <CheckCircle2 size={12} /> {mes.nombre}
+                                       </div>
+                                       <button onClick={() => generarPDF(memoriaMensual[mes.valor], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`)} className="px-3 py-2.5 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all text-[9px] font-black" title="Descargar PDF">PDF</button>
+                                       <button onClick={() => descargarWord(memoriaMensual[mes.valor], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`)} className="px-3 py-2.5 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all text-[9px] font-black" title="Descargar Word">WORD</button>
+                                    </div>
+                                  );
+                                }
+                                
+                                return (
+                                  <button
+                                     key={mes.valor}
+                                     onClick={() => handleGenerarMes(mes)}
+                                     disabled={isGenerating}
+                                     className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                        isGenerating
+                                          ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
+                                          : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
+                                     }`}
+                                  >
+                                     {isGenerating ? '...' : mes.nombre}
+                                  </button>
+                                );
+                             })}
                           </div>
                        </div>
                     )}
@@ -615,12 +669,26 @@ export default function PluricursoPage() {
                        <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest">
                           <span className="text-brand-orange">8 TOKENS</span> INVERTIDOS
                        </div>
-                       <button 
-                         onClick={handlePrint}
-                         className="flex items-center gap-2 px-6 py-3 bg-white text-brand-navy rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-brand-peach transition-all"
-                       >
-                          <Download size={14} /> PDF
-                       </button>
+                       <div className="flex gap-2">
+                         <button 
+                           onClick={handlePrint}
+                           className="flex items-center gap-2 px-5 py-3 bg-white text-brand-navy rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-brand-peach transition-all"
+                         >
+                            <Printer size={14} /> Imprimir / PDF
+                         </button>
+                         <button 
+                           onClick={() => {
+                             const isMensual = activePlanType === 'Mensual';
+                             const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+                             const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
+                             const titulo = isMensual ? `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}` : `Pluricurso_Anual_${selectedClassA?.grade}_${selectedClassB?.grade}`;
+                             descargarWord(generatedPlan, titulo);
+                           }}
+                           className="flex items-center gap-2 px-5 py-3 bg-brand-orange text-white rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-brand-peach transition-all"
+                         >
+                            <Download size={14} /> Word
+                         </button>
+                       </div>
                     </div>
                  </div>
               )}

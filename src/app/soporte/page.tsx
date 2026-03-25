@@ -114,6 +114,14 @@ export default function SoportePage() {
       content: '1. Foto clara: Sacale una foto al examen o trabajo del alumno.\n2. Subí y esperá: El sistema lee la letra cursiva o imprenta del chico.\n3. Pedagógico: Te va a decir qué hizo bien, qué hizo mal y qué nota le corresponde según su progreso.'
     },
     {
+      id: 'pluricurso',
+      title: '✦ Pluricurso',
+      icon: Users,
+      desc: 'Planificación simultánea para aulas múltiples.',
+      href: '/pluricurso',
+      content: '1. Selección: Elegí el "Grado A" y el "Grado B" y la materia que tienen en común.\n2. Doble Normativa: Subí el Diseño Curricular de cada grado, el sistema encontrará los ejes transversales.\n3. Integración: La IA estructurará objetivos comunes pero con actividades diferenciadas (enseñar el mismo tema a dos niveles distintos en simultáneo).\n4. Exportación: Clic en el mes para generar, y luego elegí descargar en Word o imprimir en PDF.'
+    },
+    {
       id: 'generador',
       title: '✨ Recursos Rápidos',
       icon: Sparkles,
