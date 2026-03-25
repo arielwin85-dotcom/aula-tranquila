@@ -12,7 +12,8 @@ import {
   Headset,
   FileText,
   GraduationCap,
-  ArrowRight
+  ArrowRight,
+  Layers
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
@@ -41,6 +42,7 @@ export default function Dashboard() {
     { name: 'Mis Clases', icon: Users, color: 'emerald-500', link: '/clases', desc: 'Gestión de alumnos y aulas.' },
     { name: 'Asistente Pedagógico', icon: Zap, color: 'brand-orange', link: '/chat', desc: 'Sugerencia de clases y secuencias.' },
     { name: 'Planificación Normativa', icon: FileText, color: 'brand-blue', link: '/normativa', desc: 'Basado en diseños curriculares.' },
+    { name: 'Pluricurso', icon: Layers, color: 'indigo-500', link: '/pluricurso', desc: 'Planeamiento para grados múltiples.' },
     { name: 'Evaluaciones', icon: BookOpen, color: 'purple-500', link: '/generador', desc: 'Exámenes y rúbricas con IA.' },
     { name: 'Notas y Evidencias', icon: ClipboardCheck, color: 'pink-500', link: '/evidencias', desc: 'Seguimiento pedagógico.' },
     { name: 'Biblioteca', icon: Library, color: 'brand-peach', link: '/biblioteca', desc: 'Tus archivos de Google Drive.' },
@@ -111,7 +113,7 @@ export default function Dashboard() {
             <div className={`absolute -right-2 -top-2 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity`}>
                <action.icon size={80} />
             </div>
-            <div className={`w-12 h-12 rounded-2xl bg-${action.icon === Zap ? 'brand-orange' : action.icon === FileText ? 'brand-blue' : action.icon === Users ? 'emerald-500' : 'slate-400'}/10 flex items-center justify-center text-${action.icon === Zap ? 'brand-orange' : action.icon === FileText ? 'brand-blue' : action.icon === Users ? 'emerald-500' : 'slate-400'} mb-4 shadow-inner group-hover:scale-110 transition-transform`}>
+            <div className={`w-12 h-12 rounded-2xl bg-${action.color}/10 flex items-center justify-center text-${action.color} mb-4 shadow-inner group-hover:scale-110 transition-transform`}>
               <action.icon size={22} />
             </div>
             <h3 className="font-black text-white text-sm mb-1 group-hover:text-brand-orange transition-colors uppercase tracking-tight">{action.name}</h3>
