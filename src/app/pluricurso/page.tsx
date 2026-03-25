@@ -1,0 +1,632 @@
+"use client";
+
+export const dynamic = 'force-dynamic';
+
+import { useState, useEffect } from 'react';
+import { 
+  FileText, 
+  Upload, 
+  Sparkles, 
+  Calendar, 
+  ChevronDown, 
+  Printer, 
+  CheckCircle2, 
+  BookOpen,
+  FileSearch,
+  Loader2,
+  Download,
+  Users
+} from 'lucide-react';
+import { Classroom, Subject } from '@/types';
+import { descontarTokens } from '@/lib/tokens';
+import { SinTokens } from '@/components/SinTokens';
+import { TokenBadge } from '@/components/TokenBadge';
+import { useTokens } from '@/lib/TokenContext';
+import { createClient } from '@/lib/supabase/client';
+
+type PlanType = 'Anual' | 'Mensual';
+
+const MESES = [
+  { nombre: 'Marzo', valor: '03' },
+  { nombre: 'Abril', valor: '04' },
+  { nombre: 'Mayo', valor: '05' },
+  { nombre: 'Junio', valor: '06' },
+  { nombre: 'Julio', valor: '07' },
+  { nombre: 'Agosto', valor: '08' },
+  { nombre: 'Septiembre', valor: '09' },
+  { nombre: 'Octubre', valor: '10' },
+  { nombre: 'Noviembre', valor: '11' },
+  { nombre: 'Diciembre', valor: '12' },
+];
+
+const FERIADOS_2026 = [
+  '2026-03-24', '2026-04-02', '2026-04-03',
+  '2026-05-01', '2026-05-25', '2026-06-15',
+  '2026-06-20', '2026-07-09', '2026-08-17',
+  '2026-10-12', '2026-11-20', '2026-11-23',
+  '2026-12-08', '2026-12-25'
+];
+
+export default function PluricursoPage() {
+  const supabase = createClient();
+  const { tokens, refrescarTokens } = useTokens();
+
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [selectedClassIdA, setSelectedClassIdA] = useState<string>('');
+  const [selectedClassIdB, setSelectedClassIdB] = useState<string>('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [activePlanType, setActivePlanType] = useState<PlanType>('Anual');
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const [regulationTextA, setRegulationTextA] = useState('');
+  const [fileNameA, setFileNameA] = useState<string | null>(null);
+  const [regulationTextB, setRegulationTextB] = useState('');
+  const [fileNameB, setFileNameB] = useState<string | null>(null);
+
+  const [generatedPlan, setGeneratedPlan] = useState<any | null>(null);
+  
+  // Mensual
+  const [mesSeleccionado, setMesSeleccionado] = useState('03');
+  const [generandoMes, setGenerandoMes] = useState<string | null>(null);
+  const [resultadoAnualGenerado, setResultadoAnualGenerado] = useState(false);
+  const [memoriaMensual, setMemoriaMensual] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch('/api/classrooms').then(res => res.json()).then(data => {
+      setClassrooms(data);
+      if (data.length > 0) setSelectedClassIdA(data[0].id);
+      if (data.length > 1) setSelectedClassIdB(data[1].id);
+      else if (data.length === 1) setSelectedClassIdB(data[0].id);
+    });
+  }, []);
+
+  const selectedClassA = classrooms.find(c => c.id === selectedClassIdA);
+  const selectedClassB = classrooms.find(c => c.id === selectedClassIdB);
+  
+  // Mostrar materias de la Clase A por defecto
+  const subjects = selectedClassA?.subjects || [];
+
+  useEffect(() => {
+    if (subjects.length > 0 && !selectedSubjectId) {
+      setSelectedSubjectId(subjects[0].id);
+    }
+  }, [selectedClassIdA, subjects]);
+
+  const handleFileUploadA = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileNameA(file.name);
+      setRegulationTextA(`Contenido extraído del documento "${file.name}".`);
+    }
+  };
+
+  const handleFileUploadB = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFileNameB(file.name);
+      setRegulationTextB(`Contenido extraído del documento "${file.name}".`);
+    }
+  };
+
+  const generarDiasHabiles = (anio: number, mes: number) => {
+    const dias = [];
+    const DIAS_NOMBRES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const fecha = new Date(anio, mes - 1, 1, 12);
+    const fin = new Date(anio, mes, 0, 12);
+
+    while (fecha <= fin) {
+      const d = fecha.getDay();
+      const str = fecha.toISOString().split('T')[0];
+      const esFinde = d === 0 || d === 6;
+      const esFeriado = FERIADOS_2026.includes(str);
+      const esRecesoInvernal = mes === 7 && fecha.getDate() >= 13 && fecha.getDate() <= 24;
+
+      if (!esFinde && !esFeriado && !esRecesoInvernal) {
+        dias.push({ fecha: str, dia: DIAS_NOMBRES[d] });
+      }
+      fecha.setDate(fecha.getDate() + 1);
+    }
+    return dias;
+  };
+
+  const costTokens = activePlanType === 'Anual' ? 8 : 3;
+
+  const handleGeneratePlan = async () => {
+    if (!selectedClassIdA || !selectedClassIdB || !selectedSubjectId || !regulationTextA || !regulationTextB) return;
+    if (tokens < costTokens) return;
+
+    if (activePlanType === 'Mensual') {
+      await handleGenerarMensual();
+      return;
+    }
+    
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/pluricurso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classroomIdA: selectedClassIdA,
+          classroomIdB: selectedClassIdB,
+          subjectId: selectedSubjectId,
+          regulationA: regulationTextA,
+          regulationB: regulationTextB,
+          planType: activePlanType
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const result = await descontarTokens(user.id, 8, 'creacion_planificacion', 'Planificación Anual Pluricurso');
+          if (result.ok) {
+             const cleanedPlan = data.plan.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+             setGeneratedPlan(cleanedPlan);
+             setResultadoAnualGenerado(true);
+             await refrescarTokens();
+          } else {
+             alert('Error al descontar tokens o tokens insuficientes.');
+          }
+        }
+      } else {
+         const errorData = await res.json();
+         alert(errorData.error || 'Ocurrió un error inesperado al generar.');
+      }
+    } catch (err) {
+      console.error("Failed to generate plan", err);
+      alert('Error de conexión.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerarMes = async (mes: any) => {
+    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+    
+    if (memoriaMensual[mes.valor]) {
+       generarPDF(memoriaMensual[mes.valor], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`);
+       return;
+    }
+
+    setGenerandoMes(mes.nombre);
+    const dias = generarDiasHabiles(2026, parseInt(mes.valor));
+
+    try {
+      const res = await fetch('/api/pluricurso/mensual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gradoA: selectedClassA?.grade,
+          gradoB: selectedClassB?.grade,
+          materia: subjName,
+          normativaA: regulationTextA,
+          normativaB: regulationTextB,
+          mes: mes.valor,
+          nombreMes: mes.nombre,
+          dias
+        })
+      });
+      const data = await res.json();
+      
+      const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+
+      setMemoriaMensual(prev => ({ ...prev, [mes.valor]: cleanedContent }));
+      generarPDF(cleanedContent, `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${mes.nombre}`);
+    } catch(error) {
+      console.error('Error generando mes:', error);
+      alert('Error al generar la planificación mensual');
+    } finally {
+      setGenerandoMes(null);
+    }
+  };
+
+  const handleGenerarMensual = async () => {
+    const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
+    const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+
+    if (memoriaMensual[mesSeleccionado]) {
+       setGeneratedPlan(memoriaMensual[mesSeleccionado]);
+       generarPDF(memoriaMensual[mesSeleccionado], `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}`);
+       return;
+    }
+    
+    if (tokens < 3) return;
+
+    const dias = generarDiasHabiles(2026, parseInt(mesSeleccionado));
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/pluricurso/mensual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gradoA: selectedClassA?.grade,
+          gradoB: selectedClassB?.grade,
+          materia: subjName,
+          normativaA: regulationTextA,
+          normativaB: regulationTextB,
+          mes: mesSeleccionado,
+          nombreMes,
+          dias
+        })
+      });
+      const data = await res.json();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const result = await descontarTokens(user.id, 3, 'creacion_plan_mensual', `Pluricurso Mensual - ${nombreMes}`);
+        if (result.ok) {
+           const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
+           setGeneratedPlan(cleanedContent);
+           setResultadoAnualGenerado(false); 
+           await refrescarTokens();
+           generarPDF(cleanedContent, `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}`);
+        }
+      }
+    } catch(error) {
+      console.error('Error:', error);
+      alert('Error al generar la planificación mensual pluricurso');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generarPDF = (contenido: string, tituloDoc: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const clases = contenido.split(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/).filter(c => c.trim().length > 10);
+    const titulosClases = clases.map(c => {
+       const match = c.match(/CLASE \d+ — .+/);
+       return match ? match[0] : 'Detalle de Clase';
+    });
+    
+    const materiaName = subjects.find(s => s.id === selectedSubjectId)?.name;
+
+    const html = `
+      <html>
+        <head>
+          <title>${tituloDoc.replace(/_/g, ' ')}</title>
+          <style>
+            @page { size: A4; margin: 20mm; }
+            body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 0; color: #1e293b; line-height: 1.6; font-size: 11pt; }
+            .page { page-break-after: always; min-height: 250mm; }
+            
+            h1 { font-size: 24pt; color: #1e293b; margin-top: 50px; text-align: center; border-bottom: 3px solid #f97316; padding-bottom: 20px; }
+            h2 { font-size: 18pt; color: #475569; border-bottom: 1px solid #e2e8f0; margin-top: 40px; }
+            
+            .header { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 30px; font-size: 9pt; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+            
+            .indice { margin: 60px 0; }
+            .indice-item { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px dotted #cbd5e1; padding-bottom: 4px; }
+            
+            .clase-box { margin-top: 20px; }
+            .clase-badge { background: #f97316; color: white; display: inline-block; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 10pt; margin-bottom: 15px; }
+            
+            pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: 10.5pt; color: #334155; margin-left: 5px; }
+            
+            .footer { position: fixed; bottom: 10mm; width: 100%; text-align: center; font-size: 9pt; color: #94a3b8; border-top: 1px solid #eee; pt: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="page">
+             <div class="header">
+                <span>PLURICURSO | ${selectedClassA?.grade} Y ${selectedClassB?.grade} | ${materiaName}</span>
+                <span>AULA PRO - COPILOTO IA</span>
+             </div>
+             <h1>${tituloDoc.replace(/Pluricurso_|_/g, ' ')}</h1>
+             <div style="text-align: center; color: #64748b; font-weight: bold; margin-top: -10px;">Grados: ${selectedClassA?.grade} y ${selectedClassB?.grade}</div>
+             <div style="text-align: center; color: #64748b; font-weight: bold; margin-top: 5px;">Materia: ${materiaName}</div>
+             
+             <div class="indice">
+                <h2 style="border: none;">Índice Cronológico</h2>
+                ${titulosClases.map((t, idx) => `
+                   <div class="indice-item">
+                      <span>${t}</span>
+                      <span>Pág. ${idx + 2}</span>
+                   </div>
+                `).join('')}
+             </div>
+          </div>
+          
+          ${clases.map((c, i) => `
+            <div class="page">
+               <div class="header">
+                  <span>${selectedClassA?.grade} y ${selectedClassB?.grade} | ${materiaName}</span>
+                  <span>Clase ${i+1} de ${clases.length}</span>
+               </div>
+               
+               <div class="clase-box">
+                  <div class="clase-badge">${titulosClases[i]}</div>
+                  <pre>${c.replace(titulosClases[i], '').trim()}</pre>
+               </div>
+               
+               <div class="footer">Página ${i + 2}</div>
+            </div>
+          `).join('')}
+          
+          <script>
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handlePrint = () => {
+    if (activePlanType === 'Anual') {
+       const printWindow = window.open('', '_blank');
+       if (!printWindow) return;
+
+       const html = `
+         <html>
+           <head>
+             <title>Pluricurso - ${activePlanType} - ${selectedClassA?.grade} / ${selectedClassB?.grade}</title>
+             <style>
+               body { font-family: sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+               h1 { color: #1e293b; border-bottom: 3px solid #f97316; padding-bottom: 10px; margin-bottom: 20px; }
+               h2 { color: #475569; margin-top: 30px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+               pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; }
+               .header-info { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+               .badge { background: #f97316; color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+               @media print { .no-print { display: none; } }
+             </style>
+           </head>
+           <body>
+             <div class="header-info">
+               <div>
+                 <p style="margin:0; font-weight:bold; color:#f97316;">Aula Pro - Copiloto IA Pluricurso</p>
+                 <h1 style="margin:10px 0 5px 0;">Planificación Integrada ${activePlanType}</h1>
+                 <p style="margin:0; color:#64748b; font-weight:bold;">${selectedClassA?.grade} y ${selectedClassB?.grade}</p>
+                 <p style="margin:0; color:#64748b;">Materia: ${subjects.find(s => s.id === selectedSubjectId)?.name}</p>
+               </div>
+               <div style="text-align: right;">
+                 <div class="badge">Pluricurso</div>
+                 <p style="margin:5px 0 0 0; font-size: 12px; color:#94a3b8;">Ciclo Lectivo ${selectedClassA?.year}</p>
+                 <p style="margin:0; font-size: 12px; color:#94a3b8;">Generado el: ${new Date().toLocaleDateString('es-AR')}</p>
+               </div>
+             </div>
+             <div class="content">
+               ${generatedPlan.replace(/\n/g, '<br/>')}
+             </div>
+             <script>
+               setTimeout(() => window.print(), 500);
+             </script>
+           </body>
+         </html>
+       `;
+       printWindow.document.write(html);
+       printWindow.document.close();
+    } else {
+       const subjName = subjects.find(s => s.id === selectedSubjectId)?.name || 'Materia';
+       const nombreMes = MESES.find(m => m.valor === mesSeleccionado)?.nombre;
+       generarPDF(generatedPlan, `Pluricurso_${selectedClassA?.grade}_${selectedClassB?.grade}_${subjName}_${nombreMes}`);
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
+      <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+        <div className="flex-1">
+          <h1 className="text-2xl md:text-4xl font-black text-white mb-2 font-montserrat tracking-tight pt-14 md:pt-0">Pluricurso</h1>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Planificá para dos grados en simultáneo integrando contenidos.</p>
+        </div>
+        <div className="flex items-center gap-4 w-full sm:w-auto mt-4 sm:mt-0">
+          <TokenBadge />
+          {generatedPlan && (
+             <button 
+               onClick={handlePrint}
+               className="flex items-center justify-center gap-2 px-6 py-4 bg-white text-brand-navy rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-brand-peach transition-all shadow-2xl"
+             >
+               <Printer size={18} />
+               Imprimir
+             </button>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        <div className="lg:col-span-5 flex flex-col gap-6 w-full">
+          <div className="bg-brand-navy rounded-[2.5rem] border border-brand-orange/20 shadow-2xl p-8 group relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/10 blur-[50px] rounded-full pointer-events-none"></div>
+            
+            <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-6 flex items-center gap-2">
+               <Users size={14} />
+               1. Aulas y Materia
+            </h2>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Grado A</label>
+                   <div className="relative">
+                     <select 
+                       value={selectedClassIdA}
+                       onChange={(e) => setSelectedClassIdA(e.target.value)}
+                       className="w-full p-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all appearance-none"
+                     >
+                       {classrooms.map(c => <option key={c.id} value={c.id} className="bg-brand-navy">{c.name} ({c.grade})</option>)}
+                     </select>
+                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Grado B</label>
+                   <div className="relative">
+                     <select 
+                       value={selectedClassIdB}
+                       onChange={(e) => setSelectedClassIdB(e.target.value)}
+                       className="w-full p-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all appearance-none"
+                     >
+                       {classrooms.map(c => <option key={c.id} value={c.id} className="bg-brand-navy">{c.name} ({c.grade})</option>)}
+                     </select>
+                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                   </div>
+                 </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Materia a Integrar</label>
+                <div className="relative">
+                  <select 
+                    value={selectedSubjectId}
+                    onChange={(e) => setSelectedSubjectId(e.target.value)}
+                    className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all appearance-none"
+                  >
+                    {subjects.map((s: Subject) => <option key={s.id} value={s.id} className="bg-brand-navy">{s.name}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Tipo de Planificación</label>
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                  {(['Anual', 'Mensual'] as PlanType[]).map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setActivePlanType(type)}
+                      className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 ${activePlanType === type ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/20' : 'text-slate-500 hover:text-white'}`}
+                    >
+                      {type}
+                      <span className="bg-black/20 px-1.5 py-0.5 rounded text-[8px]">{type === 'Anual' ? '8T' : '3T'}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {activePlanType === 'Mensual' && (
+                  <div className="mt-4 animate-in slide-in-from-top-1 duration-300">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Mes a Planificar</label>
+                    <div className="relative">
+                      <select 
+                        value={mesSeleccionado}
+                        onChange={(e) => setMesSeleccionado(e.target.value)}
+                        className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl text-sm font-bold text-white focus:bg-white/10 focus:border-brand-orange/50 outline-none transition-all appearance-none"
+                      >
+                        {MESES.map(m => <option key={m.valor} value={m.valor} className="bg-brand-navy">{m.nombre}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={18} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl p-8">
+             <h2 className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-4">2. Doble Normativa</h2>
+             
+             <div className="flex flex-col gap-4">
+                <label className="group border-2 border-dashed border-white/10 rounded-[1.5rem] p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 hover:border-brand-orange/50 transition-all relative">
+                  <input type="file" className="hidden" onChange={handleFileUploadA} accept=".pdf,.doc,.docx,.txt" />
+                  <p className="text-xs font-black text-white mb-1 tracking-tight">{fileNameA || 'Subir Diseño Grado A'}</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PDF, Word o TXT</p>
+                </label>
+                
+                <label className="group border-2 border-dashed border-white/10 rounded-[1.5rem] p-5 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 hover:border-brand-orange/50 transition-all relative">
+                  <input type="file" className="hidden" onChange={handleFileUploadB} accept=".pdf,.doc,.docx,.txt" />
+                  <p className="text-xs font-black text-white mb-1 tracking-tight">{fileNameB || 'Subir Diseño Grado B'}</p>
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PDF, Word o TXT</p>
+                </label>
+             </div>
+
+            {tokens < costTokens ? (
+               <SinTokens accion={`generar planificación pluricurso (${costTokens} req.)`} />
+            ) : (
+              <button 
+                disabled={!regulationTextA || !regulationTextB || isGenerating}
+                onClick={handleGeneratePlan}
+                className="w-full mt-6 py-5 bg-brand-orange text-white rounded-[1.8rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:bg-brand-orange"
+              >
+                {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                GENERAR PLURICURSO
+              </button>
+            )}
+            <p className="text-[10px] text-center mt-4 text-slate-500 font-bold uppercase tracking-widest">Costo: <span className="text-brand-orange">{costTokens} TOKENS</span></p>
+          </div>
+        </div>
+
+        <div className="lg:col-span-7 w-full mt-8 lg:mt-0">
+           <div className="bg-brand-navy rounded-[3rem] border border-white/5 shadow-2xl overflow-hidden min-h-[700px] flex flex-col relative">
+              {!generatedPlan ? (
+                 <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
+                    <div className="w-20 h-20 bg-white/5 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                       <Users size={40} className="text-slate-600" />
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-2 font-montserrat tracking-tight">Ecosistema Pluricurso</h3>
+                    <p className="max-w-xs text-[11px] font-bold text-slate-500 leading-relaxed">Combiná los diseños curriculares de dos grados y dejá que la IA encuentre un hilo conductor para dar en simultáneo.</p>
+                 </div>
+              ) : (
+                 <div className="animate-in fade-in duration-1000 flex flex-col h-full bg-black/20">
+                    <div className="p-8 bg-white/5 border-b border-white/5">
+                       <div className="flex items-center gap-2 text-brand-orange text-[9px] font-black uppercase tracking-[0.2em] mb-2">
+                          <CheckCircle2 size={12} /> Plan Integrado Listo
+                       </div>
+                       <h2 className="text-2xl font-black text-white tracking-tight mb-3 font-montserrat">{selectedClassA?.grade} &amp; {selectedClassB?.grade}</h2>
+                       <div className="flex flex-wrap gap-2 text-slate-500 text-[9px] font-black uppercase tracking-widest">
+                          <span className="bg-white/5 px-2 py-1 rounded border border-white/5">{subjects.find(s => s.id === selectedSubjectId)?.name}</span>
+                          <span className="bg-white/5 px-2 py-1 rounded border border-white/5">{activePlanType}</span>
+                       </div>
+                    </div>
+
+                    <div className="p-8 flex-1 overflow-y-auto max-h-[60vh] custom-scrollbar bg-black/10">
+                       <div className="whitespace-pre-wrap font-bold text-slate-300 leading-relaxed text-[13px]">
+                          {generatedPlan}
+                       </div>
+                    </div>
+
+                    {resultadoAnualGenerado && activePlanType === 'Anual' && (
+                       <div className="p-8 border-t border-white/5 bg-white/5 animate-in slide-in-from-bottom-4 duration-700">
+                          <p className="text-[9px] font-black text-brand-orange uppercase tracking-[0.2em] mb-4">
+                             DESGLOSAR POR MES (3 TOKENS C/U)
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                             {MESES.map(mes => (
+                                <button
+                                   key={mes.valor}
+                                   onClick={() => handleGenerarMes(mes)}
+                                   disabled={generandoMes === mes.nombre}
+                                   className={`px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
+                                      generandoMes === mes.nombre
+                                        ? 'bg-white/5 border-white/10 text-slate-400 cursor-wait'
+                                        : memoriaMensual[mes.valor]
+                                           ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                                           : 'bg-brand-navy border-white/5 text-white hover:bg-brand-orange hover:border-brand-orange shadow-lg'
+                                   }`}
+                                >
+                                   {generandoMes === mes.nombre ? '...' : (memoriaMensual[mes.valor] ? '✓ ' : '') + mes.nombre}
+                                </button>
+                             ))}
+                          </div>
+                       </div>
+                    )}
+
+                    <div className="p-6 bg-black/40 border-t border-white/5 flex justify-between items-center mt-auto">
+                       <div className="text-[9px] text-slate-500 font-black uppercase tracking-widest">
+                          <span className="text-brand-orange">8 TOKENS</span> INVERTIDOS
+                       </div>
+                       <button 
+                         onClick={handlePrint}
+                         className="flex items-center gap-2 px-6 py-3 bg-white text-brand-navy rounded-xl font-black uppercase tracking-widest text-[9px] hover:bg-brand-peach transition-all"
+                       >
+                          <Download size={14} /> PDF
+                       </button>
+                    </div>
+                 </div>
+              )}
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}

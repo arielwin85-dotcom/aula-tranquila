@@ -61,6 +61,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Mis Clases', href: '/clases', icon: Users },
     { name: '✦ Asistente Pedagógico', href: '/chat', icon: MessageSquareText },
     { name: 'Planificación Normativa', href: '/normativa', icon: BookOpenCheck },
+    { name: '✦ Pluricurso', href: '/pluricurso', icon: Users },
     { name: 'Valuaciones y Contenidos Rápido', href: '/generador', icon: Sparkles },
     { name: 'Evidencias', href: '/evidencias', icon: FileVideo }, 
     { name: 'Mi Biblioteca', href: '/biblioteca', icon: FolderOpen },
