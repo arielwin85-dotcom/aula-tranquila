@@ -160,19 +160,18 @@ export default function PluricursoPage() {
         
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const result = await descontarTokens(user.id, 8, 'creacion_planificacion', 'Planificación Anual Pluricurso');
-          if (result.ok) {
              const cleanedPlan = data.plan.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
              setGeneratedPlan(cleanedPlan);
              setResultadoAnualGenerado(true);
              await refrescarTokens();
-          } else {
-             alert('Error al descontar tokens o tokens insuficientes.');
-          }
         }
       } else {
          const errorData = await res.json();
-         alert(errorData.error || 'Ocurrió un error inesperado al generar.');
+         if (errorData.error && errorData.error.includes('Tokens insuficientes')) {
+           alert('Tokens insuficientes para generar el plan anual.');
+         } else {
+           alert(errorData.error || 'Ocurrió un error inesperado al generar.');
+         }
       }
     } catch (err) {
       console.error("Failed to generate plan", err);
@@ -251,15 +250,18 @@ export default function PluricursoPage() {
       const data = await res.json();
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const result = await descontarTokens(user.id, 3, 'creacion_plan_mensual', `Pluricurso Mensual - ${nombreMes}`);
-        if (result.ok) {
-           const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
-           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
-           setGeneratedPlan(cleanedContent);
-           setResultadoAnualGenerado(false); 
-           await refrescarTokens();
-        }
+      if (res.ok && user) {
+         const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+         setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
+         setGeneratedPlan(cleanedContent);
+         setResultadoAnualGenerado(false); 
+         await refrescarTokens();
+      } else if (!res.ok) {
+         if (data.error && data.error.includes('Tokens insuficientes')) {
+           alert('Tokens insuficientes para generar la planificación mensual (requiere 3).');
+         } else {
+           alert(data.error || 'Error al generar la planificación mensual pluricurso');
+         }
       }
     } catch(error) {
       console.error('Error:', error);
@@ -473,7 +475,18 @@ export default function PluricursoPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start relative">
+        {isGenerating && (
+          <div className="absolute inset-0 z-50 bg-brand-navy/90 backdrop-blur-md flex flex-col items-center justify-center rounded-[3rem] p-10 text-center border border-brand-orange/30 shadow-2xl">
+             <div className="w-24 h-24 bg-brand-orange/20 rounded-[2rem] flex items-center justify-center mb-8 animate-pulse shadow-xl shadow-brand-orange/20">
+                <Loader2 size={48} className="text-brand-orange animate-spin" />
+             </div>
+             <h2 className="text-3xl lg:text-5xl font-black text-white mb-4 font-montserrat tracking-tight">Procesando Pluricurso...</h2>
+             <p className="max-w-md text-xs lg:text-sm font-bold text-slate-400 uppercase tracking-widest leading-loose">
+               El Agente está cruzando normativas de dos jurisdicciones / grados de forma inteligente. Esto tomará unos momentos (hasta 1 minuto). Por favor espere.
+             </p>
+          </div>
+        )}
         <div className="lg:col-span-5 flex flex-col gap-6 w-full">
           <div className="bg-brand-navy rounded-[2.5rem] border border-brand-orange/20 shadow-2xl p-8 group relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-orange/10 blur-[50px] rounded-full pointer-events-none"></div>

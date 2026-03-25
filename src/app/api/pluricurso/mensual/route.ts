@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
+      generationConfig: { maxOutputTokens: 8192 },
       systemInstruction: `Sos un Experto Pedagógico de Nivel Mundial 
 en diseño curricular argentino con 20 años de experiencia.
 Tu función es transformar normativas curriculares de DOS GRADOS DISTINTOS 
@@ -57,6 +58,7 @@ ${dias.map((d: any, i: number) =>
 ).join('\n')}
 
 Generá una clase completa por cada día integrando a ambos grupos en una misma temática pero con actividades a nivel de cada grado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES, TIENES QUE GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE DÍAS.
 
 Usar esta estructura exacta por clase:
 

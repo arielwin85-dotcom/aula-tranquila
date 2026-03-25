@@ -160,17 +160,20 @@ export default function NormativaPage() {
       if (res.ok) {
         const data = await res.json();
         
-        // Descontar tokens solo si la IA generó bien
+        // Descontar tokens solo si la IA generó bien (gestionado en el backend)
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const result = await descontarTokens(user.id, 1, 'creacion_planificacion', 'Planificación Anual Normativa');
-          if (result.ok) {
-             // Limpiar etiquetas HTML indeseadas que pueda traer la IA
              const cleanedPlan = data.plan.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
              setGeneratedPlan(cleanedPlan);
              setResultadoAnualGenerado(true);
              await refrescarTokens();
-          }
+        }
+      } else {
+        const errData = await res.json();
+        if (errData.error === 'Tokens insuficientes') {
+          alert('Tokens insuficientes para generar el plan anual.');
+        } else {
+          alert('Error: ' + errData.error);
         }
       }
     } catch (err) {
@@ -250,21 +253,23 @@ export default function NormativaPage() {
         })
       });
       const data = await res.json();
-      
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const result = await descontarTokens(user.id, 1, 'creacion_plan_mensual', `Planificación Mensual - ${nombreMes}`);
-        if (result.ok) {
-           // Limpiar etiquetas HTML indeseadas
-           const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
-           
-           // Guardar en memoria
-           setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
-           
-           setGeneratedPlan(cleanedContent);
-           setResultadoAnualGenerado(false); 
-           await refrescarTokens();
-        }
+      if (res.ok && user) {
+         // Limpiar etiquetas HTML indeseadas
+         const cleanedContent = data.contenido.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
+         
+         // Guardar en memoria
+         setMemoriaMensual(prev => ({ ...prev, [mesSeleccionado]: cleanedContent }));
+         
+         setGeneratedPlan(cleanedContent);
+         setResultadoAnualGenerado(false); 
+         await refrescarTokens();
+      } else if (!res.ok) {
+         if (data.error === 'Tokens insuficientes') {
+           alert('Tokens insuficientes para generar la planificación mensual.');
+         } else {
+           alert('Error al generar la planificación mensual.');
+         }
       }
     } catch(error) {
       console.error('Error:', error);
@@ -486,7 +491,18 @@ export default function NormativaPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start relative">
+        {isGenerating && (
+          <div className="absolute inset-0 z-50 bg-brand-navy/90 backdrop-blur-md flex flex-col items-center justify-center rounded-[3rem] p-10 text-center border border-brand-orange/30 shadow-2xl">
+             <div className="w-24 h-24 bg-brand-orange/20 rounded-[2rem] flex items-center justify-center mb-8 animate-pulse shadow-xl shadow-brand-orange/20">
+                <Loader2 size={48} className="text-brand-orange animate-spin" />
+             </div>
+             <h2 className="text-3xl lg:text-5xl font-black text-white mb-4 font-montserrat tracking-tight">Procesando con IA...</h2>
+             <p className="max-w-md text-xs lg:text-sm font-bold text-slate-400 uppercase tracking-widest leading-loose">
+               El Agente Educativo está leyendo la normativa, aplicando consideraciones pedagógicas y estructurando el contenido. Esto tomará unos momentos (hasta 1 minuto). Por favor espere.
+             </p>
+          </div>
+        )}
         {/* Panel de Configuración */}
         <div className="lg:col-span-4 flex flex-col gap-8 w-full">
           <div className="bg-brand-navy rounded-[2.5rem] border border-white/5 shadow-2xl p-8 group">

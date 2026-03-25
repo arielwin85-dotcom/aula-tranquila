@@ -96,15 +96,11 @@ export default function GeneradorPage() {
         
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const result = await descontarTokens(user.id, 1, 'creacion_recurso', `Tutor IA: ${resourceType}`);
-          if (result.ok) {
-            setGeneratedContent(data.reply);
-            setResultReady(true);
-            setErrorMessage("");
-            await refrescarTokens();
-          } else {
-             setErrorMessage("Sin tokens suficientes.");
-          }
+          // Tokens are already deducted by the backend API
+          setGeneratedContent(data.reply);
+          setResultReady(true);
+          setErrorMessage("");
+          await refrescarTokens();
         }
       } else {
         const errorData = await res.json();

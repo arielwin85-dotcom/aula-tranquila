@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
+      generationConfig: { maxOutputTokens: 8192 },
       systemInstruction: `Sos un Experto Pedagógico de Nivel Mundial 
 en diseño curricular argentino con 20 años de experiencia.
 Tu función es transformar normativas curriculares en planificaciones diarias reales y aplicables.
@@ -65,7 +66,8 @@ ${dias.map((d: any, i: number) =>
   `Clase ${i+1} — ${d.dia} ${d.fecha}`
 ).join('\n')}
 
-Generá una clase completa por cada día.
+Generá una clase completa por cada día listado.
+ES OBLIGATORIO PRODUCIR LA CANTIDAD EXACTA DE CLASES SOLICITADAS. NO TE DETENGAS A MITAD DEL MES. DEBES GENERAR HASTA LA ÚLTIMA CLASE INDICADA EN LA LISTA SIN SALTEARTE LOS DÍAS.
 IMPORTANTE: Aplicar el conocimiento pedagógico por grado (estrategias, tiempos y nivel de autonomía) definido en tus instrucciones de sistema. Respetar estrictamente la estructura de clase solicitada a continuación.
 
 Usar esta estructura exacta por clase:
