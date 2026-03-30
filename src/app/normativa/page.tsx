@@ -112,25 +112,38 @@ export default function NormativaPage() {
     setReadingProgress(0);
     try {
       const pdfjs = await import('pdfjs-dist');
-      // Set worker from CDN for reliability in Next.js
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+      // Versión fija y confiable para evitar errores de carga lenta o fallos en CDN
+      const PDFJS_VERSION = '4.10.38';
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
       
       const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
+      const pdf = await pdfjs.getDocument({ 
+        data: arrayBuffer,
+        useSystemFonts: true,
+        disableFontFace: false
+      }).promise;
       
-      for (let i = 1; i <= pdf.numPages; i++) {
+      let fullText = '';
+      const totalPages = pdf.numPages;
+      
+      for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
         fullText += `--- PÁGINA ${i} ---\n${pageText}\n\n`;
-        setReadingProgress(Math.round((i / pdf.numPages) * 100));
+        setReadingProgress(Math.round((i / totalPages) * 100));
       }
       
+      if (!fullText.trim()) {
+        throw new Error('El PDF parece estar vacío o ser solo una imagen (escaneado).');
+      }
+
       return fullText;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al leer el PDF:', error);
-      alert('Error al leer el archivo PDF. Asegúrate de que no esté protegido con contraseña.');
+      alert('Error: ' + (error.message || 'No se pudo leer el PDF. Intentá con un archivo más liviano o texto plano.'));
       return '';
     } finally {
       setIsReadingFile(false);
@@ -148,12 +161,13 @@ export default function NormativaPage() {
           setRegulationText(extractedText);
         } else {
           setFileName(null);
+          setRegulationText('');
         }
       } else if (file.type === 'text/plain') {
         const text = await file.text();
         setRegulationText(text);
       } else {
-        // Fallback para otros tipos como placeholder (mejorar luego con docx si es necesario)
+        // Fallback básico para otros tipos
         setRegulationText(`Contenido extraído del documento "${file.name}".`);
       }
     }
@@ -183,8 +197,23 @@ export default function NormativaPage() {
   };
 
   const handleGeneratePlan = async () => {
-    if (!selectedClassId || !selectedSubjectId || !regulationText) return;
-    if (tokens < 1) return;
+    // Validaciones con feedback explícito para no "quedarse quieto"
+    if (!selectedClassId) {
+      alert('Por favor selecciona un aula primero.');
+      return;
+    }
+    if (!selectedSubjectId) {
+      alert('Por favor selecciona una materia primero.');
+      return;
+    }
+    if (!regulationText) {
+      alert('Por favor subí un archivo de normativa primero o esperá a que termine de procesar.');
+      return;
+    }
+    if (tokens < 1) {
+      alert('No tenés tokens suficientes para esta operación.');
+      return;
+    }
 
     if (activePlanType === 'Mensual') {
       await handleGenerarMensual();
@@ -192,7 +221,7 @@ export default function NormativaPage() {
     }
     
     setIsGenerating(true);
-    setGeneratedPlan(''); // Empezar vacío para el streaming
+    setGeneratedPlan('');
     try {
       const res = await fetch('/api/normativa', {
         method: 'POST',
