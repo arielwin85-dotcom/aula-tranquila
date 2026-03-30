@@ -81,15 +81,16 @@ export default function NormativaPage() {
     localStorage.setItem('memoria_normativa_mensual', JSON.stringify(memoriaMensual));
   }, [memoriaMensual]);
 
-  // Limpiar memoria si cambian los parámetros base, pero NO mientras se está generando
+  // Limpiar memoria si cambian el aula o materia (datos base del contexto)
   useEffect(() => {
+    // OJO: Si estamos generando, no tocamos nada
     if (isGenerating) return; 
     
     setMemoriaMensual({});
     localStorage.removeItem('memoria_normativa_mensual');
     setGeneratedPlan(null);
     setResultadoAnualGenerado(false);
-  }, [selectedClassId, selectedSubjectId, regulationText, isGenerating]);
+  }, [selectedClassId, selectedSubjectId]); // Quitamos isGenerating de aquí para que no borre al terminar
 
   useEffect(() => {
     fetch('/api/classrooms').then(res => res.json()).then(data => {

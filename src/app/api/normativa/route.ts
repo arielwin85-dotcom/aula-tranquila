@@ -596,27 +596,7 @@ export async function POST(request: Request) {
         prompt: prompt,
       });
 
-      // Handshake: Inyectamos un pequeño ping inicial para "abrir" la conexión inmediatamente
-      const heartbeat = "<!-- HEARTBEAT -->\n";
-      const encoder = new TextEncoder();
-      
-      const stream = new ReadableStream({
-        async start(controller) {
-          controller.enqueue(encoder.encode(heartbeat));
-          for await (const chunk of result.textStream) {
-            controller.enqueue(encoder.encode(chunk));
-          }
-          controller.close();
-        }
-      });
-
-      return new Response(stream, {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Transfer-Encoding': 'chunked',
-          'X-Content-Type-Options': 'nosniff',
-        }
-      });
+      return result.toTextStreamResponse();
 
     } catch (aiError: any) {
       console.error('--- ERROR IA DETECTADO ---', aiError);
