@@ -68,7 +68,7 @@ export async function getClassrooms(userId?: string): Promise<Classroom[]> {
   return data.map((c: any) => {
     const subjects = (c.subjects || []).map((s: any) => ({
       ...s,
-      id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
+      id: s.id || s.name || `sub-unknown`,
     }));
 
     const normalizedStudents: Student[] = (c.students_list || []).map((s: any) => {
@@ -191,7 +191,7 @@ export async function saveClassroom(classroom: Classroom) {
   // Heal subjects before saving to ensure consistency
   const healedSubjects = (classroom.subjects || []).map(s => ({
     ...s,
-    id: s.id || s.name || `sub-${Math.random().toString(36).substr(2, 9)}`,
+    id: s.id || s.name || `sub-unknown`,
   }));
 
   const { data, error } = await db().from('classrooms').upsert({

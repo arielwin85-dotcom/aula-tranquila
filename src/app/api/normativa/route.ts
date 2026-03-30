@@ -494,9 +494,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const subject = classroom.subjects.find((s: Subject) => s.id === subjectId);
+    const subject = classroom.subjects.find((s: Subject) => s.id === subjectId) || 
+                    classroom.subjects.find((s: Subject) => s.name === subjectId);
 
     if (!subject) {
+      console.error('Subject not found. Searched for ID/Name:', subjectId, 'Available:', classroom.subjects.map((s: any) => s.id + '/' + s.name));
       return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
     }
 
