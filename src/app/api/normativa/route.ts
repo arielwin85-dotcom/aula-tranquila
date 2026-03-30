@@ -600,7 +600,6 @@ export async function POST(request: Request) {
 
     } catch (aiError: any) {
       console.error('--- ERROR IA DETECTADO ---', aiError);
-      await registrarErrorDiagnostico(userId, `IA_FAILED: ${aiError.message}`, classroomId);
       return NextResponse.json({ 
         error: 'Error en el motor de IA de Google', 
         details: aiError.message,
@@ -610,11 +609,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Normativa API Error Critico:', error);
-    // Intentamos recuperar userId si es posible para el log
-    const cookieStore = await cookies();
-    const userIdLog = cookieStore.get('auth_session')?.value || 'unknown';
-    await registrarErrorDiagnostico(userIdLog, `CRITICAL: ${error.message}`);
-    
     return NextResponse.json({ 
       error: 'Error crítico del servidor', 
       details: error.message 

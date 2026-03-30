@@ -221,17 +221,23 @@ export default function NormativaPage() {
     
     setIsGenerating(true);
     setGeneratedPlan('');
-    setDebugStep('Iniciando proceso...');
+    
+    // Optimización para archivos gigantes (1.3M chars -> 800k chars)
+    // El límite de contexto de Gemini Flash y la red de Vercel es de aprox 1MB
+    const optimizedRegulation = regulationText.substring(0, 800000);
+    const isTruncated = regulationText.length > 800000;
+    
+    setDebugStep(isTruncated ? 'Optimizando documento (prio: 250 pág)...' : 'Iniciando proceso...');
     
     try {
-      setDebugStep('Conectando al servidor y validando tokens...');
+      setDebugStep('Conectando con la IA...');
       const res = await fetch('/api/normativa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           classroomId: selectedClassId,
           subjectId: selectedSubjectId,
-          regulation: regulationText,
+          regulation: optimizedRegulation,
           planType: activePlanType
         })
       });
