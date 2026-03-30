@@ -554,7 +554,9 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'Falta la API Key de Gemini' }, { status: 500 });
+      console.error('CRITICAL: GEMINI_API_KEY IS MISSING IN SERVER ENVIRONMENT');
+      await registrarErrorDiagnostico(userId, 'API_KEY_MISSING');
+      return NextResponse.json({ error: 'Configuración incompleta: Falta la API Key en el servidor' }, { status: 500 });
     }
 
     // --- DESCUENTO DE TOKENS ---
@@ -566,6 +568,7 @@ export async function POST(request: Request) {
     );
 
     if (!tokenCheck.ok) {
+      console.error('Error en descuento de tokens:', tokenCheck.error);
       if (tokenCheck.error === 'sin_tokens') {
         return NextResponse.json({ 
           error: 'Tokens insuficientes', 
@@ -584,7 +587,7 @@ export async function POST(request: Request) {
       .replaceAll('[NORMATIVA]', String(regulation));
 
     console.log('--- ENVIANDO A GEMINI ---');
-    console.log('Modelo: gemini-2.0-flash');
+    console.log('Modelo: gemini-1.5-flash');
     console.log('Longitud del prompt:', prompt.length);
 
     try {
@@ -616,23 +619,24 @@ export async function POST(request: Request) {
       });
 
     } catch (aiError: any) {
-      console.error('--- ERROR IA ---', aiError);
+      console.error('--- ERROR IA DETECTADO ---', aiError);
       await registrarErrorDiagnostico(userId, `IA_FAILED: ${aiError.message}`, classroomId);
       return NextResponse.json({ 
-        error: 'Error en el motor de IA', 
-        details: aiError.message 
+        error: 'Error en el motor de IA de Google', 
+        details: aiError.message,
+        code: aiError.code || 'AI_UNKNOWN'
       }, { status: 500 });
     }
 
   } catch (error: any) {
-    console.error('Normativa API Error:', error);
+    console.error('Normativa API Error Critico:', error);
     // Intentamos recuperar userId si es posible para el log
     const cookieStore = await cookies();
     const userIdLog = cookieStore.get('auth_session')?.value || 'unknown';
     await registrarErrorDiagnostico(userIdLog, `CRITICAL: ${error.message}`);
     
     return NextResponse.json({ 
-      error: 'Error interno del servidor', 
+      error: 'Error crítico del servidor', 
       details: error.message 
     }, { status: 500 });
   }

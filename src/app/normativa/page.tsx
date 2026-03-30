@@ -275,19 +275,23 @@ export default function NormativaPage() {
         setDebugStep('¡Completado con éxito!');
         await refrescarTokens();
       } else {
-        const errData = await res.json().catch(() => ({ error: 'Error desconocido en el servidor' }));
-        if (errData.error === 'Tokens insuficientes') {
-          alert('Tokens insuficientes para generar el plan anual.');
-        } else {
-          const debugInfo = errData.debug ? `\n\nBuscado: ${errData.debug.buscado}\nDisponibles: ${errData.debug.disponibles.join(', ')}` : '';
-          alert('Hubo un error al conectar con la IA. Detalle: ' + errData.error + debugInfo);
-        }
+        const status = res.status;
+        const errData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        const errorMessage = `ERROR ${status}: ${errData.error || 'Fallo en la conexión'}`;
+        setDebugStep(errorMessage);
+        alert(`FALLO CRÍTICO (Código ${status}):\n${errData.error}\n${errData.details || ''}`);
+        setIsGenerating(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to generate plan", err);
-      alert('Error de conexión. Es posible que el documento sea demasiado largo para procesar todo junto o que la red sea inestable.');
+      setDebugStep(`ERROR DE RED: ${err.message}`);
+      alert('Error de conexión o tiempo de espera agotado. Probá con un archivo más corto si el problema persiste.');
     } finally {
       setIsGenerating(false);
+      // No limpiar el error inmediatamente para que el usuario pueda leerlo
+      if (!debugStep?.startsWith('ERROR')) {
+        setTimeout(() => setDebugStep(null), 5000);
+      }
     }
   };
 
@@ -614,9 +618,11 @@ export default function NormativaPage() {
                 </p>
                 <div className="flex items-center gap-4 text-left">
                    <div className="flex-1">
-                      <div className="text-sm font-bold text-white mb-1">{debugStep || 'Analizando...'}</div>
+                      <div className={`text-sm font-bold mb-1 ${debugStep?.includes('ERROR') ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                        {debugStep || 'Analizando...'}
+                      </div>
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                         <div className="h-full bg-brand-orange animate-progress-fast"></div>
+                         <div className={`h-full bg-brand-orange animate-progress-fast ${debugStep?.includes('ERROR') ? 'bg-red-600' : ''}`}></div>
                       </div>
                    </div>
                 </div>
