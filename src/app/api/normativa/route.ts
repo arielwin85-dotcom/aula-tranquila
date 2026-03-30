@@ -598,7 +598,7 @@ export async function POST(request: Request) {
 
       // Cambio a Modo Sincrónico para estabilidad total
       const { text } = await generateText({
-        model: google("gemini-1.5-flash-latest"),
+        model: google("gemini-1.5-flash"),
         prompt: prompt,
       });
 
