@@ -59,6 +59,7 @@ export default function NormativaPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [activePlanType, setActivePlanType] = useState<PlanType>('Anual');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [debugStep, setDebugStep] = useState<string | null>(null);
   const [regulationText, setRegulationText] = useState('');
   const [generatedPlan, setGeneratedPlan] = useState<any | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -227,7 +228,10 @@ export default function NormativaPage() {
     
     setIsGenerating(true);
     setGeneratedPlan('');
+    setDebugStep('Iniciando proceso...');
+    
     try {
+      setDebugStep('Conectando al servidor y validando tokens...');
       const res = await fetch('/api/normativa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -240,6 +244,7 @@ export default function NormativaPage() {
       });
 
       if (res.ok && res.body) {
+        setDebugStep('IA respondiendo... Recibiendo primeros fragmentos');
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let done = false;
@@ -262,6 +267,7 @@ export default function NormativaPage() {
         }
         
         setResultadoAnualGenerado(true);
+        setDebugStep('¡Completado con éxito!');
         await refrescarTokens();
       } else {
         const errData = await res.json().catch(() => ({ error: 'Error desconocido en el servidor' }));
@@ -595,8 +601,27 @@ export default function NormativaPage() {
                 <Loader2 size={48} className="text-brand-orange animate-spin" />
              </div>
              <h2 className="text-3xl lg:text-5xl font-black text-white mb-4 font-montserrat tracking-tight">Procesando con IA...</h2>
-             <p className="max-w-md text-xs lg:text-sm font-bold text-slate-400 uppercase tracking-widest leading-loose">
-               El Agente Educativo está leyendo la normativa, aplicando consideraciones pedagógicas y estructurando el contenido. Esto tomará unos momentos (hasta 1 minuto). Por favor espere.
+             
+             {/* Monitor de Diagnóstico */}
+             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-4 w-full max-w-md animate-in zoom-in-95 duration-500">
+                <p className="text-[10px] font-black text-brand-orange uppercase tracking-widest mb-4 flex items-center gap-2">
+                   <Clock size={12} /> Monitor de Proceso
+                </p>
+                <div className="flex items-center gap-4 text-left">
+                   <div className="flex-1">
+                      <div className="text-sm font-bold text-white mb-1">{debugStep || 'Analizando...'}</div>
+                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                         <div className="h-full bg-brand-orange animate-progress-fast"></div>
+                      </div>
+                   </div>
+                </div>
+                <p className="mt-4 text-[9px] font-bold text-slate-500 uppercase leading-relaxed italic">
+                   Si el proceso se detiene aquí por más de 30 segundos, notificá el error.
+                </p>
+             </div>
+
+             <p className="max-w-md text-xs lg:text-sm font-bold text-slate-400 uppercase tracking-widest leading-loose mt-8">
+               El Agente Educativo está leyendo la normativa, aplicando consideraciones pedagógicas y estructurando el contenido. Por favor espere.
              </p>
           </div>
         )}

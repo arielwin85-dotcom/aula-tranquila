@@ -562,15 +562,30 @@ export async function POST(request: Request) {
       .replaceAll('[CICLO]', String(classroom.year))
       .replaceAll('[NORMATIVA]', String(regulation));
 
-    const result = streamText({
-      model: google("gemini-2.0-flash"),
-      prompt: prompt,
-    });
+    console.log('--- ENVIANDO A GEMINI ---');
+    console.log('Modelo: gemini-2.0-flash');
+    console.log('Longitud del prompt:', prompt.length);
 
-    return result.toTextStreamResponse();
+    try {
+      const result = streamText({
+        model: google("gemini-2.0-flash"),
+        prompt: prompt,
+      });
 
-  } catch (error) {
+      return result.toTextStreamResponse();
+    } catch (aiError: any) {
+      console.error('--- ERROR IA ---', aiError);
+      return NextResponse.json({ 
+        error: 'Error en el motor de IA', 
+        details: aiError.message 
+      }, { status: 500 });
+    }
+
+  } catch (error: any) {
     console.error('Normativa API Error:', error);
-    return NextResponse.json({ error: 'Error al generar la planificación por normativa' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Error interno del servidor', 
+      details: error.message 
+    }, { status: 500 });
   }
 }
