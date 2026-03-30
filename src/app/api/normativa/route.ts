@@ -516,8 +516,19 @@ export async function POST(request: Request) {
     });
 
     if (!subject) {
-      console.error('Subject lookup failed. Searched:', subjectId, 'Available subjects for this classroom:', classroom.subjects.map((s: any) => s.id + '/' + s.name));
-      return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
+      console.error('--- ERROR MATERIA ---');
+      console.error('Usuario:', userId);
+      console.error('Aula ID:', classroomId);
+      console.error('Materia ID buscada:', subjectId);
+      console.error('Materias disponibles (ID/Nombre):', classroom.subjects.map((s: any) => `${s.id}/${s.name}`));
+      console.error('----------------------');
+      return NextResponse.json({ 
+        error: 'Materia no encontrada', 
+        debug: {
+          buscado: subjectId,
+          disponibles: classroom.subjects.map((s: any) => s.name)
+        }
+      }, { status: 404 });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;

@@ -80,13 +80,15 @@ export default function NormativaPage() {
     localStorage.setItem('memoria_normativa_mensual', JSON.stringify(memoriaMensual));
   }, [memoriaMensual]);
 
-  // Limpiar memoria si cambian los parámetros base
+  // Limpiar memoria si cambian los parámetros base, pero NO mientras se está generando
   useEffect(() => {
+    if (isGenerating) return; 
+    
     setMemoriaMensual({});
     localStorage.removeItem('memoria_normativa_mensual');
     setGeneratedPlan(null);
     setResultadoAnualGenerado(false);
-  }, [selectedClassId, selectedSubjectId, regulationText]);
+  }, [selectedClassId, selectedSubjectId, regulationText, isGenerating]);
 
   useEffect(() => {
     fetch('/api/classrooms').then(res => res.json()).then(data => {
@@ -266,7 +268,8 @@ export default function NormativaPage() {
         if (errData.error === 'Tokens insuficientes') {
           alert('Tokens insuficientes para generar el plan anual.');
         } else {
-          alert('Hubo un error al conectar con la IA. Por favor, intenta de nuevo o usa un archivo más corto. Detalle: ' + errData.error);
+          const debugInfo = errData.debug ? `\n\nBuscado: ${errData.debug.buscado}\nDisponibles: ${errData.debug.disponibles.join(', ')}` : '';
+          alert('Hubo un error al conectar con la IA. Detalle: ' + errData.error + debugInfo);
         }
       }
     } catch (err) {
