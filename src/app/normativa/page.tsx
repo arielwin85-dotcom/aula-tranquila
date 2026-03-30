@@ -99,10 +99,13 @@ export default function NormativaPage() {
   const subjects = selectedClass?.subjects || [];
 
   useEffect(() => {
-    if (subjects.length > 0 && !selectedSubjectId) {
-      setSelectedSubjectId(subjects[0].id);
+    if (subjects.length > 0) {
+      const exists = subjects.some(s => s.id === selectedSubjectId);
+      if (!exists) {
+        setSelectedSubjectId(subjects[0].id);
+      }
     }
-  }, [selectedClassId, subjects]);
+  }, [selectedClassId, subjects, selectedSubjectId]);
 
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);

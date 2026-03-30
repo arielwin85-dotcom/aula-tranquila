@@ -6,6 +6,16 @@ import { getClassrooms } from '@/lib/db';
 import { Classroom, Subject } from '@/types';
 import { descontarTokensServer } from '@/lib/tokens-server';
 
+// Función para normalizar texto (quitar tildes, minúsculas, espacios) para comparaciones robustas
+function normalizeText(text: string): string {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
 const SYSTEM_PROMPT = `Sos un Experto Pedagógico de Nivel Mundial 
 en diseño curricular argentino con 20 años 
 de experiencia en aulas de primaria (1° a 7°).
@@ -28,6 +38,8 @@ CONTEXTO DEL DOCENTE:
 REGLA FUNDAMENTAL — LA NORMATIVA ES LA BASE
 ═══════════════════════════════════════════════
 
+Tu tarea principal es BUSCAR DENTRO DEL DOCUMENTO los "CONTENIDOS DE LA MATERIA" ([MATERIA]) para el grado ([GRADO]).
+
 TODO el contenido que generés debe estar
 extraído y fundamentado en la normativa
 que el docente subió.
@@ -37,7 +49,7 @@ en la normativa subida.
 
 SIEMPRE citar o referenciar el eje,
 bloque o sección de la normativa de
-donve proviene cada contenido.
+donde proviene cada contenido.
 
 Si la normativa es un Diseño Curricular
 Provincial → respetar exactamente los
@@ -491,14 +503,20 @@ export async function POST(request: Request) {
     const classroom = classrooms.find((c: Classroom) => c.id === classroomId);
     
     if (!classroom) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      console.error('Classroom not found for user:', userId, 'Searched ID:', classroomId);
+      return NextResponse.json({ error: 'Aula no encontrada' }, { status: 403 });
     }
 
-    const subject = classroom.subjects.find((s: Subject) => s.id === subjectId) || 
-                    classroom.subjects.find((s: Subject) => s.name === subjectId);
+    // Búsqueda Ultra-Robusta de Materia: por ID, Nombre o Nombre Normalizado
+    const normalizedTarget = normalizeText(subjectId);
+    const subject = classroom.subjects.find((s: Subject) => {
+      const sId = normalizeText(s.id || '');
+      const sName = normalizeText(s.name || '');
+      return sId === normalizedTarget || sName === normalizedTarget;
+    });
 
     if (!subject) {
-      console.error('Subject not found. Searched for ID/Name:', subjectId, 'Available:', classroom.subjects.map((s: any) => s.id + '/' + s.name));
+      console.error('Subject lookup failed. Searched:', subjectId, 'Available subjects for this classroom:', classroom.subjects.map((s: any) => s.id + '/' + s.name));
       return NextResponse.json({ error: 'Materia no encontrada' }, { status: 404 });
     }
 
