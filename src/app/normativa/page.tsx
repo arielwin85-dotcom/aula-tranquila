@@ -258,10 +258,9 @@ export default function NormativaPage() {
         setResultadoAnualGenerado(true);
         setDebugStep('¡Completado con éxito!');
         await refrescarTokens();
-      } else { // Cierra if (res.ok)
         const status = res.status;
         const errData = await res.json().catch(() => ({ error: 'Error desconocido' }));
-        const errorMessage = `ERROR ${status}: ${errData.error || 'Fallo en la conexión'}`;
+        const errorMessage = `ERROR ${status}: ${errData.error || 'Fallo en la conexión'}\nDetalle Técnico: ${errData.details || 'Sin detalles'}`;
         setGeneratedPlan(errorMessage);
         setDebugStep(errorMessage);
         setIsGenerating(false);
