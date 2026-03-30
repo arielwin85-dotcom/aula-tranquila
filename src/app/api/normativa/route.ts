@@ -6,6 +6,10 @@ import { getClassrooms } from '@/lib/db';
 import { Classroom, Subject } from '@/types';
 import { descontarTokensServer } from '@/lib/tokens-server';
 
+// Configuración de la ruta para App Router (Next.js 14+)
+export const maxDuration = 60; // Máximo permitido (60 segundos) para planes largos
+export const dynamic = 'force-dynamic';
+
 // Función para normalizar texto (quitar tildes, minúsculas, espacios) para comparaciones robustas
 function normalizeText(text: string): string {
   if (!text) return '';
@@ -489,13 +493,30 @@ PROHIBIDO:
 - Usar frases genéricas en estrategias`;
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
   try {
-    const { classroomId, subjectId, regulation, planType } = await request.json();
+    console.log('--- INICIO PETICIÓN NORMATIVA ---');
+    let body;
+    try {
+      body = await request.json();
+    } catch (e: any) {
+      console.error('Error al parsear el cuerpo JSON:', e.message);
+      return NextResponse.json({ 
+        error: 'Error al recibir los datos. Es posible que el documento sea demasiado grande.', 
+        details: e.message 
+      }, { status: 413 });
+    }
+    const { classroomId, subjectId, regulation, planType } = body;
+    
+    console.log('Fase 1: Body parsed');
+    console.log('Tamaño de Regulation:', (regulation?.length || 0) / 1024, 'KB');
+    console.log('Materia ID:', subjectId);
 
     const cookieStore = await cookies();
     const userId = cookieStore.get('auth_session')?.value;
 
     if (!userId) {
+      console.error('Error: Usuario no autenticado');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
