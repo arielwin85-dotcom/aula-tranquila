@@ -262,17 +262,21 @@ export default function NormativaPage() {
             .replace(/<[^>]*>?/gm, '');
 
           setGeneratedPlan(cleanedText);
-        }
+        } // Cierra while
         
-        setResultadoAnualGenerado(true);
-        setDebugStep('¡Completado con éxito!');
+        if (!cumulativeContent) {
+          setGeneratedPlan('ERROR: El servidor no devolvió contenido útil. Es posible que el documento sea ilegible o la IA se haya bloqueado.');
+        } else {
+          setResultadoAnualGenerado(true);
+          setDebugStep('¡Completado con éxito!');
+        }
         await refrescarTokens();
-      } else {
+      } else { // Cierra if (res.ok && res.body)
         const status = res.status;
         const errData = await res.json().catch(() => ({ error: 'Error desconocido' }));
         const errorMessage = `ERROR ${status}: ${errData.error || 'Fallo en la conexión'}`;
+        setGeneratedPlan(errorMessage);
         setDebugStep(errorMessage);
-        alert(`FALLO CRÍTICO (Código ${status}):\n${errData.error}\n${errData.details || ''}`);
         setIsGenerating(false);
       }
     } catch (err: any) {
@@ -729,7 +733,7 @@ export default function NormativaPage() {
                 {
                   activePlanType === 'Mensual' 
                     ? `GENERAR ${MESES.find(m => m.valor === mesSeleccionado)?.nombre.toUpperCase()}`
-                    : `Generar ${activePlanType}`
+                    : `Generar ${activePlanType} (${regulationText?.length.toLocaleString() || 0} chars)`
                 }
               </button>
             )}
