@@ -222,12 +222,11 @@ export default function NormativaPage() {
     setIsGenerating(true);
     setGeneratedPlan('');
     
-    // Garantía de Éxito (50k chars ~ 15-20 pág)
-    // Evita el Timeout de 10s de Vercel Hobby
-    const optimizedRegulation = regulationText.substring(0, 50000);
-    const isTruncated = regulationText.length > 50000;
+    // Modo Streaming de Alta Resolución (100k chars ~ 30-40 pág)
+    const optimizedRegulation = regulationText.substring(0, 100000);
+    const isTruncated = regulationText.length > 100000;
     
-    setDebugStep(isTruncated ? 'Modo Ultra-Rápido (20 pág)...' : 'Iniciando proceso...');
+    setDebugStep(isTruncated ? 'Modo Alta Resolución (40 pág)...' : 'Iniciando proceso...');
     
     try {
       setDebugStep('Conectando con la IA...');
@@ -242,19 +241,32 @@ export default function NormativaPage() {
         })
       });
 
-      if (res.ok) {
-        setDebugStep('IA terminando de escribir...');
-        const data = await res.json();
-        
-        if (!data.text) {
-          throw new Error('La respuesta llegó vacía');
+      if (res.ok && res.body) {
+        setDebugStep('¡Recibiendo datos! Procesando plan anual...');
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let cumulativeContent = '';
+
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (done) break;
+
+          const chunkValue = decoder.decode(value);
+          cumulativeContent += chunkValue;
+          
+          const cleanedText = cumulativeContent
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]*>?/gm, '');
+
+          setGeneratedPlan(cleanedText);
         }
 
-        const cleanedText = data.text
-          .replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<[^>]*>?/gm, '');
+        if (!cumulativeContent) {
+           throw new Error('La respuesta llegó vacía');
+        }
 
-        setGeneratedPlan(cleanedText);
         setResultadoAnualGenerado(true);
         setDebugStep('¡Completado con éxito!');
         await refrescarTokens();

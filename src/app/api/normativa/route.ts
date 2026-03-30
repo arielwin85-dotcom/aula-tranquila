@@ -591,22 +591,18 @@ export async function POST(request: Request) {
     console.log('Longitud del prompt:', prompt.length);
 
     try {
-      // Configuramos el cliente con la variable de entorno que SI tenés configurada
+      // Usamos el cliente configurado con tu llave
       const google = createGoogleGenerativeAI({
         apiKey: process.env.GEMINI_API_KEY,
       });
 
-      // Cambio a Modo Sincrónico para estabilidad total
-      const { text } = await generateText({
+      // Modo Streaming: Envía palabras en vivo para evitar el 504 de Vercel/Proxy
+      const result = await streamText({
         model: google("gemini-2.5-flash"),
         prompt: prompt,
       });
 
-      if (!text) {
-        throw new Error('La IA no generó texto');
-      }
-
-      return NextResponse.json({ text });
+      return result.toTextStreamResponse();
 
     } catch (aiError: any) {
       console.error('--- ERROR IA DETECTADO ---', aiError);
