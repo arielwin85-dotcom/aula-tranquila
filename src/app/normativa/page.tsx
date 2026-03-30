@@ -222,12 +222,12 @@ export default function NormativaPage() {
     setIsGenerating(true);
     setGeneratedPlan('');
     
-    // Optimización para archivos gigantes (1.3M chars -> 800k chars)
-    // El límite de contexto de Gemini Flash y la red de Vercel es de aprox 1MB
-    const optimizedRegulation = regulationText.substring(0, 800000);
-    const isTruncated = regulationText.length > 800000;
+    // Aligerar al máximo para evitar cortes (300k chars ~ 100 pág)
+    // Es el límite de oro para que Gemini responda sin bloqueos de red
+    const optimizedRegulation = regulationText.substring(0, 300000);
+    const isTruncated = regulationText.length > 300000;
     
-    setDebugStep(isTruncated ? 'Optimizando documento (prio: 250 pág)...' : 'Iniciando proceso...');
+    setDebugStep(isTruncated ? 'Modo de alta velocidad (100 pág)...' : 'Iniciando proceso...');
     
     try {
       setDebugStep('Conectando con la IA...');
