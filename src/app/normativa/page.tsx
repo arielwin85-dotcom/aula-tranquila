@@ -81,16 +81,8 @@ export default function NormativaPage() {
     localStorage.setItem('memoria_normativa_mensual', JSON.stringify(memoriaMensual));
   }, [memoriaMensual]);
 
-  // Limpiar memoria si cambian el aula o materia (datos base del contexto)
-  useEffect(() => {
-    // OJO: Si estamos generando, no tocamos nada
-    if (isGenerating) return; 
-    
-    setMemoriaMensual({});
-    localStorage.removeItem('memoria_normativa_mensual');
-    setGeneratedPlan(null);
-    setResultadoAnualGenerado(false);
-  }, [selectedClassId, selectedSubjectId]); // Quitamos isGenerating de aquí para que no borre al terminar
+  // La limpieza se hará de forma manual solo al generar un nuevo plan
+  // Ya no se borran los estados automáticamente ante cambios de campos
 
   useEffect(() => {
     fetch('/api/classrooms').then(res => res.json()).then(data => {
