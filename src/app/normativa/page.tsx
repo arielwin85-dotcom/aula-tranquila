@@ -222,12 +222,12 @@ export default function NormativaPage() {
     setIsGenerating(true);
     setGeneratedPlan('');
     
-    // Aligerar al máximo para evitar cortes (300k chars ~ 100 pág)
-    // Es el límite de oro para que Gemini responda sin bloqueos de red
-    const optimizedRegulation = regulationText.substring(0, 300000);
-    const isTruncated = regulationText.length > 300000;
+    // Garantía de Éxito (50k chars ~ 15-20 pág)
+    // Evita el Timeout de 10s de Vercel Hobby
+    const optimizedRegulation = regulationText.substring(0, 50000);
+    const isTruncated = regulationText.length > 50000;
     
-    setDebugStep(isTruncated ? 'Modo de alta velocidad (100 pág)...' : 'Iniciando proceso...');
+    setDebugStep(isTruncated ? 'Modo Ultra-Rápido (20 pág)...' : 'Iniciando proceso...');
     
     try {
       setDebugStep('Conectando con la IA...');
