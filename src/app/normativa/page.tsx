@@ -242,42 +242,23 @@ export default function NormativaPage() {
         })
       });
 
-      if (res.ok && res.body) {
-        setDebugStep('IA respondiendo... Recibiendo primeros fragmentos');
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
-        let cumulativeContent = '';
-
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          done = doneReading;
-          if (done) break;
-
-          const chunkValue = decoder.decode(value);
-          
-          if (chunkValue.includes('<!-- HEARTBEAT -->')) {
-            setDebugStep('¡Conexión establecida! Procesando contenidos...');
-            continue; 
-          }
-
-          cumulativeContent += chunkValue;
-          
-          const cleanedText = cumulativeContent
-            .replace(/<br\s*\/?>/gi, '\n')
-            .replace(/<[^>]*>?/gm, '');
-
-          setGeneratedPlan(cleanedText);
-        } // Cierra while
+      if (res.ok) {
+        setDebugStep('IA terminando de escribir...');
+        const data = await res.json();
         
-        if (!cumulativeContent) {
-          setGeneratedPlan('ERROR: El servidor no devolvió contenido útil. Es posible que el documento sea ilegible o la IA se haya bloqueado.');
-        } else {
-          setResultadoAnualGenerado(true);
-          setDebugStep('¡Completado con éxito!');
+        if (!data.text) {
+          throw new Error('La respuesta llegó vacía');
         }
+
+        const cleanedText = data.text
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]*>?/gm, '');
+
+        setGeneratedPlan(cleanedText);
+        setResultadoAnualGenerado(true);
+        setDebugStep('¡Completado con éxito!');
         await refrescarTokens();
-      } else { // Cierra if (res.ok && res.body)
+      } else { // Cierra if (res.ok)
         const status = res.status;
         const errData = await res.json().catch(() => ({ error: 'Error desconocido' }));
         const errorMessage = `ERROR ${status}: ${errData.error || 'Fallo en la conexión'}`;

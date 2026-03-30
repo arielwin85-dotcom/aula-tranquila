@@ -1,5 +1,5 @@
 import { google } from "@ai-sdk/google";
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getClassrooms } from '@/lib/db';
@@ -591,12 +591,17 @@ export async function POST(request: Request) {
     console.log('Longitud del prompt:', prompt.length);
 
     try {
-      const result = await streamText({
+      // Cambio a Modo Sincrónico para estabilidad total
+      const { text } = await generateText({
         model: google("gemini-1.5-flash-latest"),
         prompt: prompt,
       });
 
-      return result.toTextStreamResponse();
+      if (!text) {
+        throw new Error('La IA no generó texto');
+      }
+
+      return NextResponse.json({ text });
 
     } catch (aiError: any) {
       console.error('--- ERROR IA DETECTADO ---', aiError);
