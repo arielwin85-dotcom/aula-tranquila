@@ -104,11 +104,58 @@ export default function NormativaPage() {
     }
   }, [selectedClassId, subjects]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const [readingProgress, setReadingProgress] = useState(0);
+
+  const extractTextFromPDF = async (file: File) => {
+    setIsReadingFile(true);
+    setReadingProgress(0);
+    try {
+      const pdfjs = await import('pdfjs-dist');
+      // Set worker from CDN for reliability in Next.js
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+      
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += `--- PÁGINA ${i} ---\n${pageText}\n\n`;
+        setReadingProgress(Math.round((i / pdf.numPages) * 100));
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error('Error al leer el PDF:', error);
+      alert('Error al leer el archivo PDF. Asegúrate de que no esté protegido con contraseña.');
+      return '';
+    } finally {
+      setIsReadingFile(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      setRegulationText(`Contenido extraído del documento "${file.name}". Se utilizará como base para alinear los contenidos de la planificación.`);
+      
+      if (file.type === 'application/pdf') {
+        const extractedText = await extractTextFromPDF(file);
+        if (extractedText) {
+          setRegulationText(extractedText);
+        } else {
+          setFileName(null);
+        }
+      } else if (file.type === 'text/plain') {
+        const text = await file.text();
+        setRegulationText(text);
+      } else {
+        // Fallback para otros tipos como placeholder (mejorar luego con docx si es necesario)
+        setRegulationText(`Contenido extraído del documento "${file.name}".`);
+      }
     }
   };
 
@@ -145,6 +192,7 @@ export default function NormativaPage() {
     }
     
     setIsGenerating(true);
+    setGeneratedPlan(''); // Empezar vacío para el streaming
     try {
       const res = await fetch('/api/normativa', {
         method: 'POST',
@@ -157,27 +205,41 @@ export default function NormativaPage() {
         })
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        
-        // Descontar tokens solo si la IA generó bien (gestionado en el backend)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-             const cleanedPlan = data.plan.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>?/gm, '');
-             setGeneratedPlan(cleanedPlan);
-             setResultadoAnualGenerado(true);
-             await refrescarTokens();
+      if (res.ok && res.body) {
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let cumulativeContent = '';
+
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          const chunkValue = decoder.decode(value);
+          
+          // El streaming del SDK de IA a veces envía metadatos, pero con toTextStreamResponse es texto puro
+          cumulativeContent += chunkValue;
+          
+          // Limpieza básica si hay fragmentos incompletos
+          const cleanedText = cumulativeContent
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]*>?/gm, '');
+
+          setGeneratedPlan(cleanedText);
         }
+        
+        setResultadoAnualGenerado(true);
+        await refrescarTokens();
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({ error: 'Error desconocido en el servidor' }));
         if (errData.error === 'Tokens insuficientes') {
           alert('Tokens insuficientes para generar el plan anual.');
         } else {
-          alert('Error: ' + errData.error);
+          alert('Hubo un error al conectar con la IA. Por favor, intenta de nuevo o usa un archivo más corto. Detalle: ' + errData.error);
         }
       }
     } catch (err) {
       console.error("Failed to generate plan", err);
+      alert('Error de conexión. Es posible que el documento sea demasiado largo para procesar todo junto o que la red sea inestable.');
     } finally {
       setIsGenerating(false);
     }
@@ -581,17 +643,21 @@ export default function NormativaPage() {
             <label className="group border-2 border-dashed border-white/10 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-white/5 hover:border-brand-orange/50 transition-all relative">
               <input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf,.doc,.docx,.txt" />
               <div className="w-16 h-16 bg-white/5 rounded-2xl shadow-inner flex items-center justify-center text-slate-500 mb-4 group-hover:text-brand-orange group-hover:scale-110 transition-all">
-                <Upload size={32} />
+                {isReadingFile ? <Loader2 size={32} className="animate-spin text-brand-orange" /> : <Upload size={32} />}
               </div>
-              <p className="text-sm font-black text-white mb-1 tracking-tight">{fileName ? fileName : 'Subir Normativa'}</p>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">PDF, Word o TXT</p>
+              <p className="text-sm font-black text-white mb-1 tracking-tight">
+                {isReadingFile ? `Leyendo (${readingProgress}%)...` : (fileName ? fileName : 'Subir Normativa')}
+              </p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                {isReadingFile ? 'Procesando PDF pesado' : 'PDF, Word o TXT'}
+              </p>
             </label>
 
             {tokens === 0 ? (
                <SinTokens accion={`generar planificación ${activePlanType.toLowerCase()}`} />
             ) : (
               <button 
-                disabled={!regulationText || isGenerating || tokens === 0}
+                disabled={!regulationText || isGenerating || isReadingFile || tokens === 0}
                 onClick={handleGeneratePlan}
                 className="w-full mt-8 py-5 bg-brand-orange text-white rounded-[1.8rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all shadow-xl shadow-brand-orange/20 hover:scale-[1.03] active:scale-95 disabled:opacity-50 disabled:hover:bg-brand-orange disabled:hover:scale-100"
               >

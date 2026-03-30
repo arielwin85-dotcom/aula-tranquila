@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { google } from "@ai-sdk/google";
+import { streamText } from "ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getClassrooms } from '@/lib/db';
@@ -36,7 +37,7 @@ en la normativa subida.
 
 SIEMPRE citar o referenciar el eje,
 bloque o sección de la normativa de
-donde proviene cada contenido.
+donve proviene cada contenido.
 
 Si la normativa es un Diseño Curricular
 Provincial → respetar exactamente los
@@ -273,8 +274,7 @@ ESTRUCTURA OBLIGATORIA DEL DOCUMENTO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ## PLANIFICACIÓN ANUAL [CICLO]
 ### [GRADO] | [MATERIA]
-### Normativa de referencia: [nombre 
-    del documento subido]
+### Normativa de referencia: [nombre del documento subido]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ---
@@ -375,8 +375,7 @@ la recta numérica (2do trimestre)"
 Por CADA eje o bloque temático
 del cuadro anterior generar:
 
-### [Nombre del Eje — tal como aparece
-     en la normativa]
+### [Nombre del Eje — tal como aparece en la normativa]
 #### Referencia normativa: [citar sección]
 
 **ACTIVIDAD 1 — INICIO/EXPLORACIÓN**
@@ -506,19 +505,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Falta la API Key de Gemini' }, { status: 500 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
-      generationConfig: { maxOutputTokens: 8192 }
-    });
-
-    // Inyectamos los valores del contexto en el SYSTEM_PROMPT
-    const prompt = SYSTEM_PROMPT
-      .replace('[GRADO]', String(classroom.grade))
-      .replace('[MATERIA]', String(subject.name))
-      .replace('[CICLO]', String(classroom.year))
-      .replace('[NORMATIVA]', String(regulation));
-
     // --- DESCUENTO DE TOKENS ---
     const tokenCheck = await descontarTokensServer(
       userId, 
@@ -538,13 +524,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: tokenCheck.error }, { status: 500 });
     }
 
-    const result = await model.generateContent(prompt);
-    const textReply = result.response.text();
+    // Inyectamos los valores del contexto en el SYSTEM_PROMPT usando replaceAll
+    const prompt = SYSTEM_PROMPT
+      .replaceAll('[GRADO]', String(classroom.grade))
+      .replaceAll('[MATERIA]', String(subject.name))
+      .replaceAll('[CICLO]', String(classroom.year))
+      .replaceAll('[NORMATIVA]', String(regulation));
 
-    return NextResponse.json({ 
-      plan: textReply,
-      tokensRestantes: tokenCheck.tokensRestantes 
+    const result = streamText({
+      model: google("gemini-2.0-flash"),
+      prompt: prompt,
     });
+
+    return result.toTextStreamResponse();
 
   } catch (error) {
     console.error('Normativa API Error:', error);
