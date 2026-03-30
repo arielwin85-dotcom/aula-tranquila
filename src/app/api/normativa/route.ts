@@ -1,4 +1,4 @@
-import { google } from "@ai-sdk/google";
+import { google, createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamText, generateText } from "ai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -591,6 +591,11 @@ export async function POST(request: Request) {
     console.log('Longitud del prompt:', prompt.length);
 
     try {
+      // Configuramos el cliente con la variable de entorno que SI tenés configurada
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GEMINI_API_KEY,
+      });
+
       // Cambio a Modo Sincrónico para estabilidad total
       const { text } = await generateText({
         model: google("gemini-1.5-flash-latest"),
