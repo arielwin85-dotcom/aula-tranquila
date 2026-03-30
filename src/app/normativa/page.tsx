@@ -253,12 +253,17 @@ export default function NormativaPage() {
         while (!done) {
           const { value, done: doneReading } = await reader.read();
           done = doneReading;
+          if (done) break;
+
           const chunkValue = decoder.decode(value);
           
-          // El streaming del SDK de IA a veces envía metadatos, pero con toTextStreamResponse es texto puro
+          if (chunkValue.includes('<!-- HEARTBEAT -->')) {
+            setDebugStep('¡Conexión establecida! Procesando contenidos...');
+            continue; 
+          }
+
           cumulativeContent += chunkValue;
           
-          // Limpieza básica si hay fragmentos incompletos
           const cleanedText = cumulativeContent
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<[^>]*>?/gm, '');

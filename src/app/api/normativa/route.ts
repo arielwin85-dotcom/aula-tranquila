@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getClassrooms } from '@/lib/db';
 import { Classroom, Subject } from '@/types';
-import { descontarTokensServer } from '@/lib/tokens-server';
+import { descontarTokensServer, registrarErrorDiagnostico } from '@/lib/tokens-server';
 
 // Configuración de la ruta para App Router (Next.js 14+)
 export const maxDuration = 60; // Máximo permitido (60 segundos) para planes largos
@@ -588,14 +588,36 @@ export async function POST(request: Request) {
     console.log('Longitud del prompt:', prompt.length);
 
     try {
-      const result = streamText({
-        model: google("gemini-2.0-flash"),
+      const result = await streamText({
+        model: google("gemini-1.5-flash"),
         prompt: prompt,
       });
 
-      return result.toTextStreamResponse();
+      // Handshake: Inyectamos un pequeño ping inicial para "abrir" la conexión inmediatamente
+      const heartbeat = "<!-- HEARTBEAT -->\n";
+      const encoder = new TextEncoder();
+      
+      const stream = new ReadableStream({
+        async start(controller) {
+          controller.enqueue(encoder.encode(heartbeat));
+          for await (const chunk of result.textStream) {
+            controller.enqueue(encoder.encode(chunk));
+          }
+          controller.close();
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Transfer-Encoding': 'chunked',
+          'X-Content-Type-Options': 'nosniff',
+        }
+      });
+
     } catch (aiError: any) {
       console.error('--- ERROR IA ---', aiError);
+      await registrarErrorDiagnostico(userId, `IA_FAILED: ${aiError.message}`, classroomId);
       return NextResponse.json({ 
         error: 'Error en el motor de IA', 
         details: aiError.message 
@@ -604,6 +626,11 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Normativa API Error:', error);
+    // Intentamos recuperar userId si es posible para el log
+    const cookieStore = await cookies();
+    const userIdLog = cookieStore.get('auth_session')?.value || 'unknown';
+    await registrarErrorDiagnostico(userIdLog, `CRITICAL: ${error.message}`);
+    
     return NextResponse.json({ 
       error: 'Error interno del servidor', 
       details: error.message 

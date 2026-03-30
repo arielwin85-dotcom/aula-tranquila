@@ -58,6 +58,21 @@ export const descontarTokensServer = async (
   return { ok: true, tokensRestantes: tokensNuevos };
 };
 
+export const registrarErrorDiagnostico = async (userId: string, error: string, classroomId?: string) => {
+  if (!supabaseAdmin) return;
+  
+  await supabaseAdmin
+    .from('token_transactions')
+    .insert([{
+      user_id: userId,
+      tipo: 'error_diagnostico',
+      cantidad: 0,
+      tokens_antes: 0,
+      tokens_despues: 0,
+      descripcion: `ERROR EN NORMATIVA: ${error.substring(0, 200)} | Aula: ${classroomId || 'N/A'}`
+    }]);
+};
+
 export const leerTokensServer = async (userId: string): Promise<{ disponibles: number; totales: number }> => {
   if (!supabaseAdmin) return { disponibles: 0, totales: 0 };
   
